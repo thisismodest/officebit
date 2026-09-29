@@ -463,6 +463,7 @@ export class Simulation {
   // ── World editing (ventures use these) ────────────────────────────────────
 
   addLevel(level: LevelDef): void {
+    this.arranged(level);
     this.world.levels.push(level);
     this.register(level);
     this.changed([level.id]);
@@ -472,6 +473,7 @@ export class Simulation {
   replaceLevel(level: LevelDef, entry: Tile): void {
     const index = this.world.levels.findIndex((l) => l.id === level.id);
     if (index < 0) return;
+    this.arranged(level);
     for (const item of this.items) if (item.level === level.id) this.retire(item);
     this.world.levels[index] = level;
     this.register(level);
@@ -621,7 +623,9 @@ export class Simulation {
   employ(p: Person, company: string, level?: string): void {
     const old = this.items[p.desk];
     if (old?.def.owner === p.id) delete old.def.owner;
-    const desk = level ? this.activeItems().find((item) => item.level === level && item.type.desk && !item.def.owner) : undefined;
+    // Their own desk there if they have one (an office you arranged keeps its owners), otherwise a free one.
+    const desks = level ? this.activeItems().filter((item) => item.level === level && item.type.desk) : [];
+    const desk = desks.find((item) => item.def.owner === p.id) ?? desks.find((item) => !item.def.owner);
     if (desk) desk.def.owner = p.id;
     p.desk = desk?.index ?? -1;
     if (p.company !== company) p.hiredAt = this.tick;
@@ -633,6 +637,12 @@ export class Simulation {
   }
 
   // ── Internals ─────────────────────────────────────────────────────────────
+
+  /** A place the story's building, as you arranged it last time (world.overrides), if it's the same layout. */
+  private arranged(level: LevelDef): void {
+    const override = this.world.overrides?.[level.id];
+    if (override && override.size[0] === level.size[0] && override.size[1] === level.size[1]) level.furniture = structuredClone(override.furniture);
+  }
 
   private register(level: LevelDef): void {
     this.levels.set(level.id, level);

@@ -20,7 +20,7 @@ import { icon } from './ui/icons.ts';
 import { popover } from './ui/popover.ts';
 import { ShareMenu } from './ui/share-menu.ts';
 import { attachTabs } from './ui/tabs.ts';
-import { checkWorld, fromHash, loadLocal } from './ui/world-io.ts';
+import { checkWorld, fromHash, loadLocal, saveLocal } from './ui/world-io.ts';
 import { validate } from './sim/validate.ts';
 import { AudioMenu } from './ui/audio-menu.ts';
 import { Soundscape } from './ui/soundscape.ts';
@@ -107,7 +107,18 @@ attachTabs($('aside.mdst-tabs'));
 
 // Editing the map: the pencil opens a floating toolbar over the stage; the town carries on meanwhile.
 const editButton = $('#edit');
-const editor = new Editor($('#stage'), { sim: () => sim, design: () => design, renderer, tileAt }, () => setEditing(false));
+const editor = new Editor($('#stage'), { sim: () => sim, design: () => design, renderer, tileAt, saved: saveSoon }, () => setEditing(false));
+
+/** Edits save themselves, a moment after the last one. A town opened from a link then lives here: the link comes off the address, or reloading would open the link again over your edits. */
+const SAVE_AFTER_MS = 300;
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+function saveSoon(): void {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveLocal(design);
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  }, SAVE_AFTER_MS);
+}
 editButton.addEventListener('click', () => setEditing(!editor.active));
 function setEditing(on: boolean): void {
   if (on) {
@@ -195,7 +206,7 @@ renderer.onWorldChange = showPlace;
 showPlace();
 news.setSim(sim);
 if (loaded.note) sim.log(loaded.note);
-const api = exposeLocalFeed(() => sim, { follow: (id) => select(id), look: (level, x, y) => visit(level, [x, y]) });
+const api = exposeLocalFeed(() => sim, { follow: (id) => select(id), look: (level, x, y) => visit(level, x === undefined || y === undefined ? undefined : [x, y]) });
 
 /** Selecting someone opens their profile and follows them, across floors; dragging the view lets go. */
 function select(id: string | null): void {

@@ -135,3 +135,30 @@ test('a world survives the round trip through a share link, and bad ones are tur
   broken.people[0]!.dept = 'nope';
   assert.ok(checkWorld(broken).problems.some((p) => p.includes('unknown department')));
 });
+
+test('a place the story builds comes back as you arranged it (the same layout only), with desks kept for their owners', () => {
+  const w = world();
+  const place = (id: string, size: [number, number]) => ({
+    id,
+    name: 'Studio',
+    kind: 'building' as const,
+    size,
+    rooms: [{ id: `${id}-room`, name: 'Studio', rect: [0, 0, size[0], size[1]] as [number, number, number, number], floor: 'wood', walled: true }],
+    doors: [],
+    furniture: [{ t: 'computerDesk', p: [2, 2] as [number, number] }],
+  });
+  w.overrides = {
+    studio: { size: [10, 8], furniture: [{ t: 'computerDesk', p: [5, 4], owner: 'bea' }, { t: 'plant', p: [1, 1] }] },
+    bigger: { size: [10, 8], furniture: [{ t: 'plant', p: [1, 1] }] },
+  };
+  const sim = new Simulation(w);
+  sim.addLevel(place('studio', [10, 8]));
+  assert.deepEqual(sim.levels.get('studio')!.furniture.map((f) => [f.t, f.p]), [['computerDesk', [5, 4]], ['plant', [1, 1]]], 'as arranged');
+  sim.addLevel(place('bigger', [14, 10]));
+  assert.deepEqual(sim.levels.get('bigger')!.furniture.map((f) => f.t), ['computerDesk'], 'a different layout starts from its own');
+  // Bea joins the studio's company: her desk is the one she had.
+  sim.addCompany({ id: 'studio-co', name: 'Studio', levels: ['studio'] });
+  const bea = sim.person('bea')!;
+  sim.employ(bea, 'studio-co', 'studio');
+  assert.equal(sim.items[bea.desk]?.def.p.join(','), '5,4');
+});

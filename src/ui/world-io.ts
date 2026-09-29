@@ -37,6 +37,10 @@ export function checkWorld(value: unknown): Loaded {
     if (!Array.isArray(w[key])) return { world: null, problems: [`The world has no ${key} list.`] };
   }
   if (!w.spawn || typeof w.spawn !== 'object') return { world: null, problems: ['The world has no spawn point.'] };
+  const overrides = Object.values(w.overrides ?? {});
+  if (typeof (w.overrides ?? {}) !== 'object' || overrides.some((o) => !Array.isArray(o?.size) || !Array.isArray(o?.furniture))) {
+    return { world: null, problems: ['The changes to places the story builds are the wrong shape.'] };
+  }
   try {
     const problems = validate(w as WorldDef);
     return { world: problems.length ? null : (w as WorldDef), problems };

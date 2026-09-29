@@ -17,7 +17,8 @@ to be shared: small, plain data, never code.
   "spawn": { "level": "town", "p": [159, 49] },  // where people without a home come and go
   "people": [{ "id": "dev", "name": "Dev", "dept": "eng", "look": [3, 2, 3, 0], "preset": "introvert", "home": "home-dev" }],
   "npcs": [{ "id": "miso", "name": "Miso", "species": "cat", "look": [1], "home": "home-ines" }],
-  "feed": { "ids": { "U024BE7LH": "dev" } }      // optional: external ids → people
+  "feed": { "ids": { "U024BE7LH": "dev" } },     // optional: external ids → people
+  "overrides": { "venture-1-hana-office": { "size": [14, 10], "furniture": [/* … */] } }  // optional: places the story builds, as you arranged them
 }
 ```
 

@@ -165,7 +165,7 @@ Working and verified in the browser:
   editor (furniture, buildings, roads, paths, crossings, rub out), save and share
   links, interactions, feeds, opt-in music and sounds with volumes.
 
-107 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+108 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

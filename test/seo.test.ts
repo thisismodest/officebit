@@ -5,7 +5,11 @@ import { SITE_PAGES, withSite } from '../scripts/transform.ts';
 
 const SITE = { url: 'https://example.github.io/officebit/', repo: 'https://github.com/example/officebit' };
 const page = (path: string) => withSite(readFileSync(`public/${path}`, 'utf8'), SITE);
-const meta = (html: string, key: string) => html.match(new RegExp(`<meta (?:name|property)="${key}" content="([^"]*)"`))?.[1];
+/** A tag's attributes, however the HTML is laid out (one line, or an attribute a line). */
+const tags = (html: string, name: string) =>
+  [...html.matchAll(new RegExp(`<${name}\\b([^>]*)>`, 'g'))].map((m) => Object.fromEntries([...(m[1] ?? '').matchAll(/([\w:-]+)="([^"]*)"/g)].map((a) => [a[1], a[2]])));
+const meta = (html: string, key: string) => tags(html, 'meta').find((t) => t.name === key || t.property === key)?.content;
+const link = (html: string, rel: string) => tags(html, 'link').find((t) => t.rel === rel)?.href;
 const pngSize = (path: string) => {
   const png = readFileSync(`public/${path}`);
   return [png.readUInt32BE(16), png.readUInt32BE(20)];
@@ -14,12 +18,12 @@ const pngSize = (path: string) => {
 for (const path of ['index.html', 'town/index.html']) {
   test(`${path}: a title, a description, and everything a link preview needs`, () => {
     const html = page(path);
-    const title = html.match(/<title>([^<]+)<\/title>/)?.[1] ?? '';
+    const title = html.match(/<title>\s*([^<]+?)\s*<\/title>/)?.[1] ?? '';
     assert.ok(title.length > 10 && title.length <= 60, `title of ${title.length} characters`);
     const description = meta(html, 'description') ?? '';
     assert.ok(description.length >= 110 && description.length <= 160, `description of ${description.length} characters`);
-    assert.match(html, /<html lang="en-GB">/);
-    assert.match(html, /<link rel="canonical" href="https:\/\/example\.github\.io\/officebit\//);
+    assert.equal(tags(html, 'html')[0]?.lang, 'en-GB');
+    assert.ok(link(html, 'canonical')?.startsWith(SITE.url), 'a canonical link on the site');
     for (const key of ['og:type', 'og:site_name', 'og:title', 'og:description', 'og:url', 'og:image', 'og:image:alt', 'twitter:card', 'theme-color']) {
       assert.ok(meta(html, key), `${key} is set`);
     }
@@ -37,7 +41,7 @@ test('the share image and icons are the sizes they say', () => {
 });
 
 test('the landing page describes itself for search engines, in JSON-LD', () => {
-  const json = page('index.html').match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
+  const json = page('index.html').match(/<script\s+type="application\/ld\+json"\s*>([\s\S]*?)<\/script>/)?.[1];
   const data = JSON.parse(json ?? '');
   const types = data['@graph'].map((node: { '@type': string }) => node['@type']);
   assert.deepEqual(types, ['WebSite', 'WebApplication', 'SoftwareSourceCode']);

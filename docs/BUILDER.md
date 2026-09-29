@@ -7,7 +7,10 @@ buildings, drawing roads and paths, and saving and sharing the town.
 
 The pencil in the tool rail (top left) opens the editor's own toolbar in its place
 (`src/ui/editor.ts`). The town carries on while you edit; changes apply to it
-straight away, and to the design it was built from, so saving keeps them.
+straight away, and to the design it was built from, which saves itself in
+this browser a moment after each change (and each undo). A town opened from a
+link then lives here: the link comes off the address, so a reload keeps your
+edits rather than opening the link again.
 
 | Tool | Does |
 |---|---|
@@ -59,9 +62,12 @@ it runs.
 - **Crossing:** people can cross a road anywhere, but they prefer a zebra.
 - Walkers, cars and the food trucks use new roads straight away.
 
-Places the story built, like a startup's office, can be edited too, but only in
-the running town: the design doesn't have them, so those changes aren't saved
-with it (the editor says so).
+Places the story built, like a startup's office, can be edited too. The
+design doesn't have them, so their furniture is kept as an override
+(`overrides` in the world, by level id): the story's deterministic, so it
+builds that place again at the same moment, and the sim lays it out as you
+left it (`sim.arranged`). A bigger office is a new layout, so it starts from
+its own. People keep the desks they had.
 
 ## Safe zones
 
@@ -88,7 +94,7 @@ The share icon in the tool rail (`src/ui/share-menu.ts`):
 
 | | |
 |---|---|
-| **Save in this browser** | `localStorage` (`officebit:world`); it opens next time |
+| **Save in this browser** | `localStorage` (`officebit:world`); it opens next time. Edits save themselves; this is for a town you've opened from a file or link and not changed. |
 | **Copy a link** | The whole world, deflated and base64url'd into `#w=…` (about 14k characters for the starter town). Opening the link opens the town. |
 | **Download / Open a file** | The world as JSON (see [WORLD](WORLD.md)) |
 | **Start again** | Back to the starter town, forgetting the save |

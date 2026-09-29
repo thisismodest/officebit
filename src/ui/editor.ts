@@ -6,8 +6,8 @@
 // worlds/ground.ts for roads); the outline goes red, and says why, where
 // something can't go. Clicking the same spot again picks what's underneath (a
 // rug under a sofa). Changes apply to the running town and to the design it
-// was built from, so saving keeps them (except in places the story built
-// itself, like a startup's office, which the design doesn't have).
+// was built from, and save themselves; a place the story built itself (a
+// startup's office) is kept as an override, for whenever the story builds it.
 import { CATALOG } from '../sim/catalog.ts';
 import { interiorOf } from '../sim/places.ts';
 import type { Item, Simulation } from '../sim/sim.ts';
@@ -57,7 +57,12 @@ export interface EditorHost {
   design(): WorldDef;
   renderer: Renderer;
   tileAt(clientX: number, clientY: number): Tile;
+  /** The design changed: save it. */
+  saved(): void;
 }
+
+/** Things the town brings in for a while (free pizza): never kept in a place you've arranged. */
+const PASSING = new Set(['pizza']);
 
 export class Editor {
   active = false;
@@ -209,6 +214,7 @@ export class Editor {
       for (const before of change.before) before.restore();
       this.host.sim().edited(level);
     }
+    this.keep(level);
     this.select(null);
     this.say('Undone.');
   }
@@ -299,7 +305,7 @@ export class Editor {
     }
     this.host.sim().addItem(level, { t, p: tile });
     this.remember({ kind: 'add', level, def: { t, p: tile } });
-    this.say(`Added a ${CATALOG[t]!.name.toLowerCase()}. Click again to add another.${this.storyNote(level)}`);
+    this.say(`Added a ${CATALOG[t]!.name.toLowerCase()}. Click again to add another.`);
   }
 
   private move(item: Item, to: Tile): void {
@@ -317,7 +323,7 @@ export class Editor {
     this.host.sim().moveItem(item, to);
     this.remember({ kind: 'move', level: item.level, t, from, to });
     this.select(item);
-    this.say(`Moved the ${item.type.name.toLowerCase()}.${this.storyNote(item.level)}`);
+    this.say(`Moved the ${item.type.name.toLowerCase()}.`);
   }
 
   private deleteSelected(): void {
@@ -329,7 +335,7 @@ export class Editor {
     const def = this.take(item);
     this.remember({ kind: 'remove', level: item.level, def });
     this.select(null);
-    this.say(`Deleted the ${item.type.name.toLowerCase()}.${this.storyNote(item.level)}`);
+    this.say(`Deleted the ${item.type.name.toLowerCase()}.`);
   }
 
   // ── Buildings, roads and paths ────────────────────────────────────────────
@@ -457,7 +463,7 @@ export class Editor {
     if (!done) return;
     this.host.renderer.ghost = null;
     const what = tool === 'erase' ? 'Rubbed it out' : tool === 'road' ? 'Laid a road' : 'Laid a path';
-    this.say(`${what}.${cleared ? ` Cleared ${cleared === 1 ? 'a tree or bush' : `${cleared} trees, bushes and the like`} out of the way.` : ''}${this.storyNote(level)}`);
+    this.say(`${what}.${cleared ? ` Cleared ${cleared === 1 ? 'a tree or bush' : `${cleared} trees, bushes and the like`} out of the way.` : ''}`);
   }
 
   private crossing(tile: Tile): void {
@@ -567,6 +573,24 @@ export class Editor {
     this.undos.push(change);
     if (this.undos.length > UNDO_STEPS) this.undos.shift();
     this.showUndo();
+    this.keep(change.level);
+  }
+
+  /**
+   * Keep a change: the design is saved. A place the story built isn't in the
+   * design, so its furniture is kept as an override (world.overrides), for
+   * whenever the story builds it.
+   */
+  private keep(level: string): void {
+    if (!this.designed(level)) {
+      const place = this.host.sim().levels.get(level);
+      const design = this.host.design();
+      if (place) {
+        design.overrides ??= {};
+        design.overrides[level] = { size: [...place.size], furniture: structuredClone(place.furniture.filter((f) => !PASSING.has(f.t))) };
+      }
+    }
+    this.host.saved();
   }
 
   private showUndo(): void {
@@ -628,11 +652,6 @@ export class Editor {
   /** Is this level in the design, or did the story build it (a startup's office)? */
   private designed(level: string): boolean {
     return this.host.design().levels.some((l) => l.id === level);
-  }
-
-  /** Changes in a place the story built last as long as this story; the design doesn't have it to save them in. */
-  private storyNote(level: string): string {
-    return this.designed(level) ? '' : ' (This office was built in the story, so this change isn’t saved with the design.)';
   }
 
   private outline(t: string, [x, y]: Tile, problem: string | null): Ghost {

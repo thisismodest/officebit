@@ -35,6 +35,14 @@ export interface WorldDef {
   pantries?: Record<string, number>;
   /** Maps external feed ids (a Slack user id, an agent name…) to person ids. */
   feed?: { ids?: Record<string, string> };
+  /** Your changes to places the story builds (a startup's office), by level id: used whenever the story builds that place, at that size. */
+  overrides?: Record<string, LevelOverride>;
+}
+
+/** A place the story builds, as you arranged it: its furniture, for a layout of this size (a bigger office is a new layout, and starts from its own). */
+export interface LevelOverride {
+  size: [w: number, h: number];
+  furniture: FurnitureDef[];
 }
 
 export interface LevelDef {
