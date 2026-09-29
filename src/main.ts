@@ -124,8 +124,9 @@ function setEditing(on: boolean): void {
   if (on) {
     steer(null);
     card.close();
-    // The editor's toolbar sits where the profile slides in.
+    // The editor's toolbar sits where the profile slides in; on a phone, the sheet folds away to leave the map.
     select(null);
+    sheet.removeAttribute('data-open');
     editor.open();
   } else editor.close();
   editButton.setAttribute('aria-pressed', String(on));

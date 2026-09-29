@@ -40,7 +40,8 @@ On phones and small tablets (60rem and narrower) the sidebar is a sheet along
 the bottom with icon tabs (tap a tab to open it, tap it again to fold it away),
 and the profile slides up from below, with the camera keeping whoever's
 followed in the part of the map still showing. Buttons are finger-sized on
-touch screens. A long press on the map or the controls just presses: no text selection, no menu.
+touch screens. Editing folds the sheet away, and the furniture picker is a strip
+above the tabs (see [BUILDER](BUILDER.md)). A long press on the map or the controls just presses: no text selection, no menu.
 
 States are kept simple: rows tint on hover and get a bar down the side when
 selected, with dark text throughout; buttons are bordered; names in text are

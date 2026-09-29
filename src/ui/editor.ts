@@ -47,6 +47,8 @@ const INDOOR_GROUPS: [string, string[]][] = [
 const THUMB = 52;
 /** Steps of undo kept while editing. */
 const UNDO_STEPS = 50;
+/** Small screens, as style.css has them: the picker's a strip along the bottom, and shrinks to what you've picked. */
+const NARROW = '(max-width: 60rem)';
 
 /** One change, with what it takes to undo it. */
 type Change =
@@ -130,11 +132,19 @@ export class Editor {
       if (button?.dataset.action === 'done') onDone();
     });
     this.picker.addEventListener('click', (event) => {
-      const t = (event.target as HTMLElement).closest<HTMLElement>('[data-type]')?.dataset.type;
+      const target = event.target as HTMLElement;
+      // Shrunk to what you've picked (small screens): Change opens it out again.
+      if (target.closest('[data-action="change"]')) {
+        delete this.picker.dataset.collapsed;
+        return;
+      }
+      const t = target.closest<HTMLElement>('[data-type]')?.dataset.type;
       if (!t) return;
       this.adding = t;
       for (const b of this.picker.querySelectorAll('[data-type]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.type === t));
-      this.say(`Click the map to put down the ${CATALOG[t]!.name.toLowerCase()}.`);
+      // On a small screen the picker gets out of the way, so there's map to tap.
+      if (matchMedia(NARROW).matches) this.picker.dataset.collapsed = '';
+      this.say(`${matchMedia(NARROW).matches ? 'Tap' : 'Click'} the map to put down the ${CATALOG[t]!.name.toLowerCase()}.`);
     });
     for (const el of [this.bar, this.picker]) el.addEventListener('pointerdown', (event) => event.stopPropagation());
     document.addEventListener('keydown', (event) => {
@@ -319,7 +329,10 @@ export class Editor {
     const outside = sim().levels.get(renderer.level)?.kind === 'outside';
     const groups: [string, string[]][] = outside ? [['Outside', OUTSIDE_ONLY]] : INDOOR_GROUPS.map(([name, types]) => [name, types.filter((t) => !OUTSIDE_ONLY.includes(t))]);
     if (this.adding && !groups.some(([, types]) => types.includes(this.adding!))) this.adding = null;
-    this.picker.innerHTML = groups
+    delete this.picker.dataset.collapsed;
+    this.picker.innerHTML =
+      '<button type="button" class="change mdst-button--sm" data-action="change">Change</button>' +
+      groups
       .map(([name, types]) => {
         const items = types.filter((t) => CATALOG[t] && PAINTERS[t] && !NOT_PLACEABLE.has(t));
         return items.length

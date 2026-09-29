@@ -19,7 +19,7 @@ indoors.
 | Tool | Does |
 |---|---|
 | **Move** | Drag a piece of furniture, or outside a building, somewhere else. Click it to select it. It keeps its owner, so a desk stays someone's. |
-| **Add** | Pick from the thumbnails (indoor things indoors, outdoor things outside), then click the map. Click again to add another. |
+| **Add** | Pick from the thumbnails (indoor things indoors, outdoor things outside), then click the map. Click again to add another. On a phone the thumbnails are a strip along the bottom that shrinks to what you picked (Change opens it out again), so there's map to tap. |
 | **Road**, **Path** | Outside: drag to draw one (see below). A tap lays one dab. |
 | **Crossing** | Click a road to put in a zebra crossing, two tiles wide, straight across it. |
 | **Rub out** | Drag over roads, paths, pavements and crossings to turn them back to grass. Pavement never runs across the end of a road, so a gap you rub out goes to grass (a one-tile gap keeps the pavements either side joined). Rubbed-out pavement leaves a patch of verge that pavement isn't laid over again (until you draw a path or road there). |

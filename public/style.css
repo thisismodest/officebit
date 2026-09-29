@@ -1005,6 +1005,12 @@ button.icon-button {
   }
 }
 
+/* Opens the picker out again once it's shrunk to what you picked (small screens). */
+.editor-picker .change {
+  display: none;
+  flex: none;
+}
+
 .editor-picker {
   position: absolute;
   top: calc(var(--mdst-space-sm) + 2.5rem);
@@ -1205,9 +1211,53 @@ button.icon-button {
     width: min(17rem, calc(100vw - 5rem));
   }
 
+  /* The picker is a strip along the bottom, scrolling sideways, leaving the map above it; once you've picked, just that and Change. */
   .editor-picker {
-    width: min(18rem, calc(100vw - 4.5rem));
-    max-height: calc(100% - 9rem);
+    top: auto;
+    right: var(--mdst-space-sm);
+    bottom: calc(3.5rem + var(--mdst-space-sm));
+    left: calc(var(--mdst-space-sm) + 3.25rem);
+    display: flex;
+    align-items: stretch;
+    gap: var(--mdst-space-xs);
+    width: auto;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: var(--mdst-space-xs);
+
+    & h4 {
+      display: none;
+    }
+
+    & .grid {
+      display: contents;
+    }
+
+    & .grid button {
+      flex: none;
+      width: 4.75rem;
+      min-height: 4.75rem;
+    }
+
+    & .grid button canvas {
+      max-width: 100%;
+      max-height: 2.75rem;
+      margin: 0 auto;
+    }
+
+    &[data-collapsed] {
+      right: auto;
+      align-items: center;
+
+      & .grid button:not([aria-pressed='true']) {
+        display: none;
+      }
+
+      & .change {
+        display: inline-flex;
+      }
+    }
   }
 
   .editor-status {
