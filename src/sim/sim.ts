@@ -97,6 +97,8 @@ export class Simulation {
   steps = 0;
   /** How much game time the current step covers, in ticks: 1 normally, much less in live mode. */
   dt = 1;
+  /** The day (as `dayOf` counts them) the story began on, so its days are numbered from 1: a live town started on a Saturday is on Day 1 that Saturday. */
+  firstDay = 0;
 
   private readonly byId = new Map<string, Person>();
   private readonly brains = new Map<string, Brain>();

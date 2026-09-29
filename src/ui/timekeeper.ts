@@ -4,7 +4,7 @@
 // the tab has been hidden. Sandbox runs at whatever speed you pick. Jumping ahead
 // fast-forwards (on screen, at speed) to a later time, and carries on from
 // there in sandbox. The sim never sees the wall clock; this does.
-import { START_HOUR, TICKS_PER_DAY, TICKS_PER_SECOND } from '../sim/clock.ts';
+import { START_HOUR, TICKS_PER_DAY, TICKS_PER_SECOND, dayOf } from '../sim/clock.ts';
 import type { Simulation } from '../sim/sim.ts';
 
 export type Mode = 'live' | 'sandbox';
@@ -84,6 +84,7 @@ export class Timekeeper {
     }
     this.origin = liveOrigin(new Date(this.since ?? this.now()));
     sim.tick = this.origin.tick;
+    sim.firstDay = dayOf(sim.tick);
     // Up to a day behind: straight to now, before anything is drawn (a fraction of a second).
     // Further: a slice now, and the rest a frame at a time (out of sight), so the page stays responsive.
     const target = liveTick(this.origin, this.now());

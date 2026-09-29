@@ -1,8 +1,8 @@
 // Static build for GitHub Pages (or any static host): no bundler, just
 // type-stripped ES modules plus the public/ folder and vendored CSS.
 import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { toBrowserJs, VENDOR } from './transform.ts';
+import { dirname, extname, join } from 'node:path';
+import { SITE_PAGES, publishedSite, toBrowserJs, VENDOR, withSite } from './transform.ts';
 
 const OUT = 'dist';
 
@@ -16,6 +16,10 @@ async function* walk(dir: string): AsyncGenerator<string> {
 
 await rm(OUT, { recursive: true, force: true });
 await cp('public', OUT, { recursive: true });
+const where = publishedSite();
+for await (const file of walk(OUT)) {
+  if (SITE_PAGES.has(extname(file))) await writeFile(file, withSite(await readFile(file, 'utf8'), where));
+}
 
 let modules = 0;
 for await (const file of walk('src')) {
@@ -33,4 +37,4 @@ for (const [url, dir] of Object.entries(VENDOR)) {
 // Stop GitHub Pages running the output through Jekyll.
 await writeFile(join(OUT, '.nojekyll'), '');
 
-console.log(`Built ${modules} modules into ${OUT}/`);
+console.log(`Built ${modules} modules into ${OUT}/, for ${where.url}`);

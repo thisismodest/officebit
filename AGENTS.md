@@ -92,7 +92,9 @@ src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects);
               ui/soundscape.ts decides which effects play, ui/audio-menu.ts the switches and volumes
 src/feeds/    protocol.ts (validated data-only messages), local.ts (console + postMessage)
-scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports), probe.ts
+public/       index.html + landing.css (the landing page), town/index.html + style.css (the town), og-image.png, icons,
+              site.webmanifest, sitemap.xml (addresses filled in from package.json `homepage`: docs/DEVELOPING.md#deploying)
+scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports, site address), probe.ts
 test/         node:test suites, one per area
 ```
 
@@ -163,7 +165,7 @@ Working and verified in the browser:
   editor (furniture, buildings, roads, paths, crossings, rub out), save and share
   links, interactions, feeds, opt-in music and sounds with volumes.
 
-102 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+107 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

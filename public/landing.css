@@ -1,0 +1,221 @@
+/* The landing page (index.html): what officebit is, and the way into your town. The page is a card on the town's own grass, with people walking along the pavement at the top. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --stage-bg: #1f1d29;
+  --grass: #78a85a;
+  --paving: #c9c1b2;
+  /* The page's rhythm: space inside the card, and between its sections. */
+  --pad: clamp(1.25rem, 5vw, 3rem);
+  --gap: clamp(2rem, 6vw, 3.5rem);
+}
+
+body {
+  margin: 0;
+  padding: clamp(0.75rem, 4vw, 3rem) clamp(0.75rem, 3vw, 2rem);
+  background: var(--grass) url("./grass.png") repeat;
+  background-size: 256px;
+  image-rendering: pixelated;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 2px solid var(--mdst-color-fg);
+  background: var(--mdst-color-bg);
+  box-shadow: 6px 6px 0 rgba(20, 14, 30, 0.35);
+  image-rendering: auto;
+}
+
+/* The pavement along the top, and the people strolling along it. */
+.stroll {
+  position: relative;
+  height: 3.25rem;
+  border-bottom: 2px solid var(--mdst-color-fg);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.09) 1px, transparent 1px) 0 0 / 16px 16px,
+    linear-gradient(rgba(0, 0, 0, 0.09) 1px, transparent 1px) 0 0 / 16px 16px,
+    var(--paving);
+
+  & .walker {
+    position: absolute;
+    bottom: 0.25rem;
+    left: -3rem;
+    animation: stroll var(--time, 26s) linear infinite;
+    animation-delay: var(--start, 0s);
+    width: 1.3rem;
+  }
+
+  & svg {
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  & .hair {
+    fill: var(--hair);
+  }
+  & .shirt {
+    fill: var(--shirt);
+  }
+  & .skin {
+    fill: #e0a883;
+  }
+  & .legs {
+    fill: #34405e;
+  }
+  & .shoes {
+    fill: #2a2033;
+  }
+  & .step-a {
+    animation: step 0.5s steps(1) infinite;
+  }
+  & .step-b {
+    animation: step 0.5s steps(1) infinite reverse;
+  }
+}
+
+/* From just off the left of the card to just off the right, however wide it is. */
+@keyframes stroll {
+  to {
+    left: calc(100% + 1rem);
+  }
+}
+
+@keyframes step {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stroll .walker,
+  .stroll rect {
+    /* biome-ignore lint/complexity/noImportantStyles: stops every animation in the strip, whatever set it */
+    animation: none !important;
+  }
+
+  .stroll .walker {
+    left: var(--rest, 10%);
+  }
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mdst-space-md);
+  padding: var(--mdst-space-md) var(--pad);
+  border-bottom: 1px solid var(--mdst-color-subtle);
+}
+
+.wordmark {
+  color: inherit;
+  font-family: var(--mdst-font-mono);
+  font-size: var(--mdst-text-sm);
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+main {
+  padding: var(--gap) var(--pad) 0;
+}
+
+/* Headings scale with the screen and break evenly; paragraphs avoid a lone last word. */
+h1,
+h2 {
+  text-wrap: balance;
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+main > section {
+  margin-bottom: var(--gap);
+
+  & h2 {
+    margin: 0 0 var(--mdst-space-sm);
+    font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+  }
+
+  & p,
+  & ul {
+    margin: 0 0 var(--mdst-space-md);
+    max-width: 38rem;
+  }
+
+  & > :last-child {
+    margin-bottom: 0;
+  }
+}
+
+.hero {
+  & h1 {
+    margin: 0 0 var(--mdst-space-md);
+    font-size: clamp(2.1rem, 7vw, 3.25rem);
+    line-height: 1.08;
+  }
+
+  & .lede {
+    font-size: 1.125rem;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mdst-space-sm) var(--mdst-space-md);
+  margin-top: var(--mdst-space-lg);
+
+  /* Buttons, not links: no underline. */
+  & a {
+    text-decoration: none;
+  }
+}
+
+/* The screenshot: pixel art stays crisp, framed like the card. */
+.shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: var(--mdst-space-xl);
+  border: 2px solid var(--mdst-color-fg);
+  background: var(--stage-bg);
+  image-rendering: pixelated;
+}
+
+.features {
+  padding-left: 1.25rem;
+
+  & li {
+    margin-bottom: var(--mdst-space-sm);
+  }
+
+  & li:last-child {
+    margin-bottom: 0;
+  }
+}
+
+footer {
+  padding: var(--mdst-space-md) var(--pad);
+  border-top: 1px solid var(--mdst-color-subtle);
+  background: var(--mdst-color-subtle);
+
+  & p {
+    margin: 0;
+  }
+}

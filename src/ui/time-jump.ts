@@ -64,9 +64,11 @@ export class TimeJump {
     tomorrow.setHours(8, 0, 0, 0);
     when.min = localValue(new Date());
     when.value = localValue(tomorrow);
+    // Days of the story, as the clock numbers them.
     const day = this.input('day');
-    day.min = String(dayOf(tick) + 1);
-    day.value = String(dayOf(tick) + 2);
+    const today = dayOf(tick) - sim().firstDay + 1;
+    day.min = String(today);
+    day.value = String(today + 1);
     this.say('');
   }
 
@@ -92,7 +94,7 @@ export class TimeJump {
       const when = new Date(this.input('when').value).getTime();
       return Number.isNaN(when) ? NaN : tick + (when - Date.now()) * TICKS_PER_MS;
     }
-    const day = Number(this.input('day').value) - 1;
+    const day = Number(this.input('day').value) - 1 + this.host.sim().firstDay;
     const [hh = 9, mm = 0] = this.input('time').value.split(':').map(Number);
     return tickAt(day, hh + mm / 60);
   }

@@ -57,7 +57,7 @@ export function formatTime(tick: number): string {
   return `${hh}:${mm}`;
 }
 
-/** "Tue 09:30 · Day 2" */
-export function formatClock(tick: number): string {
-  return `${weekdayOf(tick)} ${formatTime(tick)} · Day ${dayOf(tick) + 1}`;
+/** "Tue 09:30 · Day 2": days counted from `firstDay`, the day the story began (see sim.firstDay). */
+export function formatClock(tick: number, firstDay = 0): string {
+  return `${weekdayOf(tick)} ${formatTime(tick)} · Day ${dayOf(tick) - firstDay + 1}`;
 }

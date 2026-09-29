@@ -29,8 +29,11 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
       - uses: actions/configure-pages@v5
+      # The site's address (for og:image, canonical links, the sitemap) is `homepage` in package.json.
+      - run: npm run build
+        env:
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -56,3 +56,17 @@ Pushing to `main` publishes the site to GitHub Pages
 `dist/` and deploys it. Paths are all relative, so it works under
 `/officebit/`. In the repo's settings, Pages' source must be **GitHub
 Actions**. The workflow can also be run by hand from the Actions tab.
+
+**Where it lives:** `homepage` in `package.json` (`https://thisismodest.com/officebit/`).
+Pages (`.html`, `.xml`, `.webmanifest`) say `%SITE_URL%` and `%REPO_URL%`
+wherever they need an absolute address (canonical links, `og:image`, the
+sitemap, the JSON-LD), filled in as they're built (`SITE_URL` overrides the
+homepage for a test build) or served (localhost). Move the site, change the
+homepage.
+
+**Search and sharing:** both pages have a description, a canonical link,
+Open Graph and Twitter card tags, and `og-image.png` (1200×630, a screenshot
+of the town); the landing page has JSON-LD (`WebSite`, `WebApplication`,
+`SoftwareSourceCode`); `sitemap.xml` lists both. There's no `robots.txt`
+here, as search engines only read one at the root of the domain: list the
+sitemap in `thisismodest.com`'s own. `test/seo.test.ts` checks all this.

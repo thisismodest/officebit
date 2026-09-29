@@ -21,6 +21,9 @@ to be shared: small, plain data, never code.
 }
 ```
 
+- **Seed:** each browser's town runs on its own seed, picked at random on the
+  first visit (`localStorage` key `officebit:seed`), so everyone gets a story
+  of their own. A shared link keeps the seed it carries: you see their story.
 - **Ids** are how everything refers to everything else: levels, rooms (unique
   across the whole world), people, departments.
 - **Positions** are tiles: `[x, y]`, top-left is `[0, 0]`.

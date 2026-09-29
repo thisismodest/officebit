@@ -3,11 +3,12 @@
 // or open it as a file, or start again from the starter town.
 import type { WorldDef } from '../sim/world.ts';
 import { popover, type Toggle } from './popover.ts';
-import { STARTER } from '../worlds/starter.ts';
 import { HASH_KEY, checkWorld, clearLocal, encodeWorld, saveLocal } from './world-io.ts';
 
 export interface ShareHost {
   design(): WorldDef;
+  /** A fresh copy of the starter town, on this browser's own story. */
+  starter(): WorldDef;
   /** Rebuild the town from a world. Returns validate() problems; throws if it can't run. */
   apply(world: WorldDef): string[];
 }
@@ -77,7 +78,7 @@ export class ShareMenu {
         if (!confirm('Start again from the starter town? Anything you haven’t saved is lost.')) return;
         clearLocal();
         history.replaceState(null, '', location.pathname + location.search);
-        this.apply(structuredClone(STARTER), 'Back to the starter town.');
+        this.apply(this.host.starter(), 'Back to the starter town.');
         return;
     }
   }

@@ -69,6 +69,16 @@ body {
   grid-template-rows: auto 1fr;
 }
 
+/* Without JavaScript there's no town: say so, over the loading screen. */
+.noscript {
+  position: fixed;
+  inset: auto 0 2rem;
+  z-index: 101;
+  margin: 0;
+  color: #e8e6f0;
+  text-align: center;
+}
+
 /* The loading screen: shown by the page itself before any script runs, removed after the first frame. */
 .loading {
   position: fixed;
@@ -98,7 +108,7 @@ body {
   }
 }
 
-/* People walk in a circle round the spinner: each walker turns round the middle while its figure turns back, so it stays upright. */
+/* People walk in a circle round the spinner, staying upright as they go. */
 .orbit {
   position: relative;
   width: 11rem;
@@ -116,34 +126,35 @@ body {
   & .walker {
     position: absolute;
     inset: 0;
-    animation: turn 6s linear infinite;
   }
 
   /* Three walkers, a third of the way round from each other, each in their own clothes. */
   & .w1 {
     --hair: #6b3d1f;
     --shirt: #c8453a;
+    --start: 0s;
   }
 
   & .w2 {
     --hair: #d9b25f;
     --shirt: #3f74b5;
-    animation-delay: -2s;
+    --start: -2s;
   }
 
   & .w3 {
     --hair: #2b1d18;
     --shirt: #379463;
-    animation-delay: -4s;
+    --start: -4s;
   }
 
+  /* One animation per figure, so it can't drift: round the middle, out to the ring, and turned back upright. */
   & .figure {
     position: absolute;
-    top: -0.75rem;
+    top: calc(50% - 22px);
     left: calc(50% - 14px);
     display: block;
-    animation: turn 6s linear infinite reverse;
-    animation-delay: inherit;
+    animation: orbit 6s linear infinite;
+    animation-delay: var(--start);
   }
 
   & svg {
@@ -165,6 +176,15 @@ body {
 @keyframes turn {
   to {
     transform: rotate(1turn);
+  }
+}
+
+@keyframes orbit {
+  from {
+    transform: rotate(0turn) translateY(-4.875rem) rotate(0turn);
+  }
+  to {
+    transform: rotate(1turn) translateY(-4.875rem) rotate(-1turn);
   }
 }
 
@@ -213,11 +233,15 @@ body {
   border-bottom: var(--mdst-border-width) solid var(--mdst-color-border);
   font-size: var(--mdst-text-sm);
 
+  /* officebit, which leads back to the landing page: it reads as a name, not a link. */
   & .wordmark {
     justify-self: start;
+    color: inherit;
     font-family: var(--mdst-font-mono);
     font-size: var(--mdst-text-xs);
+    font-weight: bold;
     letter-spacing: 0.08em;
+    text-decoration: none;
     text-transform: uppercase;
   }
 
@@ -239,6 +263,7 @@ body {
 
   & .clock {
     font-family: var(--mdst-font-mono);
+    font-size: var(--mdst-text-xs);
     padding-inline: var(--mdst-space-xs);
   }
 

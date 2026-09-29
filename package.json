@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "An 8-bit office you build, share and let run. People are driven by personalities or any data feed.",
   "license": "MIT",
+  "homepage": "https://thisismodest.com/officebit/",
   "type": "module",
   "private": true,
   "engines": {

@@ -34,7 +34,9 @@ reads the wall clock; the timekeeper does.
   at once; longer, a slice a frame behind the loading screen, which says how
   far it's got: about 5 seconds a month). Whenever it falls behind (the tab was
   hidden, or paused) it catches up out of sight, showing "Catching up with the
-  clock…". The ▸▸ menu says when it started, with **Start afresh today**.
+  clock…". The clock counts the days since it began (Day 1 is the day it
+  started, whatever the weekday). The ▸▸ menu says when it started, with **Start afresh today**,
+  which starts the town again this morning on a new seed: a new story.
   Switching to Sandbox keeps the town you have; back to Live goes back to the
   one that's been running.
 - **Jumping ahead** plays out on screen at full speed, with a progress bar and

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TICKS_PER_DAY, TICKS_PER_HOUR, formatTime, weekdayOf } from '../src/sim/clock.ts';
+import { TICKS_PER_DAY, TICKS_PER_HOUR, formatClock, formatTime, weekdayOf } from '../src/sim/clock.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { Timekeeper, liveOrigin, liveTick } from '../src/ui/timekeeper.ts';
 import { STARTER } from '../src/worlds/starter.ts';
@@ -114,4 +114,6 @@ test('live mode carries on from the day it started, catching up a slice at a tim
   for (let i = 0; i < 1000 && time.catchingUp; i++) time.advance(sim, 16);
   assert.ok(!time.catchingUp);
   assert.ok(sim.tick >= days * TICKS_PER_DAY, `${days} days of story so far`);
+  // Days are counted from the day it started: three days on, it's Day 4, whatever weekday it began.
+  assert.match(formatClock(sim.tick, sim.firstDay), /· Day 4$/);
 });

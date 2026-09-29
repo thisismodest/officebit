@@ -37,27 +37,40 @@ const narrow = matchMedia('(max-width: 60rem)');
 const MODE_KEY = 'officebit:mode';
 /** When live mode started in this browser (ms): the town has run since that morning. */
 const SINCE_KEY = 'officebit:live-since';
+/** This browser's story: the seed its town runs on, picked on the first visit, so everyone's town has a story of its own. */
+const SEED_KEY = 'officebit:seed';
 
 const time = new Timekeeper(localStorage.getItem(MODE_KEY) === 'sandbox' ? 'sandbox' : 'live');
 time.since = Number(localStorage.getItem(SINCE_KEY)) || null;
 // The design the town is built from: a shared link first, then this browser's save, then the starter town.
 const loaded = await loadDesign();
 let design: WorldDef = loaded.world;
+// A shared link is someone else's story: it keeps their seed. Otherwise the town runs on this browser's own.
+if (!loaded.fromLink) design.seed = storySeed();
 let sim = newSim();
 
-async function loadDesign(): Promise<{ world: WorldDef; note: string }> {
+async function loadDesign(): Promise<{ world: WorldDef; note: string; fromLink: boolean }> {
   for (const [source, read] of [['link', () => fromHash(location.hash)], ['save', async () => loadLocal()]] as const) {
     try {
       const value = await read();
       if (!value) continue;
       const { world, problems } = checkWorld(value);
-      if (world) return { world, note: source === 'link' ? 'Opened the town from the link.' : 'Opened your saved town.' };
-      return { world: structuredClone(STARTER), note: `Couldn't open the ${source === 'link' ? 'linked' : 'saved'} town (${problems[0]}), so here's the starter town.` };
+      if (world) return { world, note: source === 'link' ? 'Opened the town from the link.' : 'Opened your saved town.', fromLink: source === 'link' };
+      return { world: structuredClone(STARTER), note: `Couldn't open the ${source === 'link' ? 'linked' : 'saved'} town (${problems[0]}), so here's the starter town.`, fromLink: false };
     } catch {
-      return { world: structuredClone(STARTER), note: `The ${source === 'link' ? 'link' : 'saved town'} was damaged, so here's the starter town.` };
+      return { world: structuredClone(STARTER), note: `The ${source === 'link' ? 'link' : 'saved town'} was damaged, so here's the starter town.`, fromLink: false };
     }
   }
-  return { world: structuredClone(STARTER), note: '' };
+  return { world: structuredClone(STARTER), note: '', fromLink: false };
+}
+
+/** This browser's story seed, picked at random the first time (the sim's own randomness all flows from it). */
+function storySeed(fresh = false): number {
+  const stored = Number(localStorage.getItem(SEED_KEY));
+  if (stored && !fresh) return stored;
+  const seed = crypto.getRandomValues(new Uint32Array(1))[0]! || 1;
+  localStorage.setItem(SEED_KEY, String(seed));
+  return seed;
 }
 
 /** A fresh town from the design, set up for the current time mode. Live mode's first start is remembered, so the story carries on between visits. */
@@ -113,7 +126,7 @@ document.addEventListener('pointerdown', (event) => {
   const target = event.target as Node;
   if (editor.active && target !== renderer.canvas && !editor.contains(target) && !editButton.contains(target)) setEditing(false);
 });
-new ShareMenu($('#share'), { design: () => design, apply: applyDesign });
+new ShareMenu($('#share'), { design: () => design, starter: () => ({ ...structuredClone(STARTER), seed: storySeed() }), apply: applyDesign });
 
 // Music and sounds (docs/AUDIO.md): opt-in, from the speaker in the menu bar.
 const audio = new AudioMenu($('#music'));
@@ -421,10 +434,11 @@ function setMode(mode: Mode): void {
   updateTimeUi();
 }
 
-// A new beginning: the town starts again, this morning.
+// A new beginning: the town starts again this morning, with a story of its own.
 $('#start-afresh').addEventListener('click', () => {
   time.since = Date.now();
   localStorage.setItem(SINCE_KEY, String(time.since));
+  design.seed = storySeed(true);
   restart();
   updateTimeUi();
 });
@@ -501,14 +515,14 @@ function frame(now: number): void {
   const between = time.advance(sim, dt);
   const { travelling, catchingUp } = time;
   travelBar.hidden = !travelling && !catchingUp;
-  travelBar.querySelector('span')!.textContent = travelling ? `Jumping ahead… ${formatClock(sim.tick)}` : 'Catching up with the clock…';
+  travelBar.querySelector('span')!.textContent = travelling ? `Jumping ahead… ${formatClock(sim.tick, sim.firstDay)}` : 'Catching up with the clock…';
   travelBar.querySelector<HTMLElement>('[data-action="stop"]')!.hidden = !travelling;
   const progress = travelBar.querySelector('progress')!;
   if (travelling) progress.value = (sim.tick - travelling.from) / (travelling.to - travelling.from);
   else if (catchingUp && time.origin) progress.value = (sim.tick - time.origin.tick) / Math.max(1, liveTick(time.origin, Date.now()) - time.origin.tick);
   else progress.removeAttribute('value');
   // Coming back after a while: the loading screen says where the catching up has got to.
-  if (loading && catchingUp) loading.querySelector('.loading-note')!.textContent = `Catching up on the town… ${formatClock(sim.tick)}`;
+  if (loading && catchingUp) loading.querySelector('.loading-note')!.textContent = `Catching up on the town… ${formatClock(sim.tick, sim.firstDay)}`;
 
   // Jumping ahead plays out on screen, at speed. Live's catching up happens out of sight: the town just is where it should be.
   // On a phone the sheet and the profile slide up over the map: keep whoever's followed in the part still showing.
@@ -530,7 +544,8 @@ function frame(now: number): void {
     // After dark the music turns to its calm night style.
     audio.night = daylight(hourOf(sim.tick)) < 0.3;
     // Live mode shows the real day and time; sandbox counts days too, unless the screen's small.
-    clock.textContent = time.mode === 'live' || narrow.matches ? `${weekdayOf(sim.tick)} ${formatTime(sim.tick)}` : formatClock(sim.tick);
+    // Live and Sandbox alike: the day of the story, counted from the day it began (phones have room for just the time).
+    clock.textContent = narrow.matches ? `${weekdayOf(sim.tick)} ${formatTime(sim.tick)}` : formatClock(sim.tick, sim.firstDay);
     if (time.mode !== modeSelect.value) updateTimeUi();
   }
   requestAnimationFrame(frame);
