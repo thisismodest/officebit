@@ -18,7 +18,7 @@ import { Housing } from './housing.ts';
 import { Interactions } from './interactions.ts';
 import { Love } from './love.ts';
 import { DISLIKE, Relationships } from './relationships.ts';
-import { Rng } from './rng.ts';
+import { Rng, hashOf } from './rng.ts';
 import { ROLES, dailyRoutine, kindOf, roleOf, type Kind } from './roles.ts';
 import { phaseAt, wakeHour, type DayPhase } from './schedule.ts';
 import { Social } from './social.ts';
@@ -495,7 +495,7 @@ export class Simulation {
       this.stop(p);
       [p.x, p.y] = [p.px, p.py] = entry;
     }
-    this.nav = new Navigator(this.grids, this.world.portals);
+    this.renav();
     this.changed([level.id]);
   }
 
@@ -522,10 +522,7 @@ export class Simulation {
 
   /** Move a piece of furniture. Anyone using it stops; it keeps its owner (a desk stays theirs). */
   moveItem(item: Item, to: Tile): void {
-    for (const id of this.usersOf(item.index)) {
-      const user = this.byId.get(id);
-      if (user) this.stop(user);
-    }
+    this.stopUsing(item);
     item.def.p = to;
     this.rebuild(item.level);
   }
@@ -571,7 +568,7 @@ export class Simulation {
 
   addPortal(portal: PortalDef): void {
     this.world.portals.push(portal);
-    this.nav = new Navigator(this.grids, this.world.portals);
+    this.renav();
   }
 
   /**
@@ -597,7 +594,7 @@ export class Simulation {
     this.levels.delete(id);
     this.grids.delete(id);
     this.active = null;
-    this.nav = new Navigator(this.grids, this.world.portals);
+    this.renav();
     this.changed([id]);
   }
 
@@ -702,10 +699,20 @@ export class Simulation {
   private retire(item: Item): void {
     item.gone = true;
     this.active = null;
+    this.stopUsing(item);
+  }
+
+  /** Everyone using a piece of furniture stops. */
+  private stopUsing(item: Item): void {
     for (const id of this.usersOf(item.index)) {
       const user = this.byId.get(id);
       if (user) this.stop(user);
     }
+  }
+
+  /** Routes between levels, after the grids or the portals changed. */
+  private renav(): void {
+    this.nav = new Navigator(this.grids, this.world.portals);
   }
 
   /** Rebuild a level's grid after its furniture or rooms changed, nudging anyone now standing in something. */
@@ -719,7 +726,7 @@ export class Simulation {
       const free = this.randomWalkable(level);
       if (free) [p.x, p.y] = [p.px, p.py] = free.p;
     }
-    this.nav = new Navigator(this.grids, this.world.portals);
+    this.renav();
     this.changed([level]);
   }
 
@@ -728,7 +735,7 @@ export class Simulation {
   }
 
   private seedOf(id: string): number {
-    return [...id].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), this.world.seed);
+    return hashOf(id, this.world.seed);
   }
 
   private spawnNpc(def: NpcDef): Person {

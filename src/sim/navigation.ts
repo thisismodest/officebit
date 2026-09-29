@@ -1,5 +1,6 @@
 // Routes across levels (docs/BUILDINGS.md). Portals (doors, stairs) join
 // levels; a route is a chain of legs, each walked with A* on one level.
+import { manhattan } from './geometry.ts';
 import type { Grid } from './grid.ts';
 import type { Place, PortalDef, Tile } from './world.ts';
 
@@ -104,8 +105,4 @@ export class Navigator {
     for (let i = bestExit; i >= 0; i = prev[i]!) via.unshift(this.anchors[i]!);
     return { cost: best, via };
   }
-}
-
-function manhattan(a: Tile, b: Tile): number {
-  return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 }

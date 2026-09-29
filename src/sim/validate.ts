@@ -2,6 +2,7 @@
 // furniture in walls, spots nobody can reach, levels cut off from the rest.
 // Returns human-readable problems; an empty list means the world is sound.
 import { CATALOG } from './catalog.ts';
+import { endsOn, sides } from './geometry.ts';
 import { Grid } from './grid.ts';
 import type { LevelDef, Place, Tile, WorldDef } from './world.ts';
 
@@ -46,7 +47,7 @@ export function validate(world: WorldDef): string[] {
 
   for (const level of world.levels) {
     const grid = grids.get(level.id)!;
-    const entrances = world.portals.flatMap((pt) => [pt.a, pt.b]).filter((end) => end.level === level.id);
+    const entrances = endsOn(world.portals, level.id);
     const reached = flood(grid, entrances.map((end) => end.p));
     checkFurniture(level, grid, reached, problems);
     if (level.floorOf && !levels.has(level.floorOf)) problems.push(`${level.name}: a floor of "${level.floorOf}", which doesn't exist`);
@@ -114,8 +115,8 @@ function unreachableLevels(world: WorldDef): string[] {
   const queue = [world.spawn.level];
   while (queue.length > 0) {
     const level = queue.pop()!;
-    for (const { a, b } of world.portals) {
-      for (const [from, to] of [[a, b], [b, a]] as const) {
+    for (const portal of world.portals) {
+      for (const [from, to] of sides(portal)) {
         if (from.level === level && !seen.has(to.level)) {
           seen.add(to.level);
           queue.push(to.level);

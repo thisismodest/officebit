@@ -31,6 +31,7 @@ Key files:
   `person.ts`: runtime state. See [PEOPLE](PEOPLE.md#kinds).
 - `brain.ts`: decisions. `social.ts`: conversations and what comes of them.
 - `navigation.ts`: routes across levels. `grid.ts`: one level's tiles and A*.
+- `geometry.ts`: tile, rectangle and footprint maths, door rows and portal ends, shared by the sim, the world builders and the editor.
 - `roads.ts`, `traffic.ts`, `visitors.ts`: cars. See [TRAFFIC](TRAFFIC.md).
   `food-trucks.ts`: the lunch trucks, as a function of the clock.
 

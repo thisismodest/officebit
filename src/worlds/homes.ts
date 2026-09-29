@@ -2,6 +2,7 @@
 // map: a terrace is a one-bed, a semi (`house`) a two-bed, and a detached house
 // a family home with a kids' room and a study. Each returns a level plus its
 // entry tile (just inside the front door) for linking to the town map.
+import { TO_LET } from '../sim/housing.ts';
 import type { LevelDef, Tile } from '../sim/world.ts';
 import { LevelBuilder } from './layout.ts';
 
@@ -27,6 +28,13 @@ export function buildHome(style: HomeStyle, owner: string, name: string, variant
   const build = { terrace: oneBed, house: twoBed, detached: family }[style];
   const home = build(owner, name, variant);
   if (options.console) home.level.furniture.push({ t: 'console', p: home.consoleAt });
+  return home;
+}
+
+/** An empty home, to let: `to-let-n`, called "To let" throughout. */
+export function buildToLet(style: HomeStyle, n: number, variant: number): Home {
+  const home = buildHome(style, `to-let-${n}`, TO_LET, variant);
+  home.level.name = home.level.rooms[0]!.name = TO_LET;
   return home;
 }
 

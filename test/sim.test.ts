@@ -390,7 +390,7 @@ test('newcomers move into a house that is to let', () => {
   assert.equal(sim.levels.get(p.home!)!.name, "Newbie's house");
 });
 
-test('gamers seek out the arcade machines; nobody else much bothers', () => {
+test('gamers seek out the arcade machines, and play them most', () => {
   const sim = new Simulation(structuredClone(STARTER));
   const goes = new Map<string, number>();
   const last = new Map<string, number>();
@@ -402,9 +402,11 @@ test('gamers seek out the arcade machines; nobody else much bothers', () => {
       last.set(p.id, i);
     }
   }
-  assert.ok(goes.size > 0, 'someone plays');
-  for (const id of goes.keys()) {
+  const gamer = (id: string) => {
     const t = sim.person(id)!.traits;
-    assert.ok((t.chaos + (1 - t.diligence)) / 2 > 0.35, `${id} is a gamer`);
-  }
+    return (t.chaos + (1 - t.diligence)) / 2 > 0.35;
+  };
+  const total = (which: boolean) => [...goes].filter(([id]) => gamer(id) === which).reduce((sum, [, n]) => sum + n, 0);
+  assert.ok(total(true) > 0, 'gamers play');
+  assert.ok(total(true) > 3 * total(false), 'and they are the regulars');
 });

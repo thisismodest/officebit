@@ -4,6 +4,7 @@
 // rectangles, so each knows which way it runs (for its centre line); a stroke
 // of the brush becomes one rectangle per straight run.
 import { CATALOG } from '../sim/catalog.ts';
+import { footprint, freeRoomId, inRect, overlap } from '../sim/geometry.ts';
 import type { FurnitureDef, LevelDef, Rect, RoomDef, Tile } from '../sim/world.ts';
 import { aOrAn, type Problem } from './placement.ts';
 
@@ -99,7 +100,7 @@ export function lay(level: LevelDef, rects: readonly Rect[], surface: Surface, n
   }
   // Drawing over rubbed-out pavement takes the grass back up.
   level.rooms = level.rooms.filter((r) => !(r.id.startsWith(VERGE) && pieces.some((p) => overlap(p, r.rect))));
-  for (const rect of pieces) level.rooms.push({ id: uniqueRoom(level, surface), name, rect, floor: surface });
+  for (const rect of pieces) level.rooms.push({ id: freeRoomId(level, surface), name, rect, floor: surface });
   // A road's kerbs become pavement: clear those too.
   const reach = surface === 'road' ? pieces.map(([x, y, w, h]): Rect => [x - 1, y - 1, w + 2, h + 2]) : pieces;
   const cleared = level.furniture.filter((f) => CLEARABLE.has(f.t) && reach.some((r) => overlap(footprint(f), r)));
@@ -138,7 +139,7 @@ export function addCrossing(level: LevelDef, [x, y]: Tile): Problem {
   if (level.rooms.some((r) => isCrossing(r) && overlap(r.rect, across))) return "There's a crossing there already.";
   // `zebra` crosses a road running east–west; `zebraSide` one running north–south.
   const floor = road[2] >= road[3] ? 'zebra' : 'zebraSide';
-  level.rooms.push({ id: uniqueRoom(level, 'crossing'), name: 'Zebra crossing', rect: across, floor });
+  level.rooms.push({ id: freeRoomId(level, 'crossing'), name: 'Zebra crossing', rect: across, floor });
   return null;
 }
 
@@ -253,26 +254,7 @@ function sameWay(a: Tile, b: Tile, c: Tile): boolean {
   return b[0] - a[0] === c[0] - b[0] && b[1] - a[1] === c[1] - b[1];
 }
 
-function footprint(f: FurnitureDef): Rect {
-  const [w, h] = CATALOG[f.t]?.size ?? [1, 1];
-  return [f.p[0], f.p[1], w, h];
-}
-
-function inRect([rx, ry, rw, rh]: Rect, x: number, y: number): boolean {
-  return x >= rx && y >= ry && x < rx + rw && y < ry + rh;
-}
-
 function inAny(rects: readonly Rect[], x: number, y: number): boolean {
   return rects.some((r) => inRect(r, x, y));
 }
 
-function overlap([ax, ay, aw, ah]: Rect, [bx, by, bw, bh]: Rect): boolean {
-  return ax < bx + bw && bx < ax + aw && ay < by + bh && by < ay + ah;
-}
-
-function uniqueRoom(level: LevelDef, base: string): string {
-  const taken = new Set(level.rooms.map((r) => r.id));
-  let n = level.rooms.length;
-  while (taken.has(`${base}-${n}`)) n++;
-  return `${base}-${n}`;
-}

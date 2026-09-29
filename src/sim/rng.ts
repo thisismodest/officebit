@@ -27,3 +27,8 @@ export class Rng {
     return items[Math.floor(this.next() * items.length)]!;
   }
 }
+
+/** A 32-bit FNV-style hash of a string's characters, from a seed: a stable seed for something named. */
+export function hashOf(text: string, seed: number): number {
+  return [...text].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), seed);
+}

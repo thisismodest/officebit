@@ -9,6 +9,7 @@
 // was built from, and save themselves; a place the story built itself (a
 // startup's office) is kept as an override, for whenever the story builds it.
 import { CATALOG } from '../sim/catalog.ts';
+import { covers, doorOf, footprint, overlap } from '../sim/geometry.ts';
 import { interiorOf } from '../sim/places.ts';
 import type { Item, Simulation } from '../sim/sim.ts';
 import type { FurnitureDef, LevelDef, Rect, Tile, WorldDef } from '../sim/world.ts';
@@ -23,7 +24,7 @@ import { buildingMoveProblem, flipHouse, isBuilding, moveBuilding, moveFurniture
 import { CLEARABLE, addCrossing, brush, crossingAt, erase, groundProblem, joinsUp, lay, strokeRects, type Surface } from '../worlds/ground.ts';
 import { isCovering, placementProblem } from '../worlds/placement.ts';
 import type { Grab } from './controls.ts';
-import { esc } from './html.ts';
+import { esc, narrow } from './html.ts';
 import { iconButton } from './icons.ts';
 import { ROOM_HINTS, RoomTools, type RoomTool } from './room-tools.ts';
 
@@ -47,8 +48,6 @@ const INDOOR_GROUPS: [string, string[]][] = [
 const THUMB = 52;
 /** Steps of undo kept while editing. */
 const UNDO_STEPS = 50;
-/** Small screens, as style.css has them: the picker's a strip along the bottom, and shrinks to what you've picked. */
-const NARROW = '(max-width: 60rem)';
 
 /** One change, with what it takes to undo it. */
 type Change =
@@ -148,8 +147,8 @@ export class Editor {
       this.adding = t;
       for (const b of this.picker.querySelectorAll('[data-type]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.type === t));
       // On a small screen the picker gets out of the way, so there's map to tap.
-      if (matchMedia(NARROW).matches) this.picker.dataset.collapsed = '';
-      this.say(`${matchMedia(NARROW).matches ? 'Tap' : 'Click'} the map to put down the ${CATALOG[t]!.name.toLowerCase()}.`);
+      if (narrow.matches) this.picker.dataset.collapsed = '';
+      this.say(`${narrow.matches ? 'Tap' : 'Click'} the map to put down the ${CATALOG[t]!.name.toLowerCase()}.`);
     });
     for (const el of [this.bar, this.picker]) el.addEventListener('pointerdown', (event) => event.stopPropagation());
     document.addEventListener('keydown', (event) => {
@@ -464,9 +463,7 @@ export class Editor {
   /** A tip if a building's front door doesn't join up with a path or road yet. */
   private doorNote(item: Item): string {
     const level = this.host.sim().levels.get(item.level);
-    const [w, h] = item.type.size;
-    const door: Tile = [item.def.p[0] + Math.min(1, w - 1), item.def.faces === 'up' ? item.def.p[1] - 1 : item.def.p[1] + h];
-    return level && !joinsUp(level, door) ? ' Its front door doesn’t join up with a pavement yet: draw a path to it.' : '';
+    return level && !joinsUp(level, doorOf(item.def)) ? ' Its front door doesn’t join up with a pavement yet: draw a path to it.' : '';
   }
 
   /** Drag with a brush: the stroke follows the pointer along the grid, turning where you turn, and backs up if you go back over it. */
@@ -512,7 +509,6 @@ export class Editor {
 
   /** Lay a stroke of road or path, or rub one out. */
   private paint(tiles: Tile[]): void {
-    const level = this.host.renderer.level;
     const tool = this.tool;
     if (tool !== 'erase' && tool !== 'road' && tool !== 'path') return;
     const problem = tool === 'erase' ? null : tiles.map((t) => this.brushProblem(t)).find(Boolean);
@@ -522,15 +518,13 @@ export class Editor {
     }
     let cleared = 0;
     let erased = false;
-    const done = this.reshape(level, (world) => {
-      const map = world.levels.find((l) => l.id === level);
-      if (!map) return null;
+    const done = this.reshapeHere((map, _world, live) => {
       if (tool === 'erase') {
         for (const t of tiles) erased = erase(map, t) || erased;
-        return world === this.host.sim().world && !erased ? 'There’s no road, path, pavement or crossing there.' : null;
+        return live && !erased ? 'There’s no road, path, pavement or crossing there.' : null;
       }
       const gone = lay(map, strokeRects(tiles, tool), tool);
-      if (world === this.host.sim().world) cleared = gone.length;
+      if (live) cleared = gone.length;
       return null;
     });
     if (!done) return;
@@ -540,11 +534,9 @@ export class Editor {
   }
 
   private crossing(tile: Tile): void {
-    const level = this.host.renderer.level;
-    const done = this.reshape(level, (world) => {
-      const map = world.levels.find((l) => l.id === level);
-      const problem = map ? addCrossing(map, tile) : null;
-      return world === this.host.sim().world ? problem : null;
+    const done = this.reshapeHere((map, _world, live) => {
+      const problem = addCrossing(map, tile);
+      return live ? problem : null;
     });
     if (done) this.say('Put in a zebra crossing.');
   }
@@ -563,7 +555,7 @@ export class Editor {
     const rects = strokeRects(tiles, surface);
     const problem = tiles.length === 1 ? this.brushProblem(last) : null;
     const reach = surface === 'road' ? rects.map(([x, y, w, h]): Rect => [x - 1, y - 1, w + 2, h + 2]) : rects;
-    const clears = level.furniture.filter((f) => CLEARABLE.has(f.t) && reach.some((r) => overlapsRect(f, r)));
+    const clears = level.furniture.filter((f) => CLEARABLE.has(f.t) && reach.some((r) => overlap(footprint(f), r)));
     return [
       ...rects.map((rect): Ghost => ({ rect, tone: problem ? 'bad' : 'ok' })),
       ...clears.map((f): Ghost => ({ rect: [f.p[0], f.p[1], ...(CATALOG[f.t]?.size ?? [1, 1])], tone: 'clear' })),
@@ -601,7 +593,17 @@ export class Editor {
     return true;
   }
 
-  private level(): LevelDef | undefined {
+  /** `reshape` the level you're looking at: `change` gets it in each world that has it, and whether that's the running town's. */
+  reshapeHere(change: (level: LevelDef, world: WorldDef, live: boolean) => string | null): boolean {
+    const id = this.host.renderer.level;
+    return this.reshape(id, (world) => {
+      const level = world.levels.find((l) => l.id === id);
+      return level ? change(level, world, world === this.host.sim().world) : null;
+    });
+  }
+
+  /** The level you're looking at, in the running town. */
+  level(): LevelDef | undefined {
     return this.host.sim().levels.get(this.host.renderer.level);
   }
 
@@ -679,7 +681,7 @@ export class Editor {
     this.selected = item;
     const building = !!item && this.building(item);
     const house = building && HOUSES.has(item.def.t);
-    this.bar.querySelector<HTMLButtonElement>('[data-action="delete"]')!.disabled = !item || building;
+    this.deletable(!!item && !building);
     this.bar.querySelector<HTMLButtonElement>('[data-action="flip"]')!.disabled = !house;
     this.host.renderer.ghost = this.selection();
     if (!item) return;
@@ -722,8 +724,7 @@ export class Editor {
       this.building(item) ? !sim().construction.reserved(item) : (!NOT_PLACEABLE.has(item.def.t) && !interiorOf(sim(), item)) || (item.def.t === 'stairs' && this.rooms.leadsUp(item));
     const editable = (item: Item) => (!level || level.furniture.some((f) => f.t === item.def.t && f.p[0] === item.def.p[0] && f.p[1] === item.def.p[1])) && movable(item);
     const [tx, ty] = this.host.tileAt(x, y);
-    const covers = (item: Item) => tx >= item.def.p[0] && ty >= item.def.p[1] && tx < item.def.p[0] + item.type.size[0] && ty < item.def.p[1] + item.type.size[1];
-    const onTile = sim().activeItems().filter((item) => item.level === renderer.level && covers(item) && editable(item));
+    const onTile = sim().activeItems().filter((item) => item.level === renderer.level && covers(item.def, tx, ty) && editable(item));
     onTile.sort((a, b) => Number(isCovering(a.def.t)) - Number(isCovering(b.def.t)));
     const drawn = renderer.pickItem(x, y, editable)?.item;
     return drawn && !onTile.includes(drawn) ? [...onTile, drawn] : onTile;
@@ -765,7 +766,3 @@ const GROUND_HINTS = {
   erase: 'Drag over roads, paths, pavements or crossings to rub them out.',
 } as const;
 
-function overlapsRect(f: FurnitureDef, [x, y, w, h]: Rect): boolean {
-  const [fw, fh] = CATALOG[f.t]?.size ?? [1, 1];
-  return x < f.p[0] + fw && f.p[0] < x + w && y < f.p[1] + fh && f.p[1] < y + h;
-}

@@ -29,7 +29,7 @@ export interface WorldDef {
   /** Set to false for a world where nobody falls in love (one modelling real colleagues, say). */
   love?: boolean;
   people: PersonDef[];
-  /** Family and pets: they live at someone's home and aren't listed as people. */
+  /** Everyone who isn't on the team: family, pets, staff, crews, children, couriers, visitors (roles.ts). Not listed as people. */
   npcs: NpcDef[];
   /** Meals' worth of ingredients in each home's kitchen, by home level id. Missing means stocked. */
   pantries?: Record<string, number>;
@@ -97,7 +97,6 @@ export interface PortalDef {
 export interface CompanyDef {
   id: string;
   name: string;
-  /** Shown beside the name in the panel (🛒, 🚀). */
   /** Shown beside it in the panel: an icon name (`office`, `cart`, `rocket`… see ui/icons.ts), or any short text. */
   icon?: string;
   /** Hires anyone looking for work, no questions asked (the shop). Other companies only rehire their own. */

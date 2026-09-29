@@ -24,6 +24,8 @@ const ALWAYS_LIT = new Set(['lamppost', 'chargingCanopy']);
 /** Headlights: how far ahead of a car (tiles) they light the road, and how wide (pixels). */
 const HEADLIGHT_REACH = 1.5;
 const HEADLIGHT_RADIUS = 26;
+/** How dark (0–1) it must be for lights to come on. */
+const DUSK = 0.4;
 
 /** Part of the editor's outline: a tile rectangle, and what it means. */
 export interface Ghost {
@@ -114,8 +116,7 @@ export class Renderer {
 
   /** Person under a client-space point, if any. */
   pick(clientX: number, clientY: number): Person | null {
-    const bounds = this.canvas.getBoundingClientRect();
-    const { x, y } = this.camera.toWorld(clientX - bounds.left, clientY - bounds.top);
+    const { x, y } = this.toWorld(clientX, clientY);
     const hits = this.visible()
       .filter((p) => {
         const left = p.x * TILE + 1;
@@ -180,7 +181,7 @@ export class Renderer {
 
     this.paintLighting(props, night, headlights);
     // After dark, cars on the move show their lights, bright against the dark.
-    if (night > 0.4) {
+    if (night > DUSK) {
       for (const { car, pos } of cars) {
         if (car.parked) continue;
         const sprite = carSprite(car.look, car.facing);
@@ -217,8 +218,7 @@ export class Renderer {
 
   /** Front-most furniture under a client-space point, among those `accept` allows. */
   pickItem(clientX: number, clientY: number, accept: (item: Item) => boolean): Prop | null {
-    const bounds = this.canvas.getBoundingClientRect();
-    const { x, y } = this.camera.toWorld(clientX - bounds.left, clientY - bounds.top);
+    const { x, y } = this.toWorld(clientX, clientY);
     const hits = this.propsOf(this.level).filter(
       (prop) => accept(prop.item) && this.sim.isOpen(prop.item) && x >= prop.x && x < prop.x + prop.img.width && y >= prop.y && y < prop.y + prop.img.height,
     );
@@ -280,7 +280,7 @@ export class Renderer {
       return;
     }
     const stage = prop.stages?.[Math.min(prop.stages.length - 1, Math.floor((prop.item.def.progress ?? 0) * prop.stages.length))];
-    ctx.drawImage(stage ?? (prop.lit && night > 0.4 && this.lightsOn(prop.item) ? prop.lit : prop.img), prop.x, prop.y);
+    ctx.drawImage(stage ?? (prop.lit && night > DUSK && this.lightsOn(prop.item) ? prop.lit : prop.img), prop.x, prop.y);
     if (prop.screen && this.screenOn(prop.item)) {
       const [x, y, w, h] = prop.screen;
       // TVs flicker; monitors just brighten.
@@ -293,7 +293,7 @@ export class Renderer {
     }
   }
 
-  /** Lampposts at night; buildings when someone inside is awake. */
+  /** Street lights (lampposts, the charging canopy) at night; buildings when someone inside is awake. */
   private lightsOn(item: Item): boolean {
     const { sim } = this;
     if (ALWAYS_LIT.has(item.def.t)) return true;
@@ -337,7 +337,7 @@ export class Renderer {
         const [x, y, w, h] = prop.screen;
         lights.push({ x: x + w / 2, y: y + h / 2, r: prop.item.def.t === 'tv' ? 40 : 18 });
       }
-      if (prop.lit && night > 0.4 && this.lightsOn(prop.item)) {
+      if (prop.lit && night > DUSK && this.lightsOn(prop.item)) {
         const bulb = prop.item.def.t === 'lamppost';
         lights.push({ x: prop.x + prop.img.width / 2, y: prop.y + (bulb ? 6 : prop.img.height * 0.7), r: bulb ? 44 : prop.img.width * 0.6 });
       }

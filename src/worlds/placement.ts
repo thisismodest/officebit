@@ -5,6 +5,7 @@
 // if it's outdoors (or hard ground, for chargers, bays and the like), with its spots free to stand in, and if nothing on the
 // level (a door, a spot someone uses) becomes unreachable because of it.
 import { CATALOG } from '../sim/catalog.ts';
+import { covers, endsOn, footprint as footprintOf, overlap, tilesIn } from '../sim/geometry.ts';
 import { Grid } from '../sim/grid.ts';
 import type { FurnitureDef, LevelDef, PortalDef, Tile } from '../sim/world.ts';
 
@@ -23,8 +24,8 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
   const others = level.furniture.filter((f) => f !== moving);
   const without: LevelDef = { ...level, furniture: others };
   const grid = new Grid(without);
-  const footprint = tilesOf(at, w, h);
-  const ends = portals.flatMap((p) => [p.a, p.b]).filter((end) => end.level === level.id).map((end) => end.p);
+  const footprint = tilesIn([at[0], at[1], w, h]);
+  const ends = endsOn(portals, level.id).map((end) => end.p);
   const keepClear = new Set([...level.doors, ...ends].flatMap((d) => [d, ...DIRS.map(([dx, dy]): Tile => [d[0] + dx, d[1] + dy])]).map(key));
 
   let room: number | undefined;
@@ -43,8 +44,8 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
     }
   }
   // Rugs and the like lie on the floor: other things can stand on them, and they can slide under other things.
-  const overlap = !isCovering(t) && others.find((f) => !isCovering(f.t) && overlaps(f, at, w, h));
-  if (overlap) return `There's already ${aOrAn(CATALOG[overlap.t]!.name.toLowerCase())} there.`;
+  const inWay = !isCovering(t) && others.find((f) => !isCovering(f.t) && overlap(footprintOf(f), [at[0], at[1], w, h]));
+  if (inWay) return `There's already ${aOrAn(CATALOG[inWay.t]!.name.toLowerCase())} there.`;
 
   const placed: FurnitureDef = { ...(moving ?? {}), t, p: at };
   // Where people stand or sit to use it must be free: not a wall, a doorway, or another piece people use (a rug is fine).
@@ -52,7 +53,7 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
     const [x, y] = [at[0] + dx, at[1] + dy];
     const inside = dx >= 0 && dy >= 0 && dx < w && dy < h;
     if (inside) continue;
-    const taken = others.some((f) => overlaps(f, [x, y], 1, 1) && (CATALOG[f.t]!.solid || CATALOG[f.t]!.spots.length > 0));
+    const taken = others.some((f) => covers(f, x, y) && (CATALOG[f.t]!.solid || CATALOG[f.t]!.spots.length > 0));
     if (!grid.walkable(x, y) || keepClear.has(key([x, y])) || taken) return 'There needs to be room to use it.';
   }
 
@@ -71,7 +72,7 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
  * from the way in before but not after?
  */
 export function cutsOff(before: LevelDef, after: LevelDef, portals: readonly PortalDef[]): boolean {
-  const ends = portals.flatMap((p) => [p.a, p.b]).filter((end) => end.level === before.id).map((end) => end.p);
+  const ends = endsOn(portals, before.id).map((end) => end.p);
   const entrance = ends.slice(0, 1);
   const was = reachable(new Grid(before), entrance);
   const now = reachable(new Grid(after), entrance);
@@ -109,15 +110,6 @@ function reachable(grid: Grid, from: readonly Tile[]): Set<string> {
 
 function spotsOf(def: FurnitureDef): Tile[] {
   return (CATALOG[def.t]?.spots ?? []).map(([dx, dy]): Tile => [def.p[0] + dx, def.p[1] + dy]);
-}
-
-function tilesOf([x, y]: Tile, w: number, h: number): Tile[] {
-  return Array.from({ length: w * h }, (_, i): Tile => [x + (i % w), y + Math.floor(i / w)]);
-}
-
-function overlaps(f: FurnitureDef, [x, y]: Tile, w: number, h: number): boolean {
-  const [fw, fh] = CATALOG[f.t]?.size ?? [1, 1];
-  return x < f.p[0] + fw && f.p[0] < x + w && y < f.p[1] + fh && f.p[1] < y + h;
 }
 
 function key([x, y]: Tile): string {

@@ -10,11 +10,11 @@ import type { Simulation } from '../sim/sim.ts';
 export type Mode = 'live' | 'sandbox';
 
 /** Real milliseconds per step at 1× (and always, in live mode). */
-export const STEP_MS = 1000 / TICKS_PER_SECOND;
-/** Real milliseconds in one game tick. */
-const TICK_MS = 6000;
+const STEP_MS = 1000 / TICKS_PER_SECOND;
+/** Real milliseconds in one game tick, in live mode (a tick is 6 game seconds). */
+export const TICK_MS = 6000;
 /** In live mode each step covers this much game time, in ticks: one real step's worth. */
-export const LIVE_DT = STEP_MS / TICK_MS;
+const LIVE_DT = STEP_MS / TICK_MS;
 /** Live mode catches up (at full speed) once it falls this many ticks behind the clock. */
 const BEHIND = 2;
 /** Fast-forwarding may use this much of each frame, in ms, leaving enough to keep the page responsive. */

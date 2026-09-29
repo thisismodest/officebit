@@ -53,10 +53,6 @@ export class PlaceCard {
     host.append(this.root);
   }
 
-  get isOpen(): boolean {
-    return !this.root.hidden;
-  }
-
   /** Open for a building, pinned at a world point. */
   open(interior: Interior, at: { x: number; y: number }): void {
     this.interior = interior;

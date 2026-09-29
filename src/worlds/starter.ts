@@ -5,13 +5,12 @@
 //   First floor  — brand, design, engineering, operations, the CEO's office,
 //                  and a kitchenette round the stairs.
 import type { CompanyDef, DepartmentDef, NpcDef, PersonDef, PortalDef, Tile, WorldDef } from "../sim/world.ts";
-import { buildHome, type HomeStyle } from "./homes.ts";
+import { buildHome, buildToLet, type HomeStyle } from "./homes.ts";
 import { buildSchool } from "./school.ts";
 import { buildDiner, buildShop } from "./venues.ts";
 import { LevelBuilder, portal } from "./layout.ts";
 import { DINER_DOOR, OFFICE_DOOR, PLOTS, SCHOOL_DOOR, SHOP_DOOR, SPAWN, buildTown, type Plot } from "./town.ts";
 import { resolveTraits } from "../sim/personality.ts";
-import { TO_LET } from "../sim/housing.ts";
 
 const COMPANIES: CompanyDef[] = [
   { id: "head", name: "Head office", levels: ["ground", "first"] },
@@ -322,8 +321,7 @@ const portals: PortalDef[] = [
 ];
 
 const emptyHomes = toLet.map(({ style, plot }, i) => {
-  const { level, entry } = buildHome(style, `to-let-${i + 1}`, "To let", i);
-  level.name = level.rooms[0]!.name = TO_LET;
+  const { level, entry } = buildToLet(style, i + 1, i);
   portals.push(portal("door", town.at(plot.door), { level: level.id, p: entry }));
   return level;
 });

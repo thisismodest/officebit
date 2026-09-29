@@ -5,7 +5,7 @@
 import { TICKS_PER_HOUR } from './clock.ts';
 import { IN_LOVE } from './love.ts';
 import { asleep, atDesk, type Person } from './person.ts';
-import { DISLIKE, type Turn } from './relationships.ts';
+import { DISLIKE, pairKey, type Turn } from './relationships.ts';
 import { roleOf } from './roles.ts';
 import type { Simulation } from './sim.ts';
 
@@ -75,7 +75,7 @@ export class Social {
 
   /** Something between two people who don't get on, unless it's happened lately. */
   grudge(a: Person, b: Person, text: string): void {
-    const key = [a.id, b.id].sort().join('|');
+    const key = pairKey(a, b);
     if (this.sim.tick - (this.lastGrudge.get(key) ?? -Infinity) < GRUDGE_COOLDOWN) return;
     this.lastGrudge.set(key, this.sim.tick);
     this.sim.log(text, [a.id, b.id]);

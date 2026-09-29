@@ -161,7 +161,7 @@ function paintHiVis(ctx: Ctx, view: string, y0: number): void {
   const hat = "#f3c969";
   rect(ctx, 2, y0 - 1, 8, 3, OUTLINE);
   rect(ctx, 3, y0 - 1, 6, 2, hat);
-  rect(ctx, view === "side" ? 2 : 1, y0 + 1, view === "side" ? 10 : 10, 1, shade(hat, -0.25));
+  rect(ctx, view === "side" ? 2 : 1, y0 + 1, 10, 1, shade(hat, -0.25));
   const [from, to] = view === "side" ? [3, 8] : [1, 10];
   rect(ctx, from, y0 + 11, to - from + 1, 1, "#f4f4f4");
 }

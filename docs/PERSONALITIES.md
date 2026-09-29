@@ -41,7 +41,8 @@ they were doing:
    (`play` furniture) tempt grown-ups too when one's close by and they're
    feeling playful: the more chaotic, and the shorter of fun, the more.
    Gamers (chaotic, or not very diligent) seek out arcade machines (`game`
-   furniture) whether or not they're bored, so an arcade floor gets used by them.
+   furniture) whether or not they're bored; everyone else feels half that pull,
+   so the odd bored non-gamer has a go, but gamers are the regulars.
    Needing the food shop while it's waiting for its staff means queuing
    outside (see [BUILDINGS](BUILDINGS.md#venues)).
 4. **Pick the best.** `brain.options(p, sim)` returns the full scored list,

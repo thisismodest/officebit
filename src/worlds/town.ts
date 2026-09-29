@@ -17,10 +17,12 @@
 // side of a street, which face up (`faces: 'up'`) so they face their street.
 import { Rng } from '../sim/rng.ts';
 import { CATALOG } from '../sim/catalog.ts';
+import { tilesIn } from '../sim/geometry.ts';
 import type { FurnitureDef, Rect, Tile } from '../sim/world.ts';
 import type { HomeStyle } from './homes.ts';
 import { layPavements } from './ground.ts';
 import { LevelBuilder } from './layout.ts';
+import { roomAt } from './rooms.ts';
 
 export const TOWN = 160;
 
@@ -51,11 +53,10 @@ const LOTS: Tile[] = [
   [108, 98], // School Lane
 ];
 
-export type HouseType = HomeStyle;
 
 /** Somewhere a house can stand, and how its front door meets the pavement. */
 export interface Plot {
-  t: HouseType;
+  t: HomeStyle;
   x: number;
   y: number;
   faces?: 'up';
@@ -65,24 +66,24 @@ export interface Plot {
 }
 
 /** A house on the north side of a street, facing down onto the pavement at `pavement`, `setback` tiles back. */
-function facingDown(t: HouseType, x: number, pavement: number, setback = 0): Plot {
+function facingDown(t: HomeStyle, x: number, pavement: number, setback = 0): Plot {
   const door: Tile = [x + 1, pavement - 1 - setback];
   return { t, x, y: door[1] - 3, door, path: [door[0], door[1], 1, setback + 1] };
 }
 
 /** A house on the south side of a street, facing up to the pavement at `pavement`. */
-function facingUp(t: HouseType, x: number, pavement: number, setback = 0): Plot {
+function facingUp(t: HomeStyle, x: number, pavement: number, setback = 0): Plot {
   const door: Tile = [x + 1, pavement + 1 + setback];
   return { t, x, y: door[1] + 1, faces: 'up', door, path: [door[0], pavement + 1, 1, setback + 1] };
 }
 
-const widthOf = (t: HouseType) => CATALOG[t]!.size[0];
+const widthOf = (t: HomeStyle) => CATALOG[t]!.size[0];
 /** Plots side by side along a street, `gap` tiles apart. */
-const along = (t: HouseType, from: number, count: number, gap: number, plot: (t: HouseType, x: number) => Plot) =>
+const along = (t: HomeStyle, from: number, count: number, gap: number, plot: (t: HomeStyle, x: number) => Plot) =>
   Array.from({ length: count }, (_, i) => plot(t, from + i * (widthOf(t) + gap)));
 
 /** Every house plot in town, by size. More than the starter town needs, so people can move and newcomers can settle. */
-export const PLOTS: Record<HouseType, Plot[]> = {
+export const PLOTS: Record<HomeStyle, Plot[]> = {
   // Detached family homes on Birch Close, near the school, staggered either side.
   detached: [
     facingDown('detached', 86, 85, 1),
@@ -135,16 +136,10 @@ const CROSSINGS: [floor: 'zebra' | 'zebraSide', rect: Rect][] = [
  */
 function scatter(b: LevelBuilder, t: string, [ax, ay, aw, ah]: Rect, count: number, seed: number): void {
   const rng = new Rng(seed);
-  const placed = b.build().furniture;
+  const level = b.build();
+  const placed = level.furniture;
   const [w, h] = CATALOG[t]!.size;
-  const { rooms } = b.build();
-  // The floor at a tile is the smallest room covering it.
-  const floorAt = (x: number, y: number) =>
-    rooms
-      .filter(({ rect: [rx, ry, rw, rh] }) => x >= rx && y >= ry && x < rx + rw && y < ry + rh)
-      .sort((a, c) => a.rect[2] * a.rect[3] - c.rect[2] * c.rect[3])[0]?.floor;
-  const onGrass = (x: number, y: number) =>
-    Array.from({ length: w * h }, (_, i) => floorAt(x + (i % w), y + Math.floor(i / w))).every((f) => f === 'grass');
+  const onGrass = (x: number, y: number) => tilesIn([x, y, w, h]).every((tile) => roomAt(level, tile)?.floor === 'grass');
   const clear = (x: number, y: number) =>
     onGrass(x, y) &&
     placed.every((f: FurnitureDef) => {

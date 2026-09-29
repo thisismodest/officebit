@@ -4,6 +4,7 @@
 // shaker. Everything's synthesised, so
 // there are no files to load. Notes are scheduled a little ahead of time, so the
 // music keeps steady time even when the page is busy.
+import { whiteNoise } from './noise.ts';
 import { BEATS_PER_BAR, Composer, frequency, type Bar, type Mood, type Note } from './composer.ts';
 
 /** How far ahead to schedule (s), and how often to check (ms). */
@@ -202,7 +203,7 @@ export class Music {
   private shaker(at: number): void {
     const { ctx } = this;
     const noise = ctx.createBufferSource();
-    noise.buffer = this.noise ??= noiseBuffer(ctx);
+    noise.buffer = this.noise ??= whiteNoise(ctx);
     const filter = ctx.createBiquadFilter();
     filter.type = 'highpass';
     filter.frequency.value = 6000;
@@ -271,14 +272,6 @@ export class Music {
     g.connect(to);
     return g;
   }
-}
-
-/** A second of white noise, for the shaker. */
-function noiseBuffer(ctx: BaseAudioContext): AudioBuffer {
-  const buffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-  return buffer;
 }
 
 /** A reverb's impulse: stereo noise dying away over `seconds`. */

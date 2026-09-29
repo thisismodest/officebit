@@ -4,10 +4,7 @@
 import { TICKS_PER_DAY, TICKS_PER_HOUR, dayOf, tickAt } from '../sim/clock.ts';
 import type { Simulation } from '../sim/sim.ts';
 import { popover, type Toggle } from './popover.ts';
-import type { Timekeeper } from './timekeeper.ts';
-
-/** Game ticks per real millisecond in live mode (a tick is 6 seconds). */
-const TICKS_PER_MS = 1 / 6000;
+import { TICK_MS, type Timekeeper } from './timekeeper.ts';
 
 export interface TimeJumpHost {
   sim(): Simulation;
@@ -92,7 +89,7 @@ export class TimeJump {
     const tick = this.host.sim().tick;
     if (this.host.time.mode === 'live') {
       const when = new Date(this.input('when').value).getTime();
-      return Number.isNaN(when) ? NaN : tick + (when - Date.now()) * TICKS_PER_MS;
+      return Number.isNaN(when) ? NaN : tick + (when - Date.now()) / TICK_MS;
     }
     const day = Number(this.input('day').value) - 1 + this.host.sim().firstDay;
     const [hh = 9, mm = 0] = this.input('time').value.split(':').map(Number);

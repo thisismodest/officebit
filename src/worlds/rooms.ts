@@ -5,8 +5,9 @@
 // inside or beside each other, never across; a new room snaps onto walls
 // nearby, gets a doorway if it has none, and may never cut anything off.
 import { CATALOG } from '../sim/catalog.ts';
+import { area, contains, covers, endsOn, freeRoomId, inRect, intersection, onEdge } from '../sim/geometry.ts';
 import { Grid } from '../sim/grid.ts';
-import type { FurnitureDef, LevelDef, PortalDef, Rect, RoomDef, Tile } from '../sim/world.ts';
+import type { LevelDef, PortalDef, Rect, RoomDef, Tile } from '../sim/world.ts';
 import { aOrAn, cutsOff, type Problem } from './placement.ts';
 
 /** The smallest room a wall can make: one tile of floor inside it, all round. */
@@ -26,13 +27,6 @@ export function outerRoom(level: LevelDef): RoomDef | undefined {
 /** The room a tile's in: the innermost one, walled or not. */
 export function roomAt(level: LevelDef, [x, y]: Tile): RoomDef | undefined {
   return level.rooms.filter((r) => inRect(r.rect, x, y)).sort((a, b) => area(a.rect) - area(b.rect))[0];
-}
-
-/** The walled room whose wall a tile's on, innermost first (not the outside wall, if there's another). */
-export function wallAt(level: LevelDef, [x, y]: Tile): RoomDef | undefined {
-  return level.rooms
-    .filter((r) => r.walled && onEdge(r.rect, x, y))
-    .sort((a, b) => area(a.rect) - area(b.rect))[0];
 }
 
 /** Pull each edge of a rectangle onto a wall that's within a tile of it, so neighbouring rooms share their wall. */
@@ -94,7 +88,7 @@ export function addRoom(level: LevelDef, portals: readonly PortalDef[], rect: Re
   if (problem) return problem;
   const under = roomAt(level, [rect[0] + 1, rect[1] + 1])?.floor ?? outerRoom(level)!.floor;
   const floor = walled ? under : (AREA_FLOORS.find((f) => f !== under) ?? under);
-  const room: RoomDef = { id: uniqueRoom(level, walled ? 'room' : 'area'), name: name ?? (walled ? 'Room' : 'Area'), rect, floor, walled };
+  const room: RoomDef = { id: freeRoomId(level, `${level.id}-${walled ? 'room' : 'area'}`), name: name ?? (walled ? 'Room' : 'Area'), rect, floor, walled };
   return reshape(level, portals, (after) => after.rooms.push(room)) ?? room;
 }
 
@@ -121,7 +115,7 @@ export function removeRoom(level: LevelDef, portals: readonly PortalDef[], id: s
 
 /** Open a doorway in a wall, or close one that's there. The way in and the stairs stay as they are. */
 export function toggleDoor(level: LevelDef, portals: readonly PortalDef[], [x, y]: Tile): Problem {
-  const ends = portals.flatMap((p) => [p.a, p.b]).filter((end) => end.level === level.id);
+  const ends = endsOn(portals, level.id);
   if (ends.some((end) => end.p[0] === x && end.p[1] === y)) return 'That’s the way in: it stays.';
   const [w, h] = level.size;
   if (x <= 0 || y <= 0 || x >= w - 1 || y >= h - 1) return 'Doorways in the outside walls lead nowhere.';
@@ -179,13 +173,13 @@ function reshape(level: LevelDef, portals: readonly PortalDef[], change: (after:
 /** Would walls here go across the stairs (or any way in that isn't already a doorway in a wall, like the front door)? */
 function blocksWay(level: LevelDef, portals: readonly PortalDef[], rect: Rect): Problem {
   const doorway = (x: number, y: number) => level.doors.some(([dx, dy]) => dx === x && dy === y);
-  const ends = portals.flatMap((p) => [p.a, p.b]).filter((end) => end.level === level.id && !doorway(...end.p));
+  const ends = endsOn(portals, level.id).filter((end) => !doorway(...end.p));
   return ends.some((end) => onEdge(rect, end.p[0], end.p[1])) ? 'Keep the stairs clear.' : null;
 }
 
 /** Doorways that aren't in any wall any more (the room they were in was knocked through, or moved) are just floor: drop them. Ways in stay. */
 function tidyDoors(level: LevelDef, portals: readonly PortalDef[]): void {
-  const ends = portals.flatMap((p) => [p.a, p.b]).filter((end) => end.level === level.id);
+  const ends = endsOn(portals, level.id);
   level.doors = level.doors.filter(([x, y]) => ends.some((e) => e.p[0] === x && e.p[1] === y) || level.rooms.some((r) => r.walled && onEdge(r.rect, x, y)));
 }
 
@@ -197,7 +191,7 @@ function hasDoor(level: LevelDef, room: RoomDef): boolean {
 function doorwayFor(level: LevelDef, portals: readonly PortalDef[], room: RoomDef): Tile | null {
   const grid = new Grid(level);
   const floor = (x: number, y: number) => grid.walkable(x, y);
-  const entrance = portals.flatMap((p) => [p.a, p.b]).find((end) => end.level === level.id)?.p ?? [level.size[0] / 2, level.size[1] / 2];
+  const entrance = endsOn(portals, level.id)[0]?.p ?? [level.size[0] / 2, level.size[1] / 2];
   const [rx, ry, rw, rh] = room.rect;
   const options = edgeTiles(room.rect).filter(([x, y]) => {
     const corner = (x === rx || x === rx + rw - 1) && (y === ry || y === ry + rh - 1);
@@ -221,38 +215,4 @@ export function edgeTiles([x, y, w, h]: Rect): Tile[] {
   for (let i = x; i < x + w; i++) tiles.push([i, y], [i, y + h - 1]);
   for (let j = y + 1; j < y + h - 1; j++) tiles.push([x, j], [x + w - 1, j]);
   return tiles;
-}
-
-function onEdge([x, y, w, h]: Rect, tx: number, ty: number): boolean {
-  return inRect([x, y, w, h], tx, ty) && (tx === x || ty === y || tx === x + w - 1 || ty === y + h - 1);
-}
-
-function inRect([x, y, w, h]: Rect, tx: number, ty: number): boolean {
-  return tx >= x && ty >= y && tx < x + w && ty < y + h;
-}
-
-function contains(outer: Rect, inner: Rect): boolean {
-  return inner[0] >= outer[0] && inner[1] >= outer[1] && inner[0] + inner[2] <= outer[0] + outer[2] && inner[1] + inner[3] <= outer[1] + outer[3];
-}
-
-function intersection(a: Rect, b: Rect): Rect {
-  const x = Math.max(a[0], b[0]);
-  const y = Math.max(a[1], b[1]);
-  return [x, y, Math.max(0, Math.min(a[0] + a[2], b[0] + b[2]) - x), Math.max(0, Math.min(a[1] + a[3], b[1] + b[3]) - y)];
-}
-
-function area([, , w, h]: Rect): number {
-  return w * h;
-}
-
-function covers(f: FurnitureDef, x: number, y: number): boolean {
-  const [w, h] = CATALOG[f.t]?.size ?? [1, 1];
-  return x >= f.p[0] && y >= f.p[1] && x < f.p[0] + w && y < f.p[1] + h;
-}
-
-function uniqueRoom(level: LevelDef, base: string): string {
-  const taken = new Set(level.rooms.map((r) => r.id));
-  let n = level.rooms.length;
-  while (taken.has(`${level.id}-${base}-${n}`)) n++;
-  return `${level.id}-${base}-${n}`;
 }

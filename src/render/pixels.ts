@@ -13,12 +13,6 @@ export function dot(ctx: Ctx, x: number, y: number, color: string): void {
   ctx.fillRect(x, y, 1, 1);
 }
 
-/** Filled rectangle with a 1px outline. */
-export function box(ctx: Ctx, x: number, y: number, w: number, h: number, fill: string, outline: string): void {
-  rect(ctx, x, y, w, h, outline);
-  rect(ctx, x + 1, y + 1, w - 2, h - 2, fill);
-}
-
 /** Rounded-corner filled rectangle (1px corner cut), for a softer pixel look. */
 export function pill(ctx: Ctx, x: number, y: number, w: number, h: number, fill: string, outline?: string): void {
   if (outline) {

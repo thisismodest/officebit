@@ -9,7 +9,6 @@ export interface OfficebitApi {
   push(input: unknown): number;
   /** Select and follow someone by id (anyone, including family, pets and crews); null to stop. */
   follow(id: string | null): void;
-  /** Point the camera at a tile on a level. */
   /** Look at a level: at a tile, or the whole place. */
   look(level: string, x?: number, y?: number): void;
   readonly sim: Simulation;

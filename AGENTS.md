@@ -68,6 +68,7 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   schedule.ts     routines from traits; phases sleep/home/work; weekends; shifts
   clock.ts        1 tick = 6 game s; 600 ticks/h; day 1 = Monday 06:00
   grid.ts         one level's tiles + A*;  navigation.ts: routes across levels via portals
+  geometry.ts     shared tile/rect/footprint maths, door rows, portal ends (sim, worlds and the editor all use it)
   catalog.ts      furniture types and affordances (offers, spots, desk, hangout, hours, parking…)
   social.ts       conversations, interruptions, rows, walk-offs; relationships.ts: per-pair compatibility + affinity
   love.ts         sparks, dating, moving in, splitting up;  housing.ts: homes, to let, moving house
@@ -90,7 +91,7 @@ src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-
               editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), share-menu.ts + world-io.ts (save, share links, files),
               timekeeper.ts (live/sandbox), time-jump.ts (jumping ahead), controls.ts (pan/zoom/click),
               place-card.ts, describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
-src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects);
+src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects), noise.ts;
               ui/soundscape.ts decides which effects play, ui/audio-menu.ts the switches and volumes
 src/feeds/    protocol.ts (validated data-only messages), local.ts (console + postMessage)
 public/       index.html + landing.css (the landing page), town/index.html + style.css (the town), og-image.png, icons,

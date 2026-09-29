@@ -3,12 +3,14 @@
 // a problem (a sentence for the user) or null. Validate the world afterwards
 // for anything subtler.
 import { CATALOG } from '../sim/catalog.ts';
+import { atDoorOf, covers, doorOf, endsOn, footprint as footprintOf, inRect, overlap, sameTile as same, sides } from '../sim/geometry.ts';
 import { TO_LET } from '../sim/housing.ts';
 import { PRESETS } from '../sim/personality.ts';
+import { hashOf } from '../sim/rng.ts';
 import type { DepartmentDef, FurnitureDef, LevelDef, PersonDef, PortalDef, Rect, RoomDef, Tile, WorldDef } from '../sim/world.ts';
 import { CLEARABLE, groundProblem } from './ground.ts';
 import { outerRoom } from './rooms.ts';
-import { buildHome, type HomeStyle } from './homes.ts';
+import { buildToLet, type HomeStyle } from './homes.ts';
 import { placementProblem, type Problem } from './placement.ts';
 
 /** Colours handed to new departments, in turn. */
@@ -126,7 +128,7 @@ function presetFor(name: string | undefined): string {
 
 /** A look that's stable for an id: skin, hair, shirt and style from its letters. */
 function lookFor(id: string): [number, number, number, number] {
-  const h = [...id].reduce((acc, c) => Math.imul(acc ^ c.charCodeAt(0), 16777619), 2166136261) >>> 0;
+  const h = hashOf(id, 2166136261) >>> 0;
   return [h % 5, (h >>> 3) % 7, (h >>> 6) % 8, (h >>> 9) % 3];
 }
 
@@ -170,20 +172,11 @@ function moveInto(home: HouseOnMap, owner: string | undefined, name: string): vo
 
 /** The level a building on `map` leads into, through a portal on the row in front of it (as sim/places.ts sees it). */
 function insideOf(world: WorldDef, map: string, item: FurnitureDef): string | undefined {
-  const [w, h] = CATALOG[item.t]?.size ?? [1, 1];
-  const row = item.faces === 'up' ? item.p[1] - 1 : item.p[1] + h;
-  const atDoor = (p: Tile) => p[1] === row && p[0] >= item.p[0] && p[0] < item.p[0] + w;
   for (const { a, b } of world.portals) {
-    if (a.level === map && atDoor(a.p)) return b.level;
-    if (b.level === map && atDoor(b.p)) return a.level;
+    if (a.level === map && atDoorOf(item, a.p)) return b.level;
+    if (b.level === map && atDoorOf(item, b.p)) return a.level;
   }
   return undefined;
-}
-
-/** The tile in front of a house's door: the row below it, or above it if it faces up. */
-function doorOf(item: FurnitureDef): Tile {
-  const [w, h] = CATALOG[item.t]!.size;
-  return [item.p[0] + Math.min(1, w - 1), item.faces === 'up' ? item.p[1] - 1 : item.p[1] + h];
 }
 
 /** Build a house on a map, with its home inside, empty and to let. */
@@ -196,8 +189,7 @@ export function addHouse(world: WorldDef, map: string, t: HomeStyle, at: Tile, f
   const door = doorOf(item);
   if (!inBounds(level, door)) return 'There has to be room for a front door.';
   const n = world.levels.filter((l) => l.id.startsWith('home-to-let-')).length + 1;
-  const { level: inside, entry } = buildHome(t, `to-let-${uniqueNumber(world, n)}`, TO_LET, n);
-  inside.name = inside.rooms[0]!.name = TO_LET;
+  const { level: inside, entry } = buildToLet(t, uniqueNumber(world, n), n);
   level.furniture.push(item);
   level.rooms.push({ id: uniqueRoom(world, `path-${door[0]}-${door[1]}`), name: 'Path', rect: [door[0], door[1], 1, 1], floor: 'path' });
   world.levels.push(inside);
@@ -249,7 +241,7 @@ export function removeFurniture(world: WorldDef, map: string, t: string, at: Til
 export function eraseAt(world: WorldDef, map: string, at: Tile): Problem {
   const level = world.levels.find((l) => l.id === map);
   if (!level) return 'No such level.';
-  const item = [...level.furniture].reverse().find((f) => covers(f, at));
+  const item = [...level.furniture].reverse().find((f) => covers(f, ...at));
   if (!item) return 'Nothing there.';
   const home = homes(world).find((h) => h.item === item);
   if (home) {
@@ -325,19 +317,15 @@ export function flipHouse(world: WorldDef, map: string, item: FurnitureDef): Pro
 function buildingOf(world: WorldDef, map: string, item: FurnitureDef): Building | null {
   const level = world.levels.find((l) => l.id === map);
   if (!level?.furniture.includes(item)) return null;
-  const [w, h] = CATALOG[item.t]?.size ?? [1, 1];
-  const row = item.faces === 'up' ? item.p[1] - 1 : item.p[1] + h;
-  const atDoor = (p: Tile) => p[1] === row && p[0] >= item.p[0] && p[0] < item.p[0] + w;
-  const doors = world.portals.flatMap((portal) => [portal.a, portal.b]).filter((end) => end.level === map && atDoor(end.p));
-  const paths = level.rooms.filter((r) => r.floor === 'path' && !r.id.startsWith('pavement-') && doors.some((d) => inRect(r.rect, d.p)));
+  const doors = endsOn(world.portals, map).filter((end) => atDoorOf(item, end.p));
+  const paths = level.rooms.filter((r) => r.floor === 'path' && !r.id.startsWith('pavement-') && doors.some((d) => inRect(r.rect, ...d.p)));
   return { level, item, doors, paths };
 }
 
 /** Would the building fit here, with its doors and paths? Small things don't count: they'll be cleared. */
 function landingProblem(world: WorldDef, b: Building, placed: FurnitureDef, doors: Tile[], paths: Rect[]): Problem {
-  const [w, h] = CATALOG[placed.t]!.size;
-  const footprint: Rect = [placed.p[0], placed.p[1], w, h];
-  const others = b.level.furniture.filter((f) => f !== b.item && !(CLEARABLE.has(f.t) && [footprint, ...paths].some((r) => overlapsRect(f, r))));
+  const footprint = footprintOf(placed);
+  const others = b.level.furniture.filter((f) => f !== b.item && !(CLEARABLE.has(f.t) && [footprint, ...paths].some((r) => overlap(footprintOf(f), r))));
   const without: LevelDef = { ...b.level, furniture: others };
   const own = new Set(b.doors);
   const portals = world.portals.filter((p) => !own.has(p.a) && !own.has(p.b));
@@ -358,9 +346,8 @@ function landingProblem(world: WorldDef, b: Building, placed: FurnitureDef, door
 
 /** Clear small things from under a building and its paths. */
 function clearFor(level: LevelDef, item: FurnitureDef, paths: Rect[]): FurnitureDef[] {
-  const [w, h] = CATALOG[item.t]!.size;
-  const areas: Rect[] = [[item.p[0], item.p[1], w, h], ...paths];
-  const cleared = level.furniture.filter((f) => f !== item && CLEARABLE.has(f.t) && areas.some((r) => overlapsRect(f, r)));
+  const areas: Rect[] = [footprintOf(item), ...paths];
+  const cleared = level.furniture.filter((f) => f !== item && CLEARABLE.has(f.t) && areas.some((r) => overlap(footprintOf(f), r)));
   level.furniture = level.furniture.filter((f) => !cleared.includes(f));
   return cleared;
 }
@@ -373,14 +360,6 @@ function shiftedRect([x, y, w, h]: Rect, dx: number, dy: number): Rect {
   return [x + dx, y + dy, w, h];
 }
 
-function inRect([rx, ry, rw, rh]: Rect, [x, y]: Tile): boolean {
-  return x >= rx && y >= ry && x < rx + rw && y < ry + rh;
-}
-
-function overlapsRect(f: FurnitureDef, [x, y, w, h]: Rect): boolean {
-  const [fw, fh] = CATALOG[f.t]?.size ?? [1, 1];
-  return x < f.p[0] + fw && f.p[0] < x + w && y < f.p[1] + fh && f.p[1] < y + h;
-}
 
 // ── Floors ──────────────────────────────────────────────────────────────────
 
@@ -485,7 +464,7 @@ function building(world: WorldDef, level: string): string[] {
   for (let i = 0; i < floors.length; i++) {
     for (const p of world.portals) {
       if (p.kind !== 'stairs') continue;
-      for (const [from, to] of [[p.a, p.b], [p.b, p.a]] as const) if (from.level === floors[i] && !floors.includes(to.level)) floors.push(to.level);
+      for (const [from, to] of sides(p)) if (from.level === floors[i] && !floors.includes(to.level)) floors.push(to.level);
     }
   }
   return floors;
@@ -510,7 +489,7 @@ export function snapshot(world: WorldDef, map: string): Snapshot {
   const doorways = structuredClone(level.doors);
   const furniture = [...level.furniture];
   const places = furniture.map((f) => ({ f, p: f.p, faces: f.faces }));
-  const doors = world.portals.flatMap((portal) => [portal.a, portal.b]).filter((end) => end.level === map).map((end) => ({ end, p: end.p }));
+  const doors = endsOn(world.portals, map).map((end) => ({ end, p: end.p }));
   return {
     restore: () => {
       level.rooms = structuredClone(rooms);
@@ -528,17 +507,8 @@ export function snapshot(world: WorldDef, map: string): Snapshot {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function covers(item: FurnitureDef, [x, y]: Tile): boolean {
-  const [w, h] = CATALOG[item.t]?.size ?? [1, 1];
-  return x >= item.p[0] && y >= item.p[1] && x < item.p[0] + w && y < item.p[1] + h;
-}
-
 function inBounds(level: LevelDef, [x, y]: Tile): boolean {
   return x >= 0 && y >= 0 && x < level.size[0] && y < level.size[1];
-}
-
-function same(a: Tile, b: Tile): boolean {
-  return a[0] === b[0] && a[1] === b[1];
 }
 
 function slug(text: string): string {

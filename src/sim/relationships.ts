@@ -4,7 +4,7 @@
 // kept from work, sour it.
 // Friends seek each other out; people who dislike each other keep apart.
 import type { Person } from './person.ts';
-import { Rng } from './rng.ts';
+import { Rng, hashOf } from './rng.ts';
 
 /** Affinity at which people count as friends, and as not getting on. */
 export const FRIENDS = 0.5;
@@ -57,7 +57,7 @@ export class Relationships {
       const alike = 1 - (Math.abs(x.social - y.social) + Math.abs(x.chaos - y.chaos) + Math.abs(x.diligence - y.diligence)) / 3;
       const clash = x.diligence * y.chaos + y.diligence * x.chaos;
       const charm = (x.charisma + y.charisma) / 2;
-      const chemistry = new Rng(hashKey(key, this.seed)).range(-1, 1);
+      const chemistry = new Rng(hashOf(key, this.seed ^ 0x9e3779b9)).range(-1, 1);
       value = clamp(0.9 * (alike - 0.5) - 0.35 * clash + 0.3 * charm + 0.45 * chemistry);
       if (this.households.has(key)) value = Math.max(value, HOUSEHOLD_FLOOR);
       this.compatibilities.set(key, value);
@@ -122,13 +122,11 @@ export class Relationships {
   }
 }
 
-function pairKey(a: Person, b: Person): string {
+/** Two people's key, the same whichever way round. */
+export function pairKey(a: Person, b: Person): string {
   return a.id < b.id ? `${a.id}|${b.id}` : `${b.id}|${a.id}`;
 }
 
-function hashKey(key: string, seed: number): number {
-  return [...key].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), seed ^ 0x9e3779b9);
-}
 
 function clamp(value: number): number {
   return Math.min(1, Math.max(-1, value));

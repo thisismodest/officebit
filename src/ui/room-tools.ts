@@ -4,6 +4,7 @@
 // doorways; and put in stairs to build a floor above. The edits themselves are worlds/rooms.ts
 // and the floors in worlds/edit.ts; the editor (editor.ts) keeps them and
 // undoes them.
+import { onEdge } from '../sim/geometry.ts';
 import type { Item } from '../sim/sim.ts';
 import type { LevelDef, Rect, RoomDef, Tile, WorldDef } from '../sim/world.ts';
 import type { Ghost } from '../render/renderer.ts';
@@ -40,7 +41,8 @@ const FLOORS: [id: string, name: string][] = [
 /** What the tools need of the editor: the town and the design, and how it keeps changes. */
 export interface EditorCore {
   readonly host: EditorHost;
-  reshape(level: string, change: (world: WorldDef) => string | null): boolean;
+  reshapeHere(change: (level: LevelDef, world: WorldDef, live: boolean) => string | null): boolean;
+  level(): LevelDef | undefined;
   remember(change: { kind: 'floor'; level: string; added?: Floor; removed?: Floor }): void;
   say(text: string, bad?: boolean): void;
   designed(level: string): boolean;
@@ -174,14 +176,11 @@ export class RoomTools {
   // ── The tools ─────────────────────────────────────────────────────────────
 
   private build(rect: Rect, walled: boolean): void {
-    const id = this.core.host.renderer.level;
     let made: RoomDef | null = null;
-    const done = this.core.reshape(id, (world) => {
-      const level = world.levels.find((l) => l.id === id);
-      if (!level) return null;
+    const done = this.core.reshapeHere((level, world, live) => {
       const room = addRoom(level, world.portals, rect, undefined, walled);
       if (typeof room === 'string') return room;
-      if (world === this.core.host.sim().world) made = room;
+      if (live) made = room;
       return null;
     });
     if (!done || !made) return;
@@ -190,11 +189,7 @@ export class RoomTools {
   }
 
   private resize(room: string, rect: Rect): void {
-    const id = this.core.host.renderer.level;
-    const done = this.core.reshape(id, (world) => {
-      const level = world.levels.find((l) => l.id === id);
-      return level ? resizeRoom(level, world.portals, room, rect) : null;
-    });
+    const done = this.core.reshapeHere((level, world) => resizeRoom(level, world.portals, room, rect));
     if (done) {
       const moved = this.level()!.rooms.find((r) => r.id === room) ?? null;
       this.select(moved);
@@ -206,11 +201,7 @@ export class RoomTools {
   remove(): boolean {
     const room = this.selectedRoom();
     if (!room) return false;
-    const id = this.core.host.renderer.level;
-    const done = this.core.reshape(id, (world) => {
-      const level = world.levels.find((l) => l.id === id);
-      return level ? removeRoom(level, world.portals, room.id) : null;
-    });
+    const done = this.core.reshapeHere((level, world) => removeRoom(level, world.portals, room.id));
     if (done) {
       this.clear();
       this.core.say(room.walled ? `Knocked the ${room.name.toLowerCase()} through: its walls are gone, and what was in it stays.` : `Took away the ${room.name.toLowerCase()}.`);
@@ -221,21 +212,13 @@ export class RoomTools {
   private restyle(changes: { name?: string; floor?: string }): void {
     const room = this.selectedRoom();
     if (!room) return;
-    const id = this.core.host.renderer.level;
-    this.core.reshape(id, (world) => {
-      const level = world.levels.find((l) => l.id === id);
-      return level ? restyleRoom(level, room.id, changes) : null;
-    });
+    this.core.reshapeHere((level) => restyleRoom(level, room.id, changes));
     this.select(this.selectedRoom() ?? null);
   }
 
   private door(tile: Tile): void {
-    const id = this.core.host.renderer.level;
     const open = this.level()?.doors.some(([x, y]) => x === tile[0] && y === tile[1]);
-    const done = this.core.reshape(id, (world) => {
-      const level = world.levels.find((l) => l.id === id);
-      return level ? toggleDoor(level, world.portals, tile) : null;
-    });
+    const done = this.core.reshapeHere((level, world) => toggleDoor(level, world.portals, tile));
     if (done) this.core.say(open ? 'Closed the doorway.' : 'Opened a doorway.');
   }
 
@@ -286,8 +269,7 @@ export class RoomTools {
   }
 
   private level(): LevelDef | undefined {
-    const { host } = this.core;
-    return host.sim().levels.get(host.renderer.level);
+    return this.core.level();
   }
 
   private isWall(level: LevelDef, [x, y]: Tile): boolean {
@@ -323,8 +305,4 @@ function moveEdges([x, y, w, h]: Rect, edges: { left: boolean; right: boolean; t
 /** The box between two corners, whichever way you dragged. */
 function box([ax, ay]: Tile, [bx, by]: Tile): Rect {
   return [Math.min(ax, bx), Math.min(ay, by), Math.abs(bx - ax) + 1, Math.abs(by - ay) + 1];
-}
-
-function onEdge([x, y, w, h]: Rect, tx: number, ty: number): boolean {
-  return tx >= x && ty >= y && tx < x + w && ty < y + h && (tx === x || ty === y || tx === x + w - 1 || ty === y + h - 1);
 }

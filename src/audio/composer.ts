@@ -211,7 +211,7 @@ export class Composer {
   }
 
   private chimeFor(chord: Chord): Note {
-    const tone = this.rng.pick(chord.tones.filter((t) => PENTATONIC.includes(((t % 12) + 12) % 12)));
+    const tone = this.rng.pick(chord.tones.filter((t) => PENTATONIC.includes(pitchClass(t))));
     return { pitch: D + 24 + tone, at: this.rng.pick([1, 1.5, 2.5, 3]), length: 3, velocity: 0.25 };
   }
 
@@ -242,14 +242,19 @@ function bounce(root: number): Note[] {
 /** Every note of D major pentatonic in the melody's range. */
 export function scaleNotes(): number[] {
   const notes: number[] = [];
-  for (let p = LOW; p <= HIGH; p++) if (PENTATONIC.includes((((p - D) % 12) + 12) % 12)) notes.push(p);
+  for (let p = LOW; p <= HIGH; p++) if (PENTATONIC.includes(pitchClass(p - D))) notes.push(p);
   return notes;
 }
 
 /** A chord's tones that are also in the scale, across the melody's range. */
 function chordTones(chord: Chord): number[] {
-  const classes = new Set(chord.tones.map((t) => ((t % 12) + 12) % 12));
-  return scaleNotes().filter((p) => classes.has((((p - D) % 12) + 12) % 12));
+  const classes = new Set(chord.tones.map(pitchClass));
+  return scaleNotes().filter((p) => classes.has(pitchClass(p - D)));
+}
+
+/** Where a note (semitones above D) falls in the octave, 0–11. */
+function pitchClass(semitones: number): number {
+  return ((semitones % 12) + 12) % 12;
 }
 
 /** A MIDI note's frequency in Hz. */

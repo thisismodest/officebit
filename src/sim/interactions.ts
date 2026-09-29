@@ -85,7 +85,7 @@ export class Interactions {
 
   // ── Control ───────────────────────────────────────────────────────────────
 
-  /** Take control of someone (or let go, with null). Their personality takes over again when you let go. */
+  /** Take control of someone (`on`), or let go of them. Their personality takes over again when you let go. */
   control(p: Person, on: boolean): void {
     const { sim } = this;
     if (on) {

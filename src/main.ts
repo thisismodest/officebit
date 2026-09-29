@@ -26,14 +26,14 @@ import { AudioMenu } from './ui/audio-menu.ts';
 import { Soundscape } from './ui/soundscape.ts';
 import { ViewHistory } from './ui/history.ts';
 import { TimeJump } from './ui/time-jump.ts';
-import { Timekeeper, liveTick, type Mode } from './ui/timekeeper.ts';
+import { TICK_MS, Timekeeper, liveTick, type Mode } from './ui/timekeeper.ts';
+import { narrow } from './ui/html.ts';
 import { STARTER } from './worlds/starter.ts';
 
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 
 const FIRST_LEVEL = 'town';
 /** Phone-sized screens get the compact layout (style.css has the same breakpoint). */
-const narrow = matchMedia('(max-width: 60rem)');
 const MODE_KEY = 'officebit:mode';
 /** When live mode started in this browser (ms): the town has run since that morning. */
 const SINCE_KEY = 'officebit:live-since';
@@ -85,9 +85,10 @@ function newSim(): Simulation {
 }
 
 const placeName = $('#place');
-const renderer = new Renderer($('#stage'), sim, FIRST_LEVEL);
-const card = new PlaceCard($('#stage'), visit);
-const profile = new Profile($('#stage'), renderer, {
+const stage = $('#stage');
+const renderer = new Renderer(stage, sim, FIRST_LEVEL);
+const card = new PlaceCard(stage, visit);
+const profile = new Profile(stage, renderer, {
   follow,
   // Closing the profile keeps following them: the chip over the map stops that; tap them for the profile again.
   close: () => {
@@ -103,11 +104,13 @@ const overview = new Overview($('#overview'), visit, (company, event) => {
   if (problem) sim.log(problem);
 });
 const news = new News($('#news'));
-attachTabs($('aside.mdst-tabs'));
+// Narrow screens: the sidebar is a sheet along the bottom.
+const sheet = $('aside.mdst-tabs');
+attachTabs(sheet);
 
 // Editing the map: the pencil opens a floating toolbar over the stage; the town carries on meanwhile.
 const editButton = $('#edit');
-const editor = new Editor($('#stage'), { sim: () => sim, design: () => design, renderer, tileAt, saved: saveSoon }, () => setEditing(false));
+const editor = new Editor(stage, { sim: () => sim, design: () => design, renderer, tileAt, saved: saveSoon }, () => setEditing(false));
 
 /** Edits save themselves, a moment after the last one. A town opened from a link then lives here: the link comes off the address, or reloading would open the link again over your edits. */
 const SAVE_AFTER_MS = 300;
@@ -124,14 +127,14 @@ function setEditing(on: boolean): void {
   if (on) {
     steer(null);
     card.close();
-    // The editor's toolbar sits where the profile slides in; on a phone, the sheet folds away to leave the map.
+    // Nobody's selected while you edit; on a phone, the sheet folds away to leave the map.
     select(null);
     sheet.removeAttribute('data-open');
     editor.open();
   } else editor.close();
   editButton.setAttribute('aria-pressed', String(on));
   // The editor's toolbar takes the tool rail's place.
-  $('#stage').toggleAttribute('data-editing', on);
+  stage.toggleAttribute('data-editing', on);
 }
 // Using any other part of the interface (the sidebar, the menu bar) puts the editor away; the map and the editor itself don't.
 document.addEventListener('pointerdown', (event) => {
@@ -150,11 +153,9 @@ const soundscape = new Soundscape({
 });
 soundscape.setSim(sim);
 
-// Live or Sandbox, and the speed: a small menu from ▸▸ in the time card.
+// Live or Sandbox, and the speed: a small menu from ▸▸ in the menu bar.
 popover($('#speed'), $('#speed-menu'));
 
-// Narrow screens: the sidebar is a sheet along the bottom.
-const sheet = $('aside.mdst-tabs');
 // Tapping a tab opens the sheet; tapping the open tab again folds it away.
 sheet.querySelector('[role="tablist"]')!.addEventListener(
   'click',
@@ -218,7 +219,7 @@ function select(id: string | null): void {
   if (person) profile.open(person, sim);
   else profile.close();
   // On a phone the profile needs the room: fold the sheet away.
-  if (person && narrow.matches) $('aside.mdst-tabs').removeAttribute('data-open');
+  if (person && narrow.matches) sheet.removeAttribute('data-open');
   news.select(person ?? null);
   updateCameraUi();
 }
@@ -328,19 +329,8 @@ function applyDesign(next: WorldDef): string[] {
     design = previous;
     throw error;
   }
-  setEditing(false);
-  steer(null);
-  sim = rebuilt;
-  trail.clear();
-  backButton.disabled = true;
-  const level = sim.levels.has(renderer.level) ? renderer.level : FIRST_LEVEL;
-  card.close();
-  renderer.setSim(sim, level, true);
-  news.setSim(sim);
-  soundscape.setSim(sim);
-  directory.reset();
+  useSim(rebuilt);
   showPlace();
-  select(null);
   return validate(design);
 }
 
@@ -478,9 +468,14 @@ updateCameraUi();
 
 /** A fresh town from the design (switching to Live does this), looking at the same place as before. */
 function restart(): void {
+  useSim(newSim());
+}
+
+/** Swap in another town, looking at the same place if it has it, with nothing open or selected. */
+function useSim(next: Simulation): void {
   setEditing(false);
   steer(null);
-  sim = newSim();
+  sim = next;
   trail.clear();
   backButton.disabled = true;
   card.close();
@@ -498,7 +493,7 @@ function jump(to: number): void {
   updateTimeUi();
 }
 new TimeJump($('#clock'), { sim: () => sim, time, jump });
-api.travel = (when: number | string | Date) => jump(typeof when === 'number' ? sim.tick + when * TICKS_PER_DAY : sim.tick + (new Date(when).getTime() - Date.now()) / 6000);
+api.travel = (when: number | string | Date) => jump(typeof when === 'number' ? sim.tick + when * TICKS_PER_DAY : sim.tick + (new Date(when).getTime() - Date.now()) / TICK_MS);
 travelBar.querySelector('[data-action="stop"]')!.addEventListener('click', () => time.stopTravelling());
 travelBar.addEventListener('pointerdown', (event) => event.stopPropagation());
 
@@ -514,7 +509,7 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-/** The loading screen (index.html), until the town's first frame is on screen, and a moment more so it doesn't just flash. */
+/** The loading screen (town/index.html), until the town's first frame is on screen, and a moment more so it doesn't just flash. */
 const LOADING_LINGER_MS = 300;
 let loading = document.getElementById('loading');
 let last = performance.now();
@@ -555,7 +550,6 @@ function frame(now: number): void {
     editor.update();
     // After dark the music turns to its calm night style.
     audio.night = daylight(hourOf(sim.tick)) < 0.3;
-    // Live mode shows the real day and time; sandbox counts days too, unless the screen's small.
     // Live and Sandbox alike: the day of the story, counted from the day it began (phones have room for just the time).
     clock.textContent = narrow.matches ? `${weekdayOf(sim.tick)} ${formatTime(sim.tick)}` : formatClock(sim.tick, sim.firstDay);
     if (time.mode !== modeSelect.value) updateTimeUi();

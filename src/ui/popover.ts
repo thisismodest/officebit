@@ -1,6 +1,6 @@
 // A small panel that opens from a button, and closes again when you tap
 // elsewhere, press Esc, tap the button a second time, or open another one.
-// Used by the clock, the speed menu and save and share.
+// Used by the clock, the speed menu, save and share, and music and sounds.
 export type Toggle = (open?: boolean) => void;
 
 /** Only one popover is open at a time: opening another closes it. */

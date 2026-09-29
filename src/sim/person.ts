@@ -26,7 +26,7 @@ export interface Person {
   readonly id: string;
   readonly name: string;
   readonly species: Species;
-  /** Family and pets: live at someone's home, never go to work. */
+  /** Not on the team: family, pets, staff, crews, children and so on (roles.ts says what each does). */
   readonly npc: boolean;
   readonly look: readonly number[];
   readonly dept?: string;

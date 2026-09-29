@@ -3,6 +3,7 @@
 // keyboards, coffee machine, water cooler, arcade and phones, a fire alarm, and
 // the murmur of people talking. Each is short and soft, and can be panned
 // towards where it happened on screen.
+import { whiteNoise } from './noise.ts';
 
 /** Overall level of the effects at full volume. */
 const LEVEL = 0.55;
@@ -236,11 +237,4 @@ export class Sounds {
     source.stop(at + length);
     return source;
   }
-}
-
-function whiteNoise(ctx: BaseAudioContext): AudioBuffer {
-  const buffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-  return buffer;
 }

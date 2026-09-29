@@ -7,7 +7,8 @@
 import { TICKS_PER_DAY, TICKS_PER_HOUR, hourOf } from './clock.ts';
 import type { Home } from './housing.ts';
 import type { Person } from './person.ts';
-import { Rng } from './rng.ts';
+import { pairKey } from './relationships.ts';
+import { Rng, hashOf } from './rng.ts';
 import type { Simulation } from './sim.ts';
 import { roleOf } from './roles.ts';
 
@@ -71,9 +72,7 @@ export class Love {
 
   /** A spark: fixed for the pair, seeded, and independent of how well they get on. */
   spark(a: Person, b: Person): boolean {
-    const key = [a.id, b.id].sort().join('|');
-    const seed = [...key].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), this.sim.world.seed ^ 0x51ed270b);
-    return new Rng(seed).next() < SPARK;
+    return new Rng(hashOf(pairKey(a, b), this.sim.world.seed ^ 0x51ed270b)).next() < SPARK;
   }
 
   /** `a` has just started talking to `b`: good friends with a spark might become more. */

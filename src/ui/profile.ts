@@ -74,10 +74,6 @@ export class Profile {
     host.append(this.root);
   }
 
-  get openFor(): string | null {
-    return this.id;
-  }
-
   /** How much of the stage the profile covers from the bottom (it slides up on phones), in CSS px. */
   coveredHeight(): number {
     return this.id ? this.root.offsetHeight : 0;
@@ -143,10 +139,10 @@ export class Profile {
           <p class="role mdst-p--sm mdst-p--muted"></p>
           <span class="mdst-badge mdst-badge--sm mdst-badge--muted"></span>
         </div>
-        <button type="button" class="mdst-button--ghost mdst-button--sm close" data-action="close" aria-label="Close">✕</button>
+        <button type="button" class="mdst-button--ghost mdst-button--sm" data-action="close" aria-label="Close">✕</button>
       </header>
       <div class="actions">
-        <button type="button" class="mdst-button--sm follow" data-action="follow" data-field="follow"></button>
+        <button type="button" class="mdst-button--sm" data-action="follow" data-field="follow"></button>
         ${roleOf(p).controllable ? '<button type="button" class="mdst-button--sm" data-action="control" data-field="control"></button>' : ''}
       </div>
       <section><h3>Now</h3><p data-field="doing"></p><p class="mdst-p--sm mdst-p--muted" data-field="where"></p></section>

@@ -80,9 +80,9 @@ function house(): Painter {
   };
 }
 
-/** Facade layout for the office: [x, y] of each window, relative to the facade top. */
 const OFFICE_W = 12 * TILE;
 const OFFICE_DOOR_X = 5 * TILE;
+/** Facade layout for the office: [x, y] of each window, relative to the facade top. */
 const OFFICE_WINDOWS: [number, number][] = [];
 for (const y of [4, 20]) {
   for (let x = 8; x < OFFICE_W - 18; x += 20) {

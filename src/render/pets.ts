@@ -1,7 +1,7 @@
 // Pet sprites (docs/PEOPLE.md#family-and-pets). Side-on, facing right;
 // mirrored for left. Up/down reuse the side view.
 //
-//   o outline  f fur  F fur shadow  E ear  e eye  n nose  w white
+//   o outline  f fur  F fur shadow  E ear  e eye  n nose
 import { EYE, FUR, OUTLINE, shade } from './palette.ts';
 import { canvas, paintAscii } from './pixels.ts';
 import type { Facing } from './characters.ts';
@@ -98,7 +98,6 @@ export function petSprite(species: 'cat' | 'dog', fur: number, facing: Facing, p
       E: shade(base, -0.35),
       e: pose === 'sleep' ? shade(base, -0.4) : EYE,
       n: species === 'cat' ? '#e98fb3' : OUTLINE,
-      w: '#ffffff',
     };
     const rows = (species === 'cat' ? CAT : DOG)[pose].map((row) => row.padEnd(PET_W, '.'));
     const { canvas: c, ctx } = canvas(PET_W, PET_H);
