@@ -41,7 +41,9 @@ the bottom with icon tabs (tap a tab to open it, tap it again to fold it away),
 and the profile slides up from below, with the camera keeping whoever's
 followed in the part of the map still showing. Buttons are finger-sized on
 touch screens. Editing folds the sheet away, and the furniture picker is a strip
-above the tabs (see [BUILDER](BUILDER.md)). A long press on the map or the controls just presses: no text selection, no menu.
+beside the toolbar (see [BUILDER](BUILDER.md)). The editor's toolbar and the
+status, picker and room card beside it are laid out side by side, so they never
+overlap, however big the buttons are. A long press on the map or the controls just presses: no text selection, no menu.
 
 States are kept simple: rows tint on hover and get a bar down the side when
 selected, with dark text throughout; buttons are bordered; names in text are

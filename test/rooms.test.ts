@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Grid } from '../src/sim/grid.ts';
 import { validate } from '../src/sim/validate.ts';
 import type { LevelDef, Rect, WorldDef } from '../src/sim/world.ts';
-import { addRoom, removeRoom, resizeRoom, roomProblem, snap, toggleDoor } from '../src/worlds/rooms.ts';
+import { addRoom, moveDoor, removeRoom, resizeRoom, roomProblem, snap, toggleDoor } from '../src/worlds/rooms.ts';
 import { STARTER } from '../src/worlds/starter.ts';
 
 const world = (): WorldDef => structuredClone(STARTER);
@@ -105,5 +105,23 @@ test('an area is a floor of its own with no walls: it can go round furniture, an
   assert.match(roomProblem(level, [rect[0], rect[1], 1, 1], undefined, false) ?? '', /at least 2/);
   assert.equal(removeRoom(level, w.portals, area.id), null);
   assert.ok(level.furniture.includes(sofa));
+  assert.deepEqual(validate(w), []);
+});
+
+test('a doorway can be moved along the walls, even a room’s only one, but not into a corner or onto another', () => {
+  const w = world();
+  const level = home(w);
+  const snug = addRoom(level, w.portals, firstFit(w, level, 5), 'Snug') as { rect: Rect };
+  const [sx, sy, sw, sh] = snug.rect;
+  const own = level.doors.find(([dx, dy]) => dx >= sx && dy >= sy && dx < sx + sw && dy < sy + sh)!;
+  // Somewhere else along the snug's walls that a doorway can go.
+  const spots = [...Array(sw - 2).keys()].flatMap((i): [number, number][] => [[sx + 1 + i, sy], [sx + 1 + i, sy + sh - 1]]).concat([...Array(sh - 2).keys()].flatMap((j): [number, number][] => [[sx, sy + 1 + j], [sx + sw - 1, sy + 1 + j]]));
+  const to = spots.find((t) => (t[0] !== own[0] || t[1] !== own[1]) && moveDoor(structuredClone(level), w.portals, own, t) === null)!;
+  assert.ok(to, 'somewhere to move it');
+  assert.equal(moveDoor(level, w.portals, own, to), null);
+  assert.ok(level.doors.some(([x, y]) => x === to[0] && y === to[1]));
+  assert.ok(!level.doors.some(([x, y]) => x === own[0] && y === own[1]), 'and the old one closed');
+  assert.match(moveDoor(level, w.portals, to, [sx, sy]) ?? '', /corner/);
+  assert.match(moveDoor(level, w.portals, [sx + 1, sy + 1], to) ?? '', /no doorway/);
   assert.deepEqual(validate(w), []);
 });

@@ -123,7 +123,7 @@ export function toggleDoor(level: LevelDef, portals: readonly PortalDef[], [x, y
   if (open) {
     const after = { ...level, doors: level.doors.filter(([dx, dy]) => dx !== x || dy !== y) };
     const shut = after.rooms.find((r) => r.walled && r !== outerRoom(after) && onEdge(r.rect, x, y) && !hasDoor(after, r));
-    if (shut) return `The ${shut.name.toLowerCase()} needs a way in: open another doorway first.`;
+    if (shut) return `The ${shut.name.toLowerCase()} needs a way in: drag this doorway to move it, or open another first.`;
     if (cutsOff(level, after, portals)) return 'Closing it would cut somewhere off.';
     level.doors = after.doors;
     return null;
@@ -138,6 +138,18 @@ export function toggleDoor(level: LevelDef, portals: readonly PortalDef[], [x, y
     return 'There’s furniture in the way of it.';
   }
   level.doors.push([x, y]);
+  return null;
+}
+
+/** Move a doorway to another spot on a wall: open the new one, close the old, as one change (so a room's only way in can move). */
+export function moveDoor(level: LevelDef, portals: readonly PortalDef[], from: Tile, to: Tile): Problem {
+  if (!level.doors.some(([x, y]) => x === from[0] && y === from[1])) return 'There’s no doorway there to move.';
+  if (from[0] === to[0] && from[1] === to[1]) return null;
+  if (level.doors.some(([x, y]) => x === to[0] && y === to[1])) return 'There’s a doorway there already.';
+  const trial: LevelDef = { ...level, doors: [...level.doors] };
+  const problem = toggleDoor(trial, portals, to) ?? toggleDoor(trial, portals, from);
+  if (problem) return problem;
+  level.doors = trial.doors;
   return null;
 }
 

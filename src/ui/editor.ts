@@ -120,11 +120,14 @@ export class Editor {
     this.picker = document.createElement('div');
     this.picker.className = 'editor-picker mdst-card mdst-card--compact';
     this.picker.hidden = true;
-    // The status line, and under it the selected room's card, stacked beside the toolbar.
+    // The toolbar, and beside it (never under it) the status line with the picker or the selected room's card below.
+    const dock = document.createElement('div');
+    dock.className = 'editor-dock';
     const side = document.createElement('div');
     side.className = 'editor-side';
-    side.append(this.status);
-    stage.append(this.bar, side, this.picker);
+    side.append(this.status, this.picker);
+    dock.append(this.bar, side);
+    stage.append(dock);
     this.rooms = new RoomTools(side, this);
 
     this.bar.addEventListener('click', (event) => {
@@ -266,6 +269,7 @@ export class Editor {
   grab(x: number, y: number): Grab | null {
     if (this.tool === 'road' || this.tool === 'path' || this.tool === 'erase') return this.stroke(this.host.tileAt(x, y));
     if (this.tool === 'room' || this.tool === 'area') return this.rooms.grab(this.tool, this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
+    if (this.tool === 'door') return this.rooms.grabDoor(this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
     if (this.tool !== 'move') return null;
     // Drag what's selected if you press on it, even with something else drawn on top.
     const here = this.itemsAt(x, y);

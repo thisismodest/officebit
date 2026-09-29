@@ -943,12 +943,23 @@ button.icon-button {
   color: #c8453a;
 }
 
-/* The map editor: a floating toolbar in the tool rail's place (top left), its status line to the right, and the picker below that. */
-.editor {
+/* The map editor, over the map from the top left: the toolbar in the tool rail's place, and beside it the status line with the picker or a room's card below. Laid out side by side, so they never overlap whatever size the buttons are. */
+.editor-dock {
   position: absolute;
-  top: var(--mdst-space-sm);
-  left: var(--mdst-space-sm);
+  inset: var(--mdst-space-sm);
   z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mdst-space-xs);
+  pointer-events: none;
+
+  & > * {
+    pointer-events: auto;
+  }
+}
+
+.editor {
+  flex: none;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -972,17 +983,15 @@ button.icon-button {
   }
 }
 
-/* The status line, and the selected room's card under it, beside the toolbar. */
+/* The status line, and the picker or the selected room's card under it. */
 .editor-side {
-  position: absolute;
-  top: var(--mdst-space-sm);
-  left: calc(var(--mdst-space-sm) + 2.75rem);
-  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--mdst-space-xs);
+  min-width: 0;
   max-width: 24rem;
+  max-height: 100%;
   pointer-events: none;
 
   & > * {
@@ -1021,12 +1030,8 @@ button.icon-button {
 }
 
 .editor-picker {
-  position: absolute;
-  top: calc(var(--mdst-space-sm) + 2.5rem);
-  left: calc(var(--mdst-space-sm) + 2.75rem);
-  z-index: 3;
   width: 18rem;
-  max-height: calc(100% - 5rem);
+  min-height: 0;
   overflow-y: auto;
   padding: var(--mdst-space-sm);
   background: var(--mdst-color-bg);
@@ -1220,12 +1225,10 @@ button.icon-button {
     width: min(17rem, calc(100vw - 5rem));
   }
 
-  /* The picker is a strip along the bottom, scrolling sideways, leaving the map above it; once you've picked, just that and Change. */
+  /* The picker is a strip under the status line, scrolling sideways, leaving the map below it; once you've picked, just that and Change. */
   .editor-picker {
-    top: auto;
-    right: var(--mdst-space-sm);
-    bottom: calc(3.5rem + var(--mdst-space-sm));
-    left: calc(var(--mdst-space-sm) + 3.25rem);
+    align-self: stretch;
+    flex: none;
     display: flex;
     align-items: stretch;
     gap: var(--mdst-space-xs);
@@ -1256,7 +1259,7 @@ button.icon-button {
     }
 
     &[data-collapsed] {
-      right: auto;
+      align-self: flex-start;
       align-items: center;
 
       & .grid button:not([aria-pressed='true']) {
@@ -1269,8 +1272,12 @@ button.icon-button {
     }
   }
 
+  .editor-dock {
+    bottom: calc(3.5rem + var(--mdst-space-sm));
+  }
+
   .editor-side {
-    right: var(--mdst-space-sm);
+    flex: 1;
     max-width: none;
   }
 

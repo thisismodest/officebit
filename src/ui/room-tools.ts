@@ -10,7 +10,7 @@ import type { LevelDef, Rect, RoomDef, Tile, WorldDef } from '../sim/world.ts';
 import type { Ghost } from '../render/renderer.ts';
 import { addFloor, floorToRemove, planFloor, removeFloor, type Floor } from '../worlds/edit.ts';
 import { placementProblem } from '../worlds/placement.ts';
-import { MIN_AREA, MIN_ROOM, addRoom, outerRoom, removeRoom, resizeRoom, restyleRoom, roomAt, roomProblem, snap, toggleDoor } from '../worlds/rooms.ts';
+import { MIN_AREA, MIN_ROOM, addRoom, moveDoor, outerRoom, removeRoom, resizeRoom, restyleRoom, roomAt, roomProblem, snap, toggleDoor } from '../worlds/rooms.ts';
 import type { Grab } from './controls.ts';
 import type { EditorHost } from './editor.ts';
 import { esc } from './html.ts';
@@ -20,7 +20,7 @@ export type RoomTool = 'room' | 'area' | 'door' | 'stairs';
 export const ROOM_HINTS: Record<RoomTool, string> = {
   room: 'Drag to build a room; click one to rename it, change its floor or delete it; drag its walls to move them.',
   area: 'Drag to mark out an area with a floor of its own and no walls, like a dining area; click one to change it; drag its edges to move them.',
-  door: 'Click a wall to open a doorway in it, or a doorway to close it.',
+  door: 'Click a wall to open a doorway in it, or a doorway to close it; drag a doorway along to move it.',
   stairs: 'Click where the stairs go, and a floor gets built above.',
 };
 
@@ -127,6 +127,31 @@ export class RoomTools {
         this.core.say(bad ?? (edges ? `Let go to move the ${walled ? 'wall' : 'edge'} here.` : `Let go to ${walled ? 'build the room' : 'mark out the area'}.`), !!bad);
       },
       drop: () => (room && edges ? this.resize(room.id, rect) : this.build(rect, walled)),
+      release: () => {},
+    };
+  }
+
+  /** Press with the Doorway tool on a doorway: drag it to another spot on a wall. (Anywhere else, a press is just a click.) */
+  grabDoor(start: Tile, tileAt: (x: number, y: number) => Tile): Grab | null {
+    const level = this.level();
+    if (!level?.doors.some(([x, y]) => x === start[0] && y === start[1])) return null;
+    let to = start;
+    return {
+      move: (cx, cy) => {
+        to = tileAt(cx, cy);
+        const problem = moveDoor({ ...level, doors: [...level.doors] }, this.core.host.sim().world.portals, start, to);
+        this.core.host.renderer.ghost = [
+          { rect: [start[0], start[1], 1, 1], tone: 'clear' },
+          { rect: [to[0], to[1], 1, 1], tone: problem ? 'bad' : 'ok' },
+        ];
+        this.core.say(problem ?? 'Let go to move the doorway here.', !!problem);
+      },
+      drop: () => {
+        this.core.host.renderer.ghost = null;
+        if (to[0] === start[0] && to[1] === start[1]) return;
+        const done = this.core.reshapeHere((here, world) => moveDoor(here, world.portals, start, to));
+        if (done) this.core.say('Moved the doorway.');
+      },
       release: () => {},
     };
   }

@@ -19,14 +19,14 @@ indoors.
 | Tool | Does |
 |---|---|
 | **Move** | Drag a piece of furniture, or outside a building, somewhere else. Click it to select it. It keeps its owner, so a desk stays someone's. |
-| **Add** | Pick from the thumbnails (indoor things indoors, outdoor things outside), then click the map. Click again to add another. On a phone the thumbnails are a strip along the bottom that shrinks to what you picked (Change opens it out again), so there's map to tap. |
+| **Add** | Pick from the thumbnails (indoor things indoors, outdoor things outside), then click the map. Click again to add another. On a phone the thumbnails are a strip at the top, beside the toolbar, that shrinks to what you picked (Change opens it out again), so there's map to tap. |
 | **Road**, **Path** | Outside: drag to draw one (see below). A tap lays one dab. |
 | **Crossing** | Click a road to put in a zebra crossing, two tiles wide, straight across it. |
 | **Rub out** | Drag over roads, paths, pavements and crossings to turn them back to grass. Pavement never runs across the end of a road, so a gap you rub out goes to grass (a one-tile gap keeps the pavements either side joined). Rubbed-out pavement leaves a patch of verge that pavement isn't laid over again (until you draw a path or road there). |
 | **Turn round** | Turns the selected house to face the other way. |
 | **Room** | Indoors: drag a box to build a walled room; click a room to rename it, change its floor or delete it; drag a selected room's wall to move it (see below). |
 | **Area** | Indoors: drag a box to mark out a floor of its own with no walls, like a dining area; click one to change or delete it. |
-| **Doorway** | Indoors: click a wall to open a doorway, or a doorway to close it. |
+| **Doorway** | Indoors: click a wall to open a doorway, or a doorway to close it; drag a doorway along the walls to move it (even a room's only one). |
 | **Stairs up** | Indoors: click where the stairs go, and a floor is built above (see below). |
 | **Delete** | Deletes what's selected (or press Delete). Buildings stay: move them instead. Deleting the stairs up to a floor you added takes that floor away (it asks first). |
 | **Undo** | Undoes the last change (or Ctrl/Cmd+Z), up to 50 steps back. The steps are forgotten when you finish editing. A desk put back is its owner's again. |
@@ -100,7 +100,8 @@ side overlap by a tile, so they share one wall.
   and what's in it stays.
 - **Doorways** go along a wall, not at a corner, with floor either side. The
   front door and the stairs stay as they are, the outside walls get none, and
-  every room keeps at least one.
+  every room keeps at least one. Dragging one moves it: the new one opens and
+  the old one closes as one change (`moveDoor`), so a room's only doorway can move.
 - **Nothing gets cut off:** no change may leave a door, the stairs, or
   somewhere people use furniture from out of reach of the way in.
 
