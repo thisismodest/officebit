@@ -112,7 +112,9 @@ down in the same spot (`planFloor` in `src/worlds/edit.ts`). It's named in
 order (First floor, Second floor…), and it's part of the same building
 (`floorOf`, the ground floor's level id): every floor of a house is home, so
 a bed upstairs is where they'll sleep and a kitchen upstairs cooks from the
-same cupboard; a new office floor joins its company. Only floors you added
+same cupboard; a new office floor joins its company. Each floor has one floor above it at most (more stairs on
+the ground floor won't stack another; go up to build higher), and a house goes
+up to three floors, anywhere else five. Only floors you added
 come away, from the top down, by deleting their stairs. Floors go in places
 that are part of the design (not a startup's office the story built).
 

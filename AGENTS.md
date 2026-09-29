@@ -167,7 +167,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), a landing page, save and share
   links, interactions, feeds, opt-in music and sounds with volumes.
 
-117 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+118 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

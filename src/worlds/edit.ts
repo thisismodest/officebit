@@ -384,6 +384,8 @@ function overlapsRect(f: FurnitureDef, [x, y, w, h]: Rect): boolean {
 
 // ── Floors ──────────────────────────────────────────────────────────────────
 
+/** The most storeys (ground floor included) a home can have, and any other building. */
+const MAX_STOREYS = { home: 3, other: 5 };
 const ORDINALS = ['Ground floor', 'First floor', 'Second floor', 'Third floor', 'Fourth floor', 'Fifth floor', 'Sixth floor'];
 
 /** A floor, and everything that joins it on: the stairs up to it (a portal, and the stairs on the floor below), and the companies it's part of. */
@@ -404,12 +406,16 @@ export interface Floor {
 export function planFloor(world: WorldDef, below: string, at: Tile): string | Floor {
   const parent = world.levels.find((l) => l.id === below);
   if (!parent || parent.kind === 'outside') return 'Floors go in buildings.';
+  // Stairs up run from the floor below (a) to the one above (b): one floor above each, however many stairs.
+  if (world.portals.some((p) => p.kind === 'stairs' && p.a.level === parent.id)) return 'There’s already a floor above: take the stairs up to build higher.';
+  const storeys = building(world, parent.id).length;
+  const most = parent.kind === 'home' ? MAX_STOREYS.home : MAX_STOREYS.other;
+  if (storeys >= most) return `${storeys} floors is as tall as ${parent.kind === 'home' ? 'a house' : 'a building'} goes here.`;
   const problem = placementProblem(parent, world.portals, 'stairs', at);
   if (problem) return problem;
   const outer = outerRoom(parent);
   if (!outer) return 'This place has no outside walls to build up from.';
   const base = parent.floorOf ?? parent.id;
-  const storeys = building(world, parent.id).length;
   const name = ORDINALS[storeys] ?? `Floor ${storeys}`;
   const taken = new Set(world.levels.map((l) => l.id));
   let n = storeys;

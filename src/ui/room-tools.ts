@@ -262,7 +262,8 @@ export class RoomTools {
     const level = this.level();
     if (!level || level.kind === 'outside') return 'Stairs go indoors.';
     if (!this.core.designed(level.id)) return 'Floors can only be built in places that are part of the town’s design.';
-    return placementProblem(level, host.sim().world.portals, 'stairs', tile);
+    const floor = planFloor(host.design(), level.id, tile);
+    return typeof floor === 'string' ? floor : placementProblem(level, host.sim().world.portals, 'stairs', tile);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

@@ -94,3 +94,16 @@ test('a floor added to an office is part of the company: its people may work up 
   assert.ok(w.companies.find((c) => c.id === 'head')!.levels.includes(floor.level.id));
   assert.deepEqual(validate(w), []);
 });
+
+test('one floor above each: more stairs on a floor that has one don’t stack another, and there’s a limit', () => {
+  const w = world();
+  const first = planFloor(w, 'home-rowan', stairsSpot(w, 'home-rowan')) as Floor;
+  addFloor(w, first);
+  assert.match(planFloor(w, 'home-rowan', stairsSpot(w, 'home-rowan')) as string, /already a floor above/);
+  assert.equal(typeof planFloor(w, 'first', stairsSpot(w, 'first')), 'object', 'the office can still go up from its top floor');
+  assert.match(planFloor(w, 'ground', stairsSpot(w, 'ground')) as string, /already a floor above/, 'but not from its ground floor');
+  const second = planFloor(w, first.level.id, stairsSpot(w, first.level.id)) as Floor;
+  addFloor(w, second);
+  assert.match(planFloor(w, second.level.id, stairsSpot(w, second.level.id)) as string, /as tall as a house goes/);
+  assert.deepEqual(validate(w), []);
+});
