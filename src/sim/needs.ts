@@ -13,7 +13,7 @@ export type Activity = 'awake' | 'working' | 'asleep';
 export const PANTRY_FULL = 14;
 
 /** Base drain per game hour while awake. */
-const DRAIN: Needs = { energy: 0.08, hunger: 0.09, social: 0.18, fun: 0.1 };
+const DRAIN: Needs = { energy: 0.08, hunger: 0.09, social: 0.18, fun: 0.15 };
 /** Energy restored per hour of sleep. */
 const SLEEP_RATE = 0.14;
 /** Asleep, the other needs drain at this fraction of the waking rate. */

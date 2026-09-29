@@ -22,6 +22,7 @@ tile. Types describe **what they do**; art is separate.
 | `street` | Out in the street: people nip out from work to use it (food trucks) |
 | `treat` | Worth going out of the way for (food trucks, pizza) |
 | `play` | Swings, hopscotch: grown-ups have a go when they're feeling playful |
+| `game` | An arcade machine: gamers seek it out, bored or not |
 | `lot` | An empty plot a new company can build on |
 | `staff` | Where venue staff stand to serve (the diner's till, the teacher's desk) |
 | `worksite` | A building site: crews work from its spots (`siteSmall`, `siteLarge`) |

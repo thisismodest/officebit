@@ -22,6 +22,8 @@ const USE: [number, number] = [30, 60];
 const TAKEAWAY = 0.55;
 /** Extra fun per tick from gaming, and social per tick from gaming with someone. */
 const GAMING = { fun: 0.004, social: 0.003 };
+/** Fun per tick from a chat (with a pet, or pulling someone off their work, there's more). */
+const CHAT_FUN = 0.0015;
 /** How close (tiles) people must stay to keep a conversation going. */
 const CHAT_REACH = 2;
 /** How close they must get to start one. */
@@ -127,7 +129,7 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
       refill(p, 'social', 0.008 * (0.5 + p.traits.social));
       refill(target, 'social', 0.004 * (0.5 + target.traits.social));
       // Pets are fun; pulling someone off their work is fun, for some.
-      refill(p, 'fun', 0.003 + (withPet ? 0.006 : 0) + (target.distracted > 0 ? 0.01 * p.traits.chaos : 0));
+      refill(p, 'fun', CHAT_FUN + (withPet ? 0.006 : 0) + (target.distracted > 0 ? 0.01 * p.traits.chaos : 0));
       if (withPet) refill(target, 'fun', 0.006);
       else sim.social.talked(p, target, sim.dt);
     },

@@ -22,6 +22,8 @@ const TAKEAWAY_THRESHOLD = 0.45;
 /** Fun a gaming session is worth, as the brain sees it, and how keen someone must be. */
 const GAMING_FUN = 0.35;
 const GAMER_THRESHOLD = 0.35;
+/** How much gamers are drawn to a game machine, on top of the fun it offers: more if they're chaotic, and more the less fun they're having. */
+const ARCADE_PULL = 0.25;
 /** Meals left at home before the food shop comes on the list. */
 const SHOP_WHEN = 4;
 /** Waiting outside for the shop to open: the longest anyone will (ticks), how much less appealing it is than going in, and how long they won't bother again after giving up. */
@@ -121,6 +123,7 @@ export class PersonalityBrain implements Brain {
       const lonely = 0.2 + (1 - p.needs.social);
       if (type.hangout) score += (crowd * 0.08 + sim.pullAt(item.level, x, y, 2.5, p) * 0.35) * t.social * lonely;
       if (type.treat) score += TREAT_BONUS + t.chaos * 0.1;
+      if (type.game && gamer) score += ARCADE_PULL * (0.5 + t.chaos) * (1.3 - p.needs.fun);
       // Swings and hopscotch: a go on them, if they're feeling playful and it's just there.
       if (type.play && p.role !== 'child' && item.level === p.level && Math.hypot(x - p.x, y - p.y) < PLAY_NEAR) {
         score += PLAYFUL * (0.2 + t.chaos) * (1 - p.needs.fun);

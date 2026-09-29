@@ -48,6 +48,8 @@ export interface FurnitureType {
   staff?: boolean;
   /** A construction site: the crew works from its spots. */
   worksite?: boolean;
+  /** A game machine (arcades): gamers seek it out whether or not they're bored. */
+  game?: boolean;
   /** Something to play on (swings, hopscotch): grown-ups have a go too, when they're feeling playful. */
   play?: boolean;
   /** Outdoors, it stands on hard ground (a forecourt or paving), not grass: chargers, bays, the canopy. */
@@ -136,6 +138,7 @@ export const CATALOG: Record<string, FurnitureType> = {
     offers: { fun: 0.6, social: 0.05, energy: 0.05 },
     duration: [40, 80],
     hangout: true,
+    game: true,
   },
 
   // The shop

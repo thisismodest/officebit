@@ -389,3 +389,22 @@ test('newcomers move into a house that is to let', () => {
   assert.equal(sim.housing.vacant().length, free - 1);
   assert.equal(sim.levels.get(p.home!)!.name, "Newbie's house");
 });
+
+test('gamers seek out the arcade machines; nobody else much bothers', () => {
+  const sim = new Simulation(structuredClone(STARTER));
+  const goes = new Map<string, number>();
+  const last = new Map<string, number>();
+  for (let t = 0; t < 7 * TICKS_PER_DAY; t++) {
+    sim.step();
+    for (const p of sim.people) {
+      const i = p.intent?.kind === 'use' ? p.intent.item : -1;
+      if (i >= 0 && sim.items[i]!.def.t === 'arcade' && last.get(p.id) !== i) goes.set(p.id, (goes.get(p.id) ?? 0) + 1);
+      last.set(p.id, i);
+    }
+  }
+  assert.ok(goes.size > 0, 'someone plays');
+  for (const id of goes.keys()) {
+    const t = sim.person(id)!.traits;
+    assert.ok((t.chaos + (1 - t.diligence)) / 2 > 0.35, `${id} is a gamer`);
+  }
+});
