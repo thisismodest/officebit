@@ -172,6 +172,8 @@ export class Editor {
 
   open(): void {
     this.active = true;
+    // Only this place's tools, before the toolbar shows (not on the next panel refresh, which would flash them all).
+    this.update();
     this.bar.hidden = false;
     this.setTool('move');
   }
