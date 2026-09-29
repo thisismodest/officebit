@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>officebit</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./vendor/mdst-ui/modest-ui.min.css" />
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./src/main.js"></script>
+  </head>
+  <body class="mdst-ui">
+    <!-- Shown until the town's first frame is drawn (main.ts removes it): a few people walking round a spinner. -->
+    <div id="loading" class="loading" role="status" aria-label="Loading officebit">
+      <div class="orbit">
+        <span class="spinner"></span>
+        <span class="walker w1"
+          ><span class="figure"
+            ><svg viewBox="0 0 7 11" width="28" height="44" aria-hidden="true" shape-rendering="crispEdges">
+              <rect class="hair" x="2" y="0" width="1" height="1" />
+              <rect class="hair" x="3" y="0" width="1" height="1" />
+              <rect class="hair" x="4" y="0" width="1" height="1" />
+              <rect class="hair" x="1" y="1" width="1" height="1" />
+              <rect class="hair" x="2" y="1" width="1" height="1" />
+              <rect class="hair" x="3" y="1" width="1" height="1" />
+              <rect class="hair" x="4" y="1" width="1" height="1" />
+              <rect class="hair" x="5" y="1" width="1" height="1" />
+              <rect class="hair" x="1" y="2" width="1" height="1" />
+              <rect class="skin" x="2" y="2" width="1" height="1" />
+              <rect class="skin" x="3" y="2" width="1" height="1" />
+              <rect class="skin" x="4" y="2" width="1" height="1" />
+              <rect class="hair" x="5" y="2" width="1" height="1" />
+              <rect class="skin" x="2" y="3" width="1" height="1" />
+              <rect class="skin" x="3" y="3" width="1" height="1" />
+              <rect class="skin" x="4" y="3" width="1" height="1" />
+              <rect class="shirt" x="1" y="4" width="1" height="1" />
+              <rect class="shirt" x="2" y="4" width="1" height="1" />
+              <rect class="shirt" x="3" y="4" width="1" height="1" />
+              <rect class="shirt" x="4" y="4" width="1" height="1" />
+              <rect class="shirt" x="5" y="4" width="1" height="1" />
+              <rect class="shirt" x="0" y="5" width="1" height="1" />
+              <rect class="shirt" x="1" y="5" width="1" height="1" />
+              <rect class="shirt" x="2" y="5" width="1" height="1" />
+              <rect class="shirt" x="3" y="5" width="1" height="1" />
+              <rect class="shirt" x="4" y="5" width="1" height="1" />
+              <rect class="shirt" x="5" y="5" width="1" height="1" />
+              <rect class="shirt" x="6" y="5" width="1" height="1" />
+              <rect class="skin" x="0" y="6" width="1" height="1" />
+              <rect class="shirt" x="2" y="6" width="1" height="1" />
+              <rect class="shirt" x="3" y="6" width="1" height="1" />
+              <rect class="shirt" x="4" y="6" width="1" height="1" />
+              <rect class="skin" x="6" y="6" width="1" height="1" />
+              <rect class="legs" x="2" y="7" width="1" height="1" />
+              <rect class="legs" x="3" y="7" width="1" height="1" />
+              <rect class="legs" x="4" y="7" width="1" height="1" />
+              <g class="step-a">
+                <rect class="legs" x="2" y="8" width="1" height="1" />
+                <rect class="legs" x="4" y="8" width="1" height="1" />
+                <rect class="legs" x="2" y="9" width="1" height="1" />
+                <rect class="legs" x="4" y="9" width="1" height="1" />
+                <rect class="shoes" x="2" y="10" width="1" height="1" />
+                <rect class="shoes" x="4" y="10" width="1" height="1" />
+              </g>
+              <g class="step-b">
+                <rect class="legs" x="1" y="8" width="1" height="1" />
+                <rect class="legs" x="5" y="8" width="1" height="1" />
+                <rect class="legs" x="1" y="9" width="1" height="1" />
+                <rect class="legs" x="5" y="9" width="1" height="1" />
+                <rect class="shoes" x="1" y="10" width="1" height="1" />
+                <rect class="shoes" x="5" y="10" width="1" height="1" />
+              </g></svg></span></span
+        ><span class="walker w2"
+          ><span class="figure"
+            ><svg viewBox="0 0 7 11" width="28" height="44" aria-hidden="true" shape-rendering="crispEdges">
+              <rect class="hair" x="2" y="0" width="1" height="1" />
+              <rect class="hair" x="3" y="0" width="1" height="1" />
+              <rect class="hair" x="4" y="0" width="1" height="1" />
+              <rect class="hair" x="1" y="1" width="1" height="1" />
+              <rect class="hair" x="2" y="1" width="1" height="1" />
+              <rect class="hair" x="3" y="1" width="1" height="1" />
+              <rect class="hair" x="4" y="1" width="1" height="1" />
+              <rect class="hair" x="5" y="1" width="1" height="1" />
+              <rect class="hair" x="1" y="2" width="1" height="1" />
+              <rect class="skin" x="2" y="2" width="1" height="1" />
+              <rect class="skin" x="3" y="2" width="1" height="1" />
+              <rect class="skin" x="4" y="2" width="1" height="1" />
+              <rect class="hair" x="5" y="2" width="1" height="1" />
+              <rect class="skin" x="2" y="3" width="1" height="1" />
+              <rect class="skin" x="3" y="3" width="1" height="1" />
+              <rect class="skin" x="4" y="3" width="1" height="1" />
+              <rect class="shirt" x="1" y="4" width="1" height="1" />
+              <rect class="shirt" x="2" y="4" width="1" height="1" />
+              <rect class="shirt" x="3" y="4" width="1" height="1" />
+              <rect class="shirt" x="4" y="4" width="1" height="1" />
+              <rect class="shirt" x="5" y="4" width="1" height="1" />
+              <rect class="shirt" x="0" y="5" width="1" height="1" />
+              <rect class="shirt" x="1" y="5" width="1" height="1" />
+              <rect class="shirt" x="2" y="5" width="1" height="1" />
+              <rect class="shirt" x="3" y="5" width="1" height="1" />
+              <rect class="shirt" x="4" y="5" width="1" height="1" />
+              <rect class="shirt" x="5" y="5" width="1" height="1" />
+              <rect class="shirt" x="6" y="5" width="1" height="1" />
+              <rect class="skin" x="0" y="6" width="1" height="1" />
+              <rect class="shirt" x="2" y="6" width="1" height="1" />
+              <rect class="shirt" x="3" y="6" width="1" height="1" />
+              <rect class="shirt" x="4" y="6" width="1" height="1" />
+              <rect class="skin" x="6" y="6" width="1" height="1" />
+              <rect class="legs" x="2" y="7" width="1" height="1" />
+              <rect class="legs" x="3" y="7" width="1" height="1" />
+              <rect class="legs" x="4" y="7" width="1" height="1" />
+              <g class="step-a">
+                <rect class="legs" x="2" y="8" width="1" height="1" />
+                <rect class="legs" x="4" y="8" width="1" height="1" />
+                <rect class="legs" x="2" y="9" width="1" height="1" />
+                <rect class="legs" x="4" y="9" width="1" height="1" />
+                <rect class="shoes" x="2" y="10" width="1" height="1" />
+                <rect class="shoes" x="4" y="10" width="1" height="1" />
+              </g>
+              <g class="step-b">
+                <rect class="legs" x="1" y="8" width="1" height="1" />
+                <rect class="legs" x="5" y="8" width="1" height="1" />
+                <rect class="legs" x="1" y="9" width="1" height="1" />
+                <rect class="legs" x="5" y="9" width="1" height="1" />
+                <rect class="shoes" x="1" y="10" width="1" height="1" />
+                <rect class="shoes" x="5" y="10" width="1" height="1" />
+              </g></svg></span></span
+        ><span class="walker w3"
+          ><span class="figure"
+            ><svg viewBox="0 0 7 11" width="28" height="44" aria-hidden="true" shape-rendering="crispEdges">
+              <rect class="hair" x="2" y="0" width="1" height="1" />
+              <rect class="hair" x="3" y="0" width="1" height="1" />
+              <rect class="hair" x="4" y="0" width="1" height="1" />
+              <rect class="hair" x="1" y="1" width="1" height="1" />
+              <rect class="hair" x="2" y="1" width="1" height="1" />
+              <rect class="hair" x="3" y="1" width="1" height="1" />
+              <rect class="hair" x="4" y="1" width="1" height="1" />
+              <rect class="hair" x="5" y="1" width="1" height="1" />
+              <rect class="hair" x="1" y="2" width="1" height="1" />
+              <rect class="skin" x="2" y="2" width="1" height="1" />
+              <rect class="skin" x="3" y="2" width="1" height="1" />
+              <rect class="skin" x="4" y="2" width="1" height="1" />
+              <rect class="hair" x="5" y="2" width="1" height="1" />
+              <rect class="skin" x="2" y="3" width="1" height="1" />
+              <rect class="skin" x="3" y="3" width="1" height="1" />
+              <rect class="skin" x="4" y="3" width="1" height="1" />
+              <rect class="shirt" x="1" y="4" width="1" height="1" />
+              <rect class="shirt" x="2" y="4" width="1" height="1" />
+              <rect class="shirt" x="3" y="4" width="1" height="1" />
+              <rect class="shirt" x="4" y="4" width="1" height="1" />
+              <rect class="shirt" x="5" y="4" width="1" height="1" />
+              <rect class="shirt" x="0" y="5" width="1" height="1" />
+              <rect class="shirt" x="1" y="5" width="1" height="1" />
+              <rect class="shirt" x="2" y="5" width="1" height="1" />
+              <rect class="shirt" x="3" y="5" width="1" height="1" />
+              <rect class="shirt" x="4" y="5" width="1" height="1" />
+              <rect class="shirt" x="5" y="5" width="1" height="1" />
+              <rect class="shirt" x="6" y="5" width="1" height="1" />
+              <rect class="skin" x="0" y="6" width="1" height="1" />
+              <rect class="shirt" x="2" y="6" width="1" height="1" />
+              <rect class="shirt" x="3" y="6" width="1" height="1" />
+              <rect class="shirt" x="4" y="6" width="1" height="1" />
+              <rect class="skin" x="6" y="6" width="1" height="1" />
+              <rect class="legs" x="2" y="7" width="1" height="1" />
+              <rect class="legs" x="3" y="7" width="1" height="1" />
+              <rect class="legs" x="4" y="7" width="1" height="1" />
+              <g class="step-a">
+                <rect class="legs" x="2" y="8" width="1" height="1" />
+                <rect class="legs" x="4" y="8" width="1" height="1" />
+                <rect class="legs" x="2" y="9" width="1" height="1" />
+                <rect class="legs" x="4" y="9" width="1" height="1" />
+                <rect class="shoes" x="2" y="10" width="1" height="1" />
+                <rect class="shoes" x="4" y="10" width="1" height="1" />
+              </g>
+              <g class="step-b">
+                <rect class="legs" x="1" y="8" width="1" height="1" />
+                <rect class="legs" x="5" y="8" width="1" height="1" />
+                <rect class="legs" x="1" y="9" width="1" height="1" />
+                <rect class="legs" x="5" y="9" width="1" height="1" />
+                <rect class="shoes" x="1" y="10" width="1" height="1" />
+                <rect class="shoes" x="5" y="10" width="1" height="1" />
+              </g></svg></span
+        ></span>
+      </div>
+      <p class="wordmark">officebit</p>
+      <p class="loading-note">Waking the town up…</p>
+    </div>
+    <!-- The menu bar: officebit, where you're looking, and the time (tap the clock to jump ahead). -->
+    <header class="menubar">
+      <strong class="wordmark">officebit</strong>
+      <span class="place-name" id="place" aria-live="polite"></span>
+      <div class="status-items">
+        <span class="popover-anchor"
+          ><button type="button" class="clock mdst-button--sm mdst-button--ghost" id="clock" title="Jump ahead to another time">
+            Day 1 · 06:00
+          </button></span
+        >
+        <span class="popover-anchor"
+          ><button type="button" class="icon-button mdst-button--sm mdst-button--ghost" id="music" aria-expanded="false"></button
+        ></span>
+        <button
+          type="button"
+          class="icon-button mdst-button--sm mdst-button--ghost"
+          id="play-pause"
+          aria-label="Pause"
+          title="Pause (space)"
+        ></button>
+        <span class="popover-anchor">
+          <button
+            type="button"
+            class="icon-button mdst-button--sm mdst-button--ghost"
+            id="speed"
+            data-icon="speed"
+            aria-label="Time and speed"
+            title="Time and speed"
+            aria-expanded="false"
+          ></button>
+          <div class="speed-menu popover mdst-card mdst-card--compact" id="speed-menu" hidden>
+            <select id="mode" aria-label="Time" class="mdst-dropdown--sm" title="Live follows your clock; Sandbox lets you speed up">
+              <option value="live">Live: follows your clock</option>
+              <option value="sandbox">Sandbox: pick a speed</option>
+            </select>
+            <p class="since mdst-p--sm" id="since" hidden>
+              <span id="since-date"></span>
+              <button type="button" class="link" id="start-afresh">Start afresh today</button>
+            </p>
+            <fieldset class="speeds" aria-label="Speed">
+              <button type="button" class="mdst-button--sm" data-speed="1">1×</button>
+              <button type="button" class="mdst-button--sm" data-speed="4">4×</button>
+              <button type="button" class="mdst-button--sm" data-speed="16">16×</button>
+              <button type="button" class="mdst-button--sm" data-speed="60">60×</button>
+            </fieldset>
+          </div>
+        </span>
+        <button
+          type="button"
+          class="icon-button mdst-button--sm mdst-button--ghost sidebar-toggle"
+          id="sidebar-toggle"
+          data-icon="sidebar"
+          aria-pressed="true"
+          aria-label="Hide the sidebar"
+          title="Hide the sidebar"
+        ></button>
+      </div>
+    </header>
+
+    <main>
+      <section id="stage" aria-label="Office">
+        <!-- Floating over the map: the tool rail (top left), zoom (bottom right), and a chip while following someone. -->
+        <div class="hud hud-tools mdst-card mdst-card--compact" role="toolbar" aria-label="Tools">
+          <button
+            type="button"
+            class="icon-button mdst-button--sm mdst-button--ghost"
+            id="back"
+            data-icon="back"
+            aria-label="Back (Alt+←)"
+            title="Back (Alt+←)"
+            disabled
+          ></button>
+          <button
+            type="button"
+            class="icon-button mdst-button--sm mdst-button--ghost"
+            id="to-town"
+            data-icon="town"
+            aria-label="Back to town"
+            title="Back to town"
+          ></button>
+          <button
+            type="button"
+            class="icon-button mdst-button--sm mdst-button--ghost"
+            id="edit"
+            data-icon="edit"
+            aria-label="Edit the map"
+            title="Edit the map"
+            aria-pressed="false"
+          ></button>
+          <span class="popover-anchor"
+            ><button
+              type="button"
+              class="icon-button mdst-button--sm mdst-button--ghost"
+              id="share"
+              data-icon="share"
+              aria-label="Save and share"
+              title="Save and share"
+            ></button
+          ></span>
+        </div>
+        <fieldset class="hud hud-zoom mdst-card mdst-card--compact" aria-label="Zoom">
+          <button
+            type="button"
+            class="icon-button mdst-button--sm mdst-button--ghost"
+            id="zoom-in"
+            data-icon="add"
+            aria-label="Zoom in (+)"
+            title="Zoom in (+)"
+          ></button>
+          <output class="zoom-level" id="zoom-level">3×</output>
+          <button
+            type="button"
+            class="icon-button mdst-button--sm mdst-button--ghost"
+            id="zoom-out"
+            data-icon="minus"
+            aria-label="Zoom out (−)"
+            title="Zoom out (−)"
+          ></button>
+        </fieldset>
+        <button type="button" class="hud follow-chip mdst-button--sm mdst-button--inverted" id="follow" hidden></button>
+        <div id="steer" class="travel steer mdst-card mdst-card--compact" hidden>
+          <span class="mdst-p--sm">Steering <strong></strong>: tap to walk, use things or talk to people</span
+          ><button type="button" class="mdst-button--sm mdst-button--inverted" data-action="let-go">Let go</button>
+        </div>
+        <div id="travel" class="travel mdst-card mdst-card--compact" hidden>
+          <span class="mdst-p--sm">Jumping ahead…</span><progress max="1"></progress
+          ><button type="button" class="mdst-button--sm" data-action="stop">Stop here</button>
+        </div>
+      </section>
+      <aside class="mdst-tabs mdst-tabs--compact">
+        <div class="mdst-tabs-list" role="tablist">
+          <button type="button" class="mdst-tab" role="tab" data-tab="world" data-icon="world" data-state="active">World</button>
+          <button type="button" class="mdst-tab" role="tab" data-tab="people" data-icon="people" data-state="inactive">People</button>
+          <button type="button" class="mdst-tab" role="tab" data-tab="news" data-icon="news" data-state="inactive">News</button>
+        </div>
+        <section class="mdst-tabs-panel" data-panel="world" data-state="active" id="overview" aria-label="The world"></section>
+        <section class="mdst-tabs-panel" data-panel="people" data-state="inactive" id="directory" aria-label="Everyone"></section>
+        <section class="mdst-tabs-panel" data-panel="news" data-state="inactive" id="news" aria-label="News"></section>
+      </aside>
+    </main>
+  </body>
+</html>

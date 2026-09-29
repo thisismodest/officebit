@@ -1,0 +1,1183 @@
+:root {
+  --mdst-font-ui: var(--mdst-font-mono);
+  /* Hover changes are instant: modest-ui's fades make the controls feel slow to respond. */
+  --mdst-transition: 0s;
+  --mdst-transition-fast: 0s;
+  --stage-bg: #1f1d29;
+}
+
+/* Sizes include padding and borders, everywhere, so nothing comes out bigger than it says. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Holding a finger (or the mouse) down on the map or a control doesn't select it or pop up a menu: only text is selectable. */
+#stage,
+.menubar,
+.loading,
+button,
+svg,
+canvas,
+[role='tab'] {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* mdst-ui sets `display` on buttons, so hiding has to win. */
+[hidden] {
+  /* biome-ignore lint/complexity/noImportantStyles: has to beat mdst-ui's display on buttons */
+  display: none !important;
+}
+
+/* Groups of buttons (speeds, zoom) are fieldsets, without the browser's box round them. */
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* A button that reads as a link: names in lists and sentences. */
+button.link,
+button.link:hover {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+}
+
+button.link:hover {
+  text-decoration-color: currentColor;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+/* The loading screen: shown by the page itself before any script runs, removed after the first frame. */
+.loading {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mdst-space-sm);
+  background: var(--stage-bg);
+  color: #e8e6f0;
+
+  & .wordmark {
+    margin: var(--mdst-space-md) 0 0;
+    color: #e8e6f0;
+    font-family: var(--mdst-font-mono);
+    font-size: var(--mdst-text-sm);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  & .loading-note {
+    margin: 0;
+    color: #9d99b0;
+    font-size: var(--mdst-text-sm);
+  }
+}
+
+/* People walk in a circle round the spinner: each walker turns round the middle while its figure turns back, so it stays upright. */
+.orbit {
+  position: relative;
+  width: 11rem;
+  height: 11rem;
+
+  & .spinner {
+    position: absolute;
+    inset: 3.5rem;
+    border: 3px solid #3a3650;
+    border-top-color: #e8e6f0;
+    border-radius: 50%;
+    animation: turn 0.9s linear infinite;
+  }
+
+  & .walker {
+    position: absolute;
+    inset: 0;
+    animation: turn 6s linear infinite;
+  }
+
+  /* Three walkers, a third of the way round from each other, each in their own clothes. */
+  & .w1 {
+    --hair: #6b3d1f;
+    --shirt: #c8453a;
+  }
+
+  & .w2 {
+    --hair: #d9b25f;
+    --shirt: #3f74b5;
+    animation-delay: -2s;
+  }
+
+  & .w3 {
+    --hair: #2b1d18;
+    --shirt: #379463;
+    animation-delay: -4s;
+  }
+
+  & .figure {
+    position: absolute;
+    top: -0.75rem;
+    left: calc(50% - 14px);
+    display: block;
+    animation: turn 6s linear infinite reverse;
+    animation-delay: inherit;
+  }
+
+  & svg {
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  & .hair { fill: var(--hair); }
+  & .shirt { fill: var(--shirt); }
+  & .skin { fill: #e0a883; }
+  & .legs { fill: #34405e; }
+  & .shoes { fill: #2a2033; }
+
+  /* Two frames of legs, swapping on each step. */
+  & .step-a { animation: step 0.5s steps(1) infinite; }
+  & .step-b { animation: step 0.5s steps(1) infinite reverse; }
+}
+
+@keyframes turn {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes step {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit * {
+    /* biome-ignore lint/complexity/noImportantStyles: stops every animation in the loader, whatever set it */
+    animation: none !important;
+  }
+}
+
+/* Anything with a popover opening from it. */
+.popover-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.popover {
+  position: absolute;
+  z-index: 5;
+  background: var(--mdst-color-bg);
+  box-shadow: 0 0.25rem 0 rgba(0, 0, 0, 0.2);
+}
+
+/* The menu bar, like a Mac's: officebit on the left, where you're looking in the middle, the time on the right. */
+.menubar {
+  /* Its menus open from the bar's right-hand end, so they always stay on screen. */
+  position: relative;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--mdst-space-sm);
+  min-height: 2.25rem;
+  padding: 0 var(--mdst-space-sm);
+  border-bottom: var(--mdst-border-width) solid var(--mdst-color-border);
+  font-size: var(--mdst-text-sm);
+
+  & .wordmark {
+    justify-self: start;
+    font-family: var(--mdst-font-mono);
+    font-size: var(--mdst-text-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Where you're looking: a name, not a picker. */
+  & .place-name {
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .status-items {
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    gap: 2px;
+  }
+
+  & .clock {
+    font-family: var(--mdst-font-mono);
+    padding-inline: var(--mdst-space-xs);
+  }
+
+  & .popover-anchor {
+    position: static;
+  }
+
+  /* Hover is modest-ui's own (black, white text, border kept); a button stays black while its menu is open. */
+  & button[aria-expanded='true'] {
+    background: var(--mdst-color-fg);
+    color: var(--mdst-color-bg);
+  }
+
+  & .popover {
+    top: calc(100% + var(--mdst-space-xs));
+    right: var(--mdst-space-sm);
+    max-width: calc(100vw - 2 * var(--mdst-space-sm));
+  }
+}
+
+/* Floating over the map: the time card (top left), the tool rail (top right), zoom (bottom right),
+   and a chip while you're following someone (top centre). */
+.hud {
+  position: absolute;
+  z-index: 3;
+  background: var(--mdst-color-bg);
+
+  & [aria-pressed='true'] {
+    background: var(--mdst-color-fg);
+    color: var(--mdst-color-bg);
+  }
+}
+
+.hud-tools,
+.hud-zoom {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px;
+  transition: right 180ms ease-out;
+}
+
+.hud-tools {
+  top: var(--mdst-space-sm);
+  left: var(--mdst-space-sm);
+}
+
+.hud-zoom {
+  right: var(--mdst-space-sm);
+  bottom: var(--mdst-space-sm);
+  align-items: center;
+
+  & .zoom-level {
+    font-family: var(--mdst-font-mono);
+    font-size: var(--mdst-text-xs);
+  }
+}
+
+/* With a profile open over the right of the map, zoom moves out of its way. */
+#stage:has(.profile[data-open]) .hud-zoom {
+  right: calc(min(20rem, 90%) + var(--mdst-space-sm));
+}
+
+/* While editing, the editor's toolbar takes the rail's place. */
+#stage[data-editing] .hud-tools {
+  display: none;
+}
+
+.follow-chip {
+  top: var(--mdst-space-sm);
+  left: 50%;
+  max-width: calc(100% - 20rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+/* With a profile open, the chip centres on the part of the map still showing. */
+#stage:has(.profile[data-open]) .follow-chip {
+  left: calc((100% - min(20rem, 90%)) / 2);
+  max-width: calc(100% - min(20rem, 90%) - 2rem);
+}
+
+/* Live or Sandbox, and the speed: down from ▸▸ at the end of the menu bar. */
+.speed-menu {
+  top: calc(100% + var(--mdst-space-xs));
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mdst-space-xs);
+  width: 15rem;
+  padding: var(--mdst-space-sm);
+
+  & .speeds {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+  }
+}
+
+/* Music and sounds: two switches under the speaker, each with its volume below it. */
+.audio-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mdst-space-xs);
+  width: 12rem;
+  padding: var(--mdst-space-sm);
+
+  & label {
+    display: flex;
+    align-items: center;
+    gap: var(--mdst-space-sm);
+  }
+
+  & input[type='range'] {
+    width: 100%;
+    margin: 0 0 var(--mdst-space-xs);
+  }
+}
+
+/* The speed you're on, inverted. */
+.menubar .speed-menu [aria-pressed='true'] {
+  background: var(--mdst-color-fg);
+  color: var(--mdst-color-bg);
+  border-color: var(--mdst-color-fg);
+}
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 22rem;
+  min-height: 0;
+}
+
+/* Sidebar folded away: the town gets the whole window. */
+@media (min-width: 60.001rem) {
+  body[data-sidebar-hidden] main {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-sidebar-hidden] aside.mdst-tabs {
+    display: none;
+  }
+}
+
+#stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--stage-bg);
+
+  /* The map (not the portraits in the profile). */
+  & > canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  & > canvas.clickable {
+    cursor: pointer;
+  }
+
+  & > canvas.dragging {
+    cursor: grabbing;
+  }
+}
+
+.steer button {
+  flex: none;
+  white-space: nowrap;
+}
+
+.travel {
+  position: absolute;
+  bottom: var(--mdst-space-md);
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: var(--mdst-space-md);
+  /* Room inside the border: more on the text side, just enough round the button. */
+  padding: var(--mdst-space-xs) var(--mdst-space-xs) var(--mdst-space-xs) var(--mdst-space-md);
+  transform: translateX(-50%);
+  background: var(--mdst-color-bg);
+
+  & progress {
+    width: 12rem;
+  }
+}
+
+.place-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 12rem;
+  background: var(--mdst-color-bg);
+  box-shadow: 0 0.25rem 0 rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+
+  & .mdst-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--mdst-space-sm);
+  }
+
+  & p {
+    margin: 0 0 var(--mdst-space-sm);
+  }
+
+  & .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mdst-space-xs);
+  }
+
+  /* A little tail pointing at where you clicked. */
+  &::after {
+    content: "";
+    position: absolute;
+    left: var(--tail-x, 50%);
+    width: 0.75rem;
+    height: 0.5rem;
+    background: var(--mdst-color-border);
+    transform: translateX(-50%);
+  }
+
+  &[data-side="above"]::after {
+    bottom: -0.5rem;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+
+  &[data-side="below"]::after {
+    top: -0.5rem;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+}
+
+aside {
+  overflow-y: auto;
+  border-left: var(--mdst-border-width) solid var(--mdst-color-border);
+
+  /* Never squeezed by a long panel (the sidebar is a flex column). */
+  & .mdst-tabs-list {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex: none;
+    background: var(--mdst-color-bg);
+  }
+
+  /* More specific than modest-ui's compact tab panel rule. */
+  &.mdst-tabs .mdst-tabs-panel[data-panel] {
+    padding: var(--mdst-space-md);
+  }
+
+  & h3 {
+    margin: 0 0 var(--mdst-space-xs);
+    font-family: var(--mdst-font-ui);
+    font-size: var(--mdst-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  & section section,
+  & #overview > section {
+    margin-bottom: var(--mdst-space-md);
+  }
+}
+
+/* Overview: the day at a glance, each fact after its icon. */
+.today {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mdst-space-xs) var(--mdst-space-md);
+
+  & .stat {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mdst-space-xs);
+  }
+
+  & .icon {
+    flex: none;
+  }
+}
+
+/* Overview: one row per place, its icon first, with a Visit button (and a … menu for workplaces). */
+.place {
+  display: flex;
+  align-items: center;
+  gap: var(--mdst-space-sm);
+  padding: var(--mdst-space-xs) 0;
+  border-bottom: var(--mdst-border-width) solid var(--mdst-color-subtle);
+
+  & > .icon,
+  & > .mark {
+    flex: none;
+    width: 16px;
+    text-align: center;
+  }
+
+  & .about {
+    flex: 1;
+    min-width: 0;
+  }
+
+  & strong,
+  & small {
+    display: block;
+  }
+
+  & .actions {
+    display: flex;
+    flex: none;
+    gap: var(--mdst-space-xs);
+  }
+
+  & [aria-expanded='true'] {
+    background: var(--mdst-color-fg);
+    color: var(--mdst-color-bg);
+  }
+}
+
+.place-menu {
+  top: calc(100% + var(--mdst-space-xs));
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--mdst-space-xs);
+  white-space: nowrap;
+
+  & button {
+    display: flex;
+    align-items: center;
+    gap: var(--mdst-space-xs);
+    text-align: left;
+  }
+
+  & .icon {
+    flex: none;
+  }
+}
+
+/* Directory: search, group-by, and everyone. */
+.directory-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mdst-space-xs);
+  margin-bottom: var(--mdst-space-sm);
+
+  & input {
+    flex: 1 1 9rem;
+    min-width: 0;
+  }
+
+  & select {
+    width: auto;
+  }
+}
+
+.directory {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  & li.group {
+    margin-top: var(--mdst-space-md);
+    padding-bottom: var(--mdst-space-xs);
+    border-bottom: var(--mdst-border-width) solid var(--mdst-color-border);
+    font-family: var(--mdst-font-ui);
+    font-size: var(--mdst-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* Rows, not buttons: a tint on hover, a bar down the side when selected. Text stays dark throughout. */
+  & button,
+  & button:hover {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--mdst-space-sm);
+    width: 100%;
+    padding: 3px var(--mdst-space-xs);
+    border: 0;
+    border-radius: 0;
+    color: var(--mdst-color-fg);
+    text-align: left;
+    background: none;
+  }
+
+  & button:hover {
+    background: var(--mdst-color-subtle);
+  }
+
+  & li[data-selected] button {
+    background: var(--mdst-color-subtle);
+    box-shadow: inset 3px 0 0 var(--mdst-color-fg);
+  }
+
+  /* A fixed slot, so names line up whatever the sprite's shape. */
+  & .thumb {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex: none;
+    overflow: hidden;
+  }
+
+  & canvas {
+    image-rendering: pixelated;
+  }
+
+  & .who {
+    min-width: 0;
+    flex: 1;
+  }
+
+  /* Name and what they're doing on one line; the status gives way first. */
+  & .line {
+    display: flex;
+    align-items: baseline;
+    gap: var(--mdst-space-sm);
+  }
+
+  & strong {
+    flex: none;
+  }
+
+  & .doing {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Profile: slides out over the right of the stage, so you can keep watching. */
+.profile {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(20rem, 90%);
+  overflow-y: auto;
+  padding: var(--mdst-space-md);
+  background: var(--mdst-color-bg);
+  border-left: var(--mdst-border-width) solid var(--mdst-color-border);
+  transform: translateX(100%);
+  transition: transform 180ms ease-out;
+  z-index: 2;
+
+  &[data-open] {
+    transform: translateX(0);
+  }
+
+  & header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--mdst-space-sm);
+    margin-bottom: var(--mdst-space-sm);
+
+    & > div {
+      flex: 1;
+    }
+
+    & h2 {
+      margin: 0;
+    }
+
+    & p {
+      margin: 0 0 var(--mdst-space-xs);
+    }
+  }
+
+  & .portrait {
+    flex: none;
+    image-rendering: pixelated;
+    background: var(--mdst-color-bg);
+  }
+
+  & .role {
+    font-size: var(--mdst-text-sm);
+  }
+
+  & .actions {
+    display: flex;
+    gap: var(--mdst-space-xs);
+    margin-bottom: var(--mdst-space-md);
+
+    & button {
+      flex: 1;
+    }
+  }
+
+  & section {
+    margin-bottom: var(--mdst-space-md);
+  }
+
+  & p {
+    margin: 0;
+  }
+
+  & .bars {
+    display: grid;
+    grid-template-columns: 6rem 1fr;
+    gap: 2px var(--mdst-space-sm);
+    align-items: center;
+    margin: 0;
+    font-size: var(--mdst-text-xs);
+
+    & dd {
+      margin: 0;
+    }
+  }
+
+  & .bars-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: var(--mdst-text-sm);
+
+    & li {
+      display: grid;
+      grid-template-columns: 1fr 5rem;
+      gap: var(--mdst-space-sm);
+      align-items: center;
+    }
+
+    & button {
+      justify-self: start;
+    }
+  }
+
+  & .people-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mdst-space-xs);
+    margin-top: var(--mdst-space-xs);
+  }
+
+  & h3 {
+    margin: 0 0 var(--mdst-space-xs);
+    font-size: var(--mdst-text-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+
+/* Tab icons are for the bottom sheet on phones. */
+.mdst-tab .icon {
+  display: none;
+}
+
+/* Icon buttons: a square with a symbol, at every size; the label is a tooltip. (`button.` so it outranks mdst-ui's padding for small buttons.) */
+button.icon-button {
+  --icon-button: 2rem;
+  display: inline-grid;
+  place-items: center;
+  width: var(--icon-button);
+  height: var(--icon-button);
+  min-height: 0;
+  padding: 0;
+
+  & .icon {
+    display: block;
+  }
+}
+
+/* Jumping ahead: a small panel down from the clock. */
+.time-jump {
+  top: calc(100% + var(--mdst-space-xs));
+  right: 0;
+  width: 18rem;
+  padding: var(--mdst-space-sm);
+
+  & h3 {
+    margin: 0 0 var(--mdst-space-sm);
+    font-size: var(--mdst-text-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  & .presets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--mdst-space-xs);
+    margin-bottom: var(--mdst-space-sm);
+  }
+
+  & form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--mdst-space-xs);
+  }
+
+  & label {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--mdst-space-xs);
+  }
+
+  & input {
+    min-width: 0;
+    font-size: var(--mdst-text-sm);
+  }
+
+  & input[type='number'] {
+    width: 4rem;
+  }
+
+  & p {
+    margin: var(--mdst-space-sm) 0 0;
+  }
+
+  & .status:empty {
+    display: none;
+  }
+}
+
+/* Save and share: a small menu opening to the right of the rail. */
+.share-menu {
+  top: 0;
+  left: calc(100% + var(--mdst-space-sm));
+  display: flex;
+  flex-direction: column;
+  width: 17rem;
+  padding: var(--mdst-space-xs);
+
+  & button,
+  & label {
+    justify-content: flex-start;
+    width: 100%;
+    text-align: left;
+  }
+
+  & hr {
+    width: 100%;
+    margin: var(--mdst-space-xs) 0;
+    border: 0;
+    border-top: var(--mdst-border-width) solid var(--mdst-color-subtle);
+  }
+
+  & .link {
+    width: 100%;
+    margin-top: var(--mdst-space-xs);
+  }
+
+  & .status {
+    margin: var(--mdst-space-xs) 0 0;
+  }
+
+  & .status:empty {
+    display: none;
+  }
+}
+
+.bad {
+  color: #c8453a;
+}
+
+/* The map editor: a floating toolbar in the tool rail's place (top left), its status line to the right, and the picker below that. */
+.editor {
+  position: absolute;
+  top: var(--mdst-space-sm);
+  left: var(--mdst-space-sm);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px;
+  background: var(--mdst-color-bg);
+
+  & [aria-pressed='true'] {
+    background: var(--mdst-color-fg);
+    color: var(--mdst-color-bg);
+  }
+
+  & .divider {
+    height: 1px;
+    margin: 2px 0;
+    background: var(--mdst-color-subtle);
+  }
+}
+
+.editor-status {
+  position: absolute;
+  top: var(--mdst-space-sm);
+  left: calc(var(--mdst-space-sm) + 2.75rem);
+  z-index: 3;
+  max-width: 24rem;
+  margin: 0;
+  padding: var(--mdst-space-xs) var(--mdst-space-sm);
+  background: var(--mdst-color-bg);
+  border: var(--mdst-border-width) solid var(--mdst-color-border);
+}
+
+.editor-picker {
+  position: absolute;
+  top: calc(var(--mdst-space-sm) + 2.5rem);
+  left: calc(var(--mdst-space-sm) + 2.75rem);
+  z-index: 3;
+  width: 18rem;
+  max-height: calc(100% - 5rem);
+  overflow-y: auto;
+  padding: var(--mdst-space-sm);
+  background: var(--mdst-color-bg);
+
+  & h4 {
+    margin: var(--mdst-space-xs) 0;
+    font-size: var(--mdst-text-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  & .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--mdst-space-xs);
+  }
+
+  /* A thumbnail with its name underneath. */
+  & .grid button {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 2px;
+    min-height: 5rem;
+    padding: var(--mdst-space-xs) 2px;
+    border-color: transparent;
+    background: none;
+    color: var(--mdst-color-fg);
+  }
+
+  & .grid button span {
+    font-size: var(--mdst-text-xs);
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  & .grid button:hover {
+    border-color: var(--mdst-color-border);
+    background: var(--mdst-color-subtle);
+  }
+
+  & .grid button[aria-pressed='true'] {
+    border-color: var(--mdst-color-fg);
+    background: var(--mdst-color-subtle);
+  }
+
+  & canvas {
+    image-rendering: pixelated;
+  }
+}
+
+.news-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--mdst-space-xs);
+  margin-bottom: var(--mdst-space-sm);
+}
+
+.log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  & li {
+    padding: 2px 0;
+  }
+
+  & time {
+    font-family: var(--mdst-font-mono);
+    color: var(--mdst-color-muted);
+  }
+}
+
+/* Fingers need bigger targets than pointers. */
+@media (pointer: coarse) {
+  button.icon-button {
+    --icon-button: 2.5rem;
+  }
+
+  .hud button,
+  .menubar button,
+  .speed-menu select,
+  .editor-picker .grid button,
+  .share-menu button,
+  .share-menu label {
+    min-height: 2.5rem;
+  }
+}
+
+/* While the window is being resized, nothing animates: only real opening and closing slides. */
+.resizing,
+.resizing * {
+  /* biome-ignore lint/complexity/noImportantStyles: stops every transition while resizing, whatever set it */
+  transition: none !important;
+}
+
+/* Phones and small tablets: the menu bar trimmed down, pinch instead of zoom buttons, the sidebar
+   as a sheet along the bottom, and the profile sliding up from below. main.ts uses the same breakpoint. */
+@media (max-width: 60rem) {
+  /* The sidebar's a sheet here, folded away by its tabs. */
+  .menubar .sidebar-toggle {
+    display: none;
+  }
+
+  /* Pinch to zoom; no buttons for it. */
+  .hud-zoom {
+    display: none;
+  }
+
+  .follow-chip {
+    top: auto;
+    bottom: calc(3.5rem + var(--mdst-space-sm));
+    max-width: calc(100% - 2rem);
+  }
+
+  /* The profile slides up from the bottom here, so the chip goes to the top. */
+  #stage:has(.profile[data-open]) .follow-chip {
+    top: var(--mdst-space-sm);
+    bottom: auto;
+    left: 50%;
+    max-width: calc(100% - 2rem);
+  }
+
+  main {
+    position: relative;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  /* The sheet slides over the bottom of the map; the map itself never resizes (the camera aims above the sheet instead). */
+  aside.mdst-tabs {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    max-height: 3.5rem;
+    overflow: hidden;
+    background: var(--mdst-color-bg);
+    border-top: var(--mdst-border-width) solid var(--mdst-color-border);
+    border-left: none;
+    transition: max-height 200ms ease-out;
+
+    &[data-open] {
+      max-height: 60vh;
+    }
+
+    & .mdst-tabs-list {
+      flex: none;
+    }
+
+    & .mdst-tab {
+      flex: 1;
+      flex-direction: column;
+      gap: 2px;
+      padding-block: var(--mdst-space-xs);
+      font-size: var(--mdst-text-xs);
+    }
+
+    & .mdst-tab .icon {
+      display: block;
+      margin: 0 auto;
+    }
+
+    & .mdst-tabs-panel[data-panel] {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+  }
+
+  .profile {
+    top: auto;
+    left: 0;
+    width: 100%;
+    height: 75%;
+    z-index: 6;
+    border-top: var(--mdst-border-width) solid var(--mdst-color-border);
+    border-left: none;
+    transform: translateY(100%);
+  }
+
+  .time-jump,
+  .speed-menu {
+    width: min(20rem, calc(100vw - 2rem));
+  }
+
+  .share-menu {
+    width: min(17rem, calc(100vw - 5rem));
+  }
+
+  .editor-picker {
+    width: min(18rem, calc(100vw - 4.5rem));
+    max-height: calc(100% - 9rem);
+  }
+
+  .editor-status {
+    right: var(--mdst-space-sm);
+    max-width: none;
+  }
+
+  /* The bar on a small screen: the place name gives way first. */
+  .menubar {
+    grid-template-columns: auto 1fr auto;
+
+    & .place-name {
+      text-align: center;
+    }
+  }
+
+  /* Banners (steering, time travel) sit just above the sheet. */
+  .travel {
+    bottom: calc(3.5rem + var(--mdst-space-sm));
+    width: max-content;
+    max-width: calc(100vw - 1rem);
+  }
+}
+

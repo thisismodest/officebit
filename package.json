@@ -1,0 +1,25 @@
+{
+  "name": "officebit",
+  "version": "0.1.0",
+  "description": "An 8-bit office you build, share and let run. People are driven by personalities or any data feed.",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.ts",
+    "build": "node scripts/build.ts",
+    "test": "node --test",
+    "typecheck": "tsc",
+    "probe": "node scripts/probe.ts"
+  },
+  "dependencies": {
+    "mdst-ui": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^7.0.2"
+  }
+}
