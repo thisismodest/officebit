@@ -31,7 +31,7 @@ type Tool = 'move' | 'add' | Surface | 'crossing' | 'erase' | RoomTool;
 /** Tools for the ground outside: they only work on the town map. */
 const GROUND_TOOLS = new Set<Tool>(['road', 'path', 'crossing', 'erase']);
 /** Tools for walls, doorways and floors: they only work indoors (room-tools.ts). */
-const INDOOR_TOOLS = new Set<Tool>(['room', 'door', 'stairs']);
+const INDOOR_TOOLS = new Set<Tool>(['room', 'area', 'door', 'stairs']);
 const HOUSES = new Set(['terrace', 'house', 'detached']);
 
 /** What the picker offers indoors and out. Buildings, houses, lots and building sites are placed some other way. */
@@ -105,6 +105,7 @@ export class Editor {
       <span class="group" data-scene="inside">
         <span class="divider"></span>
         ${iconButton('room', 'Room: drag to build one, or click one to change it', 'data-tool="room"')}
+        ${iconButton('area', 'Area: drag to mark out a floor of its own, with no walls', 'data-tool="area"')}
         ${iconButton('door', 'Doorway: click a wall to open or close one', 'data-tool="door"')}
         ${iconButton('stairs', 'Stairs up: click where they go to build a floor above', 'data-tool="stairs"')}
       </span>
@@ -120,8 +121,12 @@ export class Editor {
     this.picker = document.createElement('div');
     this.picker.className = 'editor-picker mdst-card mdst-card--compact';
     this.picker.hidden = true;
-    stage.append(this.bar, this.status, this.picker);
-    this.rooms = new RoomTools(stage, this);
+    // The status line, and under it the selected room's card, stacked beside the toolbar.
+    const side = document.createElement('div');
+    side.className = 'editor-side';
+    side.append(this.status);
+    stage.append(this.bar, side, this.picker);
+    this.rooms = new RoomTools(side, this);
 
     this.bar.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLElement>('button');
@@ -261,7 +266,7 @@ export class Editor {
   /** Press on a piece of furniture with the move tool: drag it somewhere else. */
   grab(x: number, y: number): Grab | null {
     if (this.tool === 'road' || this.tool === 'path' || this.tool === 'erase') return this.stroke(this.host.tileAt(x, y));
-    if (this.tool === 'room') return this.rooms.grab(this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
+    if (this.tool === 'room' || this.tool === 'area') return this.rooms.grab(this.tool, this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
     if (this.tool !== 'move') return null;
     // Drag what's selected if you press on it, even with something else drawn on top.
     const here = this.itemsAt(x, y);
@@ -307,7 +312,7 @@ export class Editor {
     this.tool = tool;
     for (const b of this.bar.querySelectorAll<HTMLElement>('[data-tool]')) b.setAttribute('aria-pressed', String(b.dataset.tool === tool));
     this.picker.hidden = tool !== 'add';
-    if (tool !== 'room') this.rooms.clear();
+    this.rooms.clear();
     if (tool === 'add') {
       this.select(null);
       this.fillPicker();
@@ -382,7 +387,13 @@ export class Editor {
     this.say(`Moved the ${item.type.name.toLowerCase()}.`);
   }
 
+  /** Whether the delete button deletes something (the room tools say, for the selected room). */
+  deletable(on: boolean): void {
+    this.bar.querySelector<HTMLButtonElement>('[data-action="delete"]')!.disabled = !on;
+  }
+
   private deleteSelected(): void {
+    if (INDOOR_TOOLS.has(this.tool) && this.rooms.remove()) return;
     const item = this.selected;
     // Stairs up to a floor you added: the floor comes away with them.
     if (item?.def.t === 'stairs') {

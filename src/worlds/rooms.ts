@@ -1,6 +1,7 @@
 // Rooms and doorways (docs/BUILDER.md#rooms): plain edits over a level, for
 // the map editor. A walled room is a rectangle whose edge is its wall; rooms
-// next to each other overlap by a tile, so they share one wall. Rooms sit
+// next to each other overlap by a tile, so they share one wall. An area is a
+// room without walls: just its own floor, like a dining area. Rooms sit
 // inside or beside each other, never across; a new room snaps onto walls
 // nearby, gets a doorway if it has none, and may never cut anything off.
 import { CATALOG } from '../sim/catalog.ts';
@@ -10,6 +11,10 @@ import { aOrAn, cutsOff, type Problem } from './placement.ts';
 
 /** The smallest room a wall can make: one tile of floor inside it, all round. */
 export const MIN_ROOM = 3;
+/** The smallest area (tiles across): with no walls, all of it is floor. */
+export const MIN_AREA = 2;
+/** Floors a new area tries, first one that isn't the floor it's on (so you can see it). */
+const AREA_FLOORS = ['carpetGreen', 'wood'];
 /** How near (tiles) an edge must be to a wall to snap onto it. */
 const SNAP = 1;
 
@@ -55,21 +60,24 @@ export function snap(level: LevelDef, [x, y, w, h]: Rect, except?: RoomDef): Rec
   return [left, top, right - left + 1, bottom - top + 1];
 }
 
-/** Why a walled room can't be `rect` here (or `room` can't be resized to it), or null if it can. */
-export function roomProblem(level: LevelDef, rect: Rect, room?: RoomDef): Problem {
+/** Why a room (walled, or an area) can't be `rect` here (or `room` can't be resized to it), or null if it can. */
+export function roomProblem(level: LevelDef, rect: Rect, room?: RoomDef, walled = room ? !!room.walled : true): Problem {
   const [, , w, h] = rect;
-  if (w < MIN_ROOM || h < MIN_ROOM) return 'A room needs at least a tile of floor inside its walls.';
+  if (walled && (w < MIN_ROOM || h < MIN_ROOM)) return 'A room needs at least a tile of floor inside its walls.';
+  if (!walled && (w < MIN_AREA || h < MIN_AREA)) return `An area needs to be at least ${MIN_AREA} tiles across.`;
   const outer = outerRoom(level);
   if (!outer || room === outer) return 'The outside walls stay as they are.';
-  if (!contains(outer.rect, rect)) return 'Rooms go inside the building.';
+  if (!contains(outer.rect, rect)) return `${walled ? 'Rooms' : 'Areas'} go inside the building.`;
   for (const other of level.rooms) {
-    if (!other.walled || other === room || other === outer) continue;
+    // Walls mustn't cross walls; an area mustn't cross anything.
+    if ((walled && !other.walled) || other === room || other === outer) continue;
     if (contains(other.rect, rect) || contains(rect, other.rect)) continue;
     const [ix, iy, iw, ih] = intersection(other.rect, rect);
     if (iw > 1 && ih > 1) return 'Rooms can sit inside or beside each other, but not across.';
     // Sharing a wall is fine; overlapping a whole wall's length and more isn't.
     if ((iw === 1 || ih === 1) && !(onEdge(other.rect, ix, iy) && onEdge(rect, ix, iy))) return 'Rooms can sit inside or beside each other, but not across.';
   }
+  if (!walled) return null;
   // The new walls (where there isn't one already) mustn't go through furniture, or across a way in or the stairs.
   const grid = new Grid(level);
   for (const [tx, ty] of edgeTiles(rect)) {
@@ -80,12 +88,13 @@ export function roomProblem(level: LevelDef, rect: Rect, room?: RoomDef): Proble
   return null;
 }
 
-/** Make a walled room. It gets a doorway, facing the way in, if it has none. */
-export function addRoom(level: LevelDef, portals: readonly PortalDef[], rect: Rect, name = 'Room'): string | RoomDef {
-  const problem = roomProblem(level, rect) ?? blocksWay(level, portals, rect);
+/** Make a walled room (it gets a doorway, facing the way in, if it has none), or an area: a floor of its own. */
+export function addRoom(level: LevelDef, portals: readonly PortalDef[], rect: Rect, name?: string, walled = true): string | RoomDef {
+  const problem = roomProblem(level, rect, undefined, walled) ?? (walled ? blocksWay(level, portals, rect) : null);
   if (problem) return problem;
-  const floor = roomAt(level, [rect[0] + 1, rect[1] + 1])?.floor ?? outerRoom(level)!.floor;
-  const room: RoomDef = { id: uniqueRoom(level, 'room'), name, rect, floor, walled: true };
+  const under = roomAt(level, [rect[0] + 1, rect[1] + 1])?.floor ?? outerRoom(level)!.floor;
+  const floor = walled ? under : (AREA_FLOORS.find((f) => f !== under) ?? under);
+  const room: RoomDef = { id: uniqueRoom(level, walled ? 'room' : 'area'), name: name ?? (walled ? 'Room' : 'Area'), rect, floor, walled };
   return reshape(level, portals, (after) => after.rooms.push(room)) ?? room;
 }
 
@@ -93,14 +102,14 @@ export function addRoom(level: LevelDef, portals: readonly PortalDef[], rect: Re
 export function resizeRoom(level: LevelDef, portals: readonly PortalDef[], id: string, rect: Rect): Problem {
   const room = level.rooms.find((r) => r.id === id);
   if (!room) return 'There’s no room there.';
-  const problem = roomProblem(level, rect, room) ?? blocksWay(level, portals, rect);
+  const problem = roomProblem(level, rect, room) ?? (room.walled ? blocksWay(level, portals, rect) : null);
   if (problem) return problem;
   return reshape(level, portals, (after) => {
     after.rooms.find((r) => r.id === id)!.rect = rect;
   });
 }
 
-/** Knock a room through: its walls go, and any doorways in them. What's in it stays. */
+/** Knock a room through (its walls go, and any doorways in them), or take an area away. What's in it stays. */
 export function removeRoom(level: LevelDef, portals: readonly PortalDef[], id: string): Problem {
   const room = level.rooms.find((r) => r.id === id);
   if (!room) return 'There’s no room there.';

@@ -972,24 +972,33 @@ button.icon-button {
   }
 }
 
-.editor-status {
+/* The status line, and the selected room's card under it, beside the toolbar. */
+.editor-side {
   position: absolute;
   top: var(--mdst-space-sm);
   left: calc(var(--mdst-space-sm) + 2.75rem);
   z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--mdst-space-xs);
   max-width: 24rem;
+  pointer-events: none;
+
+  & > * {
+    pointer-events: auto;
+  }
+}
+
+.editor-status {
   margin: 0;
   padding: var(--mdst-space-xs) var(--mdst-space-sm);
   background: var(--mdst-color-bg);
   border: var(--mdst-border-width) solid var(--mdst-color-border);
 }
 
-/* The selected room: its name, its floor, and knocking it through. Bottom left, clear of the status line. */
+/* The selected room: its name and its floor (the toolbar's delete takes it away). */
 .editor-room {
-  position: absolute;
-  bottom: var(--mdst-space-sm);
-  left: calc(var(--mdst-space-sm) + 2.75rem);
-  z-index: 3;
   display: flex;
   flex-direction: column;
   gap: var(--mdst-space-sm);
@@ -1260,7 +1269,7 @@ button.icon-button {
     }
   }
 
-  .editor-status {
+  .editor-side {
     right: var(--mdst-space-sm);
     max-width: none;
   }

@@ -83,3 +83,27 @@ test('doorways go along walls: not in the outside wall, not at a corner, not on 
   const [bx, by, bw, bh] = bedroom.rect;
   assert.match(toggleDoor(level, w.portals, [bx + bw - 1, by + bh - 1]) ?? '', /corner/);
 });
+
+test('an area is a floor of its own with no walls: it can go round furniture, and comes away leaving it', () => {
+  const w = world();
+  const level = home(w);
+  const doors = level.doors.length;
+  const walls = [...new Grid(level).wall];
+  // Somewhere round a piece of furniture (where walls couldn't go).
+  const fits = (r: Rect) => typeof addRoom(structuredClone(level), w.portals, r, undefined, false) !== 'string';
+  const sofa = level.furniture.find((f) => fits([f.p[0], f.p[1] - 1, 4, 4]))!;
+  const rect: Rect = [sofa.p[0], sofa.p[1] - 1, 4, 4];
+  assert.match(roomProblem(level, rect) ?? '', /where the wall would go/);
+  const area = addRoom(level, w.portals, rect, undefined, false) as { id: string; name: string; floor: string; walled: boolean };
+  assert.equal(typeof area, 'object', String(area));
+  assert.equal(area.name, 'Area');
+  assert.equal(area.walled, false);
+  assert.notEqual(area.floor, level.rooms.find((r) => r.id !== area.id && r.rect[0] <= rect[0] && r.rect[1] <= rect[1] && r.walled)?.floor, 'a floor you can see');
+  assert.equal(level.doors.length, doors, 'no doorway needed');
+  assert.deepEqual([...new Grid(level).wall], walls, 'and no new walls');
+  assert.deepEqual(validate(w), []);
+  assert.match(roomProblem(level, [rect[0], rect[1], 1, 1], undefined, false) ?? '', /at least 2/);
+  assert.equal(removeRoom(level, w.portals, area.id), null);
+  assert.ok(level.furniture.includes(sofa));
+  assert.deepEqual(validate(w), []);
+});

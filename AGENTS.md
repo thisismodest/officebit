@@ -164,10 +164,10 @@ Working and verified in the browser:
   histories, clickable buildings and doors, follow, eased zoom, a phone layout,
   time modes (Live runs since its start date; Sandbox; jumping ahead), the map
   editor (furniture, buildings, roads, paths, crossings, rub out, rooms, doorways,
-  floors; it saves as you go, story-built places as overrides), a landing page, save and share
+  areas without walls, floors; it saves as you go, story-built places as overrides), a landing page, save and share
   links, interactions, feeds, opt-in music and sounds with volumes.
 
-116 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+117 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

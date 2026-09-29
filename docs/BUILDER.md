@@ -24,7 +24,8 @@ indoors.
 | **Crossing** | Click a road to put in a zebra crossing, two tiles wide, straight across it. |
 | **Rub out** | Drag over roads, paths, pavements and crossings to turn them back to grass. Pavement never runs across the end of a road, so a gap you rub out goes to grass (a one-tile gap keeps the pavements either side joined). Rubbed-out pavement leaves a patch of verge that pavement isn't laid over again (until you draw a path or road there). |
 | **Turn round** | Turns the selected house to face the other way. |
-| **Room** | Indoors: drag a box to build a walled room; click a room to rename it, change its floor or knock it through; drag a selected room's wall to move it (see below). |
+| **Room** | Indoors: drag a box to build a walled room; click a room to rename it, change its floor or delete it; drag a selected room's wall to move it (see below). |
+| **Area** | Indoors: drag a box to mark out a floor of its own with no walls, like a dining area; click one to change or delete it. |
 | **Doorway** | Indoors: click a wall to open a doorway, or a doorway to close it. |
 | **Stairs up** | Indoors: click where the stairs go, and a floor is built above (see below). |
 | **Delete** | Deletes what's selected (or press Delete). Buildings stay: move them instead. Deleting the stairs up to a floor you added takes that floor away (it asks first). |
@@ -88,9 +89,15 @@ side overlap by a tile, so they share one wall.
   outside walls, sit inside or beside other rooms but never across them, have
   at least a tile of floor inside, and not have a wall go through furniture or
   across the stairs. It gets a doorway, in the wall nearest the way in.
-- **Changing one:** click it. The card (bottom left) renames it, changes its
-  floor, or knocks it through (its walls and their doorways go; what's in it
-  stays). Drag one of its walls to move it; doorways still in the wall stay.
+- **Areas** (the Area tool) are rooms without walls: a floor of its own,
+  like the dining area. Drag a box; it may go round furniture, but not across
+  a room or another area. It starts on a floor that shows up against the one
+  it's on.
+- **Changing one:** click it. The card, under the status line, renames it or
+  changes its floor. Drag one of its walls (an area's edges) to move it;
+  doorways still in the wall stay. The toolbar's delete (or the Delete key)
+  takes it away: a room's walls and their doorways go, an area's floor goes,
+  and what's in it stays.
 - **Doorways** go along a wall, not at a corner, with floor either side. The
   front door and the stairs stay as they are, the outside walls get none, and
   every room keeps at least one.
