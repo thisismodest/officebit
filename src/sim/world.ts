@@ -43,6 +43,9 @@ export interface WorldDef {
 export interface LevelOverride {
   size: [w: number, h: number];
   furniture: FurnitureDef[];
+  /** Its rooms and doorways, if you changed its walls. */
+  rooms?: RoomDef[];
+  doors?: Tile[];
 }
 
 export interface LevelDef {
@@ -55,6 +58,8 @@ export interface LevelDef {
   furniture: FurnitureDef[];
   /** Where the camera starts when you look at this level (defaults to the middle). */
   view?: Tile;
+  /** An upper floor you added (in the editor), of the building whose ground floor is this level: part of that home, or that company's office. */
+  floorOf?: string;
 }
 
 export interface RoomDef {

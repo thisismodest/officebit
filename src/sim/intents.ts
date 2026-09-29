@@ -224,8 +224,10 @@ export function rulesFor(intent: Intent): Rules<Intent> {
 /** Cooking takes from the pantry; the food shop fills the one at home. */
 function eatFrom(sim: Simulation, p: Person, item: Item): void {
   const pantries = sim.world.pantries ?? {};
-  const left = pantries[item.level];
-  if (item.type.usesPantry && left !== undefined) pantries[item.level] = Math.max(0, left - item.type.usesPantry);
+  // One kitchen cupboard per home, whichever floor the cooking's on.
+  const home = sim.baseOf(item.level);
+  const left = pantries[home];
+  if (item.type.usesPantry && left !== undefined) pantries[home] = Math.max(0, left - item.type.usesPantry);
   if (item.type.groceries && p.home) {
     pantries[p.home] = PANTRY_FULL;
     sim.log(`${p.name} did the food shop 🛒`, [p.id]);

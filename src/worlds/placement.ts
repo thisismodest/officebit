@@ -57,16 +57,25 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
   }
 
   // Nothing that could be reached from the way in before may be cut off.
-  const entrance = ends.slice(0, 1);
-  const before = reachable(new Grid(level), entrance);
-  const after = reachable(new Grid({ ...level, furniture: [...others, placed] }), entrance);
-  const targets = (defs: readonly FurnitureDef[]) => [...ends, ...defs.flatMap(spotsOf)];
-  for (const target of targets(level.furniture.filter((f) => f !== moving))) {
-    if (before.has(key(target)) && !after.has(key(target))) return 'That would block the way.';
-  }
+  const after: LevelDef = { ...level, furniture: [...others, placed] };
+  if (cutsOff({ ...level, furniture: others }, after, portals)) return 'That would block the way.';
   const ownSpots = spotsOf(placed);
-  if (ownSpots.length > 0 && !ownSpots.some((s) => after.has(key(s)))) return 'Nobody could get to it there.';
+  const reached = reachable(new Grid(after), ends.slice(0, 1));
+  if (ownSpots.length > 0 && !ownSpots.some((s) => reached.has(key(s)))) return 'Nobody could get to it there.';
   return null;
+}
+
+/**
+ * Would changing a level from `before` to `after` cut anything off: a door,
+ * a stair, or somewhere people use furniture from, that could be reached
+ * from the way in before but not after?
+ */
+export function cutsOff(before: LevelDef, after: LevelDef, portals: readonly PortalDef[]): boolean {
+  const ends = portals.flatMap((p) => [p.a, p.b]).filter((end) => end.level === before.id).map((end) => end.p);
+  const entrance = ends.slice(0, 1);
+  const was = reachable(new Grid(before), entrance);
+  const now = reachable(new Grid(after), entrance);
+  return [...ends, ...before.furniture.flatMap(spotsOf)].some((target) => was.has(key(target)) && !now.has(key(target)));
 }
 
 /** "a bench", "an empty lot". */

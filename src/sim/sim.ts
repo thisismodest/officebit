@@ -133,7 +133,7 @@ export class Simulation {
     for (const level of world.levels) this.register(level);
     // Every kitchen starts with something in it.
     world.pantries ??= {};
-    for (const level of world.levels) if (level.kind === 'home') world.pantries[level.id] ??= this.rng.int(2, PANTRY_FULL);
+    for (const level of world.levels) if (level.kind === 'home' && !level.floorOf) world.pantries[level.id] ??= this.rng.int(2, PANTRY_FULL);
     this.nav = new Navigator(this.grids, world.portals);
 
     for (const def of world.people) this.spawnPerson(def);
@@ -222,7 +222,7 @@ export class Simulation {
   canUse(p: Person, item: Item, phase: DayPhase): boolean {
     if (item.gone || !this.isOpen(item)) return false;
     const needs = item.type.usesPantry ?? 0;
-    if (needs > 0 && this.levels.get(item.level)?.kind === 'home' && this.pantry(item.level) < needs) return false;
+    if (needs > 0 && this.levels.get(item.level)?.kind === 'home' && this.pantry(this.baseOf(item.level)) < needs) return false;
     return this.areaOf(p, phase).includes(item.level) || (phase === 'work' && !!item.type.street);
   }
 
@@ -298,14 +298,24 @@ export class Simulation {
   /** Levels someone may pick things from during a phase: work or home first, then (for those who go out) any public venue. */
   areaOf(p: Person, phase: DayPhase): string[] {
     const work = p.works ? [p.works] : (this.companies.get(p.company ?? '')?.levels ?? []);
-    const base = phase === 'work' ? work : p.home ? [p.home] : [];
+    const base = phase === 'work' ? work : p.home ? this.floorsOf(p.home) : [];
     if (!roleOf(p).goesOut || phase === 'sleep' || base.length === 0) return base;
     return [...base, ...this.publicPlaces()];
   }
 
+  /** Every floor of the building whose ground floor is `level`: it, then any you've added above it. */
+  floorsOf(level: string): string[] {
+    return [level, ...this.world.levels.filter((l) => l.floorOf === level).map((l) => l.id)];
+  }
+
+  /** The ground floor of the building a level's in (itself, unless it's a floor you added). */
+  baseOf(level: string): string {
+    return this.levels.get(level)?.floorOf ?? level;
+  }
+
   /** Venues anyone can walk into right now: the open ones. */
   publicPlaces(): string[] {
-    return this.world.levels.filter((l) => l.kind === 'venue' && this.venueOpen(l.id)).map((l) => l.id);
+    return this.world.levels.filter((l) => l.kind === 'venue' && this.venueOpen(this.baseOf(l.id))).map((l) => l.id);
   }
 
   /** The tick of this person's next wake-up. */
@@ -564,6 +574,33 @@ export class Simulation {
     this.nav = new Navigator(this.grids, this.world.portals);
   }
 
+  /**
+   * Take a level away (a floor you added, being removed): its furniture goes,
+   * so do the portals to it and its place in any company, and anyone on it
+   * (or on their way to it) is back at `to`.
+   */
+  removeLevel(id: string, to: Place): void {
+    if (!this.levels.has(id)) return;
+    for (const item of this.items) if (item.level === id && !item.gone) this.retire(item);
+    for (const p of this.people) {
+      const bound = p.level === id || p.dest?.level === id || p.route.some((leg) => leg.level === id);
+      if (!bound) continue;
+      this.stop(p);
+      if (p.level === id) {
+        p.level = to.level;
+        [p.x, p.y] = [p.px, p.py] = to.p;
+      }
+    }
+    this.world.levels = this.world.levels.filter((l) => l.id !== id);
+    this.world.portals = this.world.portals.filter((portal) => portal.a.level !== id && portal.b.level !== id);
+    for (const company of this.world.companies) company.levels = company.levels.filter((l) => l !== id);
+    this.levels.delete(id);
+    this.grids.delete(id);
+    this.active = null;
+    this.nav = new Navigator(this.grids, this.world.portals);
+    this.changed([id]);
+  }
+
   addCompany(company: CompanyDef): void {
     this.world.companies.push(company);
     this.companies.set(company.id, company);
@@ -641,7 +678,10 @@ export class Simulation {
   /** A place the story's building, as you arranged it last time (world.overrides), if it's the same layout. */
   private arranged(level: LevelDef): void {
     const override = this.world.overrides?.[level.id];
-    if (override && override.size[0] === level.size[0] && override.size[1] === level.size[1]) level.furniture = structuredClone(override.furniture);
+    if (!override || override.size[0] !== level.size[0] || override.size[1] !== level.size[1]) return;
+    level.furniture = structuredClone(override.furniture);
+    if (override.rooms) level.rooms = structuredClone(override.rooms);
+    if (override.doors) level.doors = structuredClone(override.doors);
   }
 
   private register(level: LevelDef): void {

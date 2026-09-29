@@ -41,12 +41,12 @@ households never split. Lines: adults only, nobody already spoken for, and
 ### 6. Builder
 Rebuilding it a step at a time (see `docs/BUILDER.md`). Done: a floating map
 editor to move, add and delete furniture in safe spots; moving buildings (with
-their doors and paths) and turning houses round; drawing roads, paths and zebra
+their doors and paths) and turning houses round; building rooms, doorways and
+floors (stairs up, and every floor of a house is home); drawing roads, paths and zebra
 crossings, and rubbing them out; save and share (browser, link, file), validated
 on load. Next, in order:
 - A team dialog (people, departments, paste-a-list; the editing is already in
   `worlds/edit.ts`).
-- Rooms, doors and floors, with rules so walls never stack or overlap.
 - New houses and lots from the picker; naming roads; family, pets and companies.
 - Furniture can be placed on empty lots; it shouldn't be.
 - Share the town as it is now (a 1:1 link: its people, time and story), not

@@ -14,7 +14,7 @@ export function describe(p: Person, sim: Simulation): string {
 
   // Long walks between places read better as a commute.
   const heading = moving && p.dest && p.dest.level !== p.level ? sim.levels.get(p.dest.level) : undefined;
-  if (heading?.id === p.home) return 'Heading home';
+  if (heading && p.home && sim.floorsOf(p.home).includes(heading.id)) return 'Heading home';
   if (heading?.kind === 'building' && sim.levels.get(p.level)?.kind !== 'building') return 'Heading to work';
   if (heading?.kind === 'school') return p.role === 'child' ? 'Walking to school 🎒' : 'Heading to work';
 

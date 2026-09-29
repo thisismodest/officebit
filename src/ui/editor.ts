@@ -19,16 +19,19 @@ import { OFFICE } from '../render/props/office.ts';
 import { PAINTERS } from '../render/props/index.ts';
 import { SCHOOL } from '../render/props/school.ts';
 import { VENUE } from '../render/props/venue.ts';
-import { buildingMoveProblem, flipHouse, isBuilding, moveBuilding, moveFurniture, placeFurniture, removeFurniture, snapshot, type Snapshot } from '../worlds/edit.ts';
+import { buildingMoveProblem, flipHouse, isBuilding, moveBuilding, moveFurniture, placeFurniture, removeFurniture, snapshot, type Floor, type Snapshot } from '../worlds/edit.ts';
 import { CLEARABLE, addCrossing, brush, crossingAt, erase, groundProblem, joinsUp, lay, strokeRects, type Surface } from '../worlds/ground.ts';
 import { isCovering, placementProblem } from '../worlds/placement.ts';
 import type { Grab } from './controls.ts';
 import { esc } from './html.ts';
 import { iconButton } from './icons.ts';
+import { ROOM_HINTS, RoomTools, type RoomTool } from './room-tools.ts';
 
-type Tool = 'move' | 'add' | Surface | 'crossing' | 'erase';
+type Tool = 'move' | 'add' | Surface | 'crossing' | 'erase' | RoomTool;
 /** Tools for the ground outside: they only work on the town map. */
 const GROUND_TOOLS = new Set<Tool>(['road', 'path', 'crossing', 'erase']);
+/** Tools for walls, doorways and floors: they only work indoors (room-tools.ts). */
+const INDOOR_TOOLS = new Set<Tool>(['room', 'door', 'stairs']);
 const HOUSES = new Set(['terrace', 'house', 'detached']);
 
 /** What the picker offers indoors and out. Buildings, houses, lots and building sites are placed some other way. */
@@ -49,8 +52,10 @@ const UNDO_STEPS = 50;
 type Change =
   | { kind: 'add' | 'remove'; level: string; def: FurnitureDef }
   | { kind: 'move'; level: string; t: string; from: Tile; to: Tile }
-  /** Roads, paths and buildings: the whole map as it was, in the town and in the design. */
-  | { kind: 'map'; level: string; before: Snapshot[] };
+  /** Roads, paths, buildings, rooms and doorways: the whole map as it was, in the town and in the design. */
+  | { kind: 'map'; level: string; before: Snapshot[] }
+  /** A floor built (`added`) or taken away (`removed`), with the stairs up to it from `level`. */
+  | { kind: 'floor'; level: string; added?: Floor; removed?: Floor };
 
 export interface EditorHost {
   sim(): Simulation;
@@ -69,9 +74,11 @@ export class Editor {
   private tool: Tool = 'move';
   private adding: string | null = null;
   private selected: Item | null = null;
-  private readonly host: EditorHost;
+  readonly host: EditorHost;
   private readonly bar: HTMLElement;
   private readonly picker: HTMLElement;
+  /** Rooms, doorways and floors, indoors. */
+  private readonly rooms: RoomTools;
   private readonly status: HTMLElement;
   private pickerLevel = '';
   private readonly undos: Change[] = [];
@@ -86,13 +93,21 @@ export class Editor {
     this.bar.innerHTML = `
       ${iconButton('move', 'Move: drag furniture or a building to move it', 'data-tool="move"')}
       ${iconButton('add', 'Add furniture', 'data-tool="add"')}
+      <span class="group" data-scene="outside">
+        <span class="divider"></span>
+        ${iconButton('road', 'Road: drag to draw one', 'data-tool="road"')}
+        ${iconButton('path', 'Path: drag to draw one', 'data-tool="path"')}
+        ${iconButton('crossing', 'Zebra crossing: click a road', 'data-tool="crossing"')}
+        ${iconButton('erase', 'Rub out roads, paths, pavements and crossings', 'data-tool="erase"')}
+      </span>
+      <span class="group" data-scene="inside">
+        <span class="divider"></span>
+        ${iconButton('room', 'Room: drag to build one, or click one to change it', 'data-tool="room"')}
+        ${iconButton('door', 'Doorway: click a wall to open or close one', 'data-tool="door"')}
+        ${iconButton('stairs', 'Stairs up: click where they go to build a floor above', 'data-tool="stairs"')}
+      </span>
       <span class="divider"></span>
-      ${iconButton('road', 'Road: drag to draw one', 'data-tool="road"')}
-      ${iconButton('path', 'Path: drag to draw one', 'data-tool="path"')}
-      ${iconButton('crossing', 'Zebra crossing: click a road', 'data-tool="crossing"')}
-      ${iconButton('erase', 'Rub out roads, paths, pavements and crossings', 'data-tool="erase"')}
-      <span class="divider"></span>
-      ${iconButton('flip', 'Turn the house round', 'data-action="flip" disabled')}
+      <span class="group" data-scene="outside">${iconButton('flip', 'Turn the house round', 'data-action="flip" disabled')}</span>
       ${iconButton('trash', 'Delete what’s selected (Delete)', 'data-action="delete"')}
       ${iconButton('undo', 'Undo (Ctrl+Z)', 'data-action="undo" disabled')}
       <span class="divider"></span>
@@ -104,6 +119,7 @@ export class Editor {
     this.picker.className = 'editor-picker mdst-card mdst-card--compact';
     this.picker.hidden = true;
     stage.append(this.bar, this.status, this.picker);
+    this.rooms = new RoomTools(stage, this);
 
     this.bar.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLElement>('button');
@@ -132,9 +148,9 @@ export class Editor {
     });
   }
 
-  /** Is this part of the editor (its toolbar, status line or picker)? */
+  /** Is this part of the editor (its toolbar, status line, picker or room card)? */
   contains(node: Node): boolean {
-    return [this.bar, this.status, this.picker].some((el) => el.contains(node));
+    return [this.bar, this.status, this.picker].some((el) => el.contains(node)) || this.rooms.contains(node);
   }
 
   open(): void {
@@ -150,6 +166,7 @@ export class Editor {
     this.showUndo();
     this.bar.hidden = this.picker.hidden = this.status.hidden = true;
     this.select(null);
+    this.rooms.clear();
     this.host.renderer.ghost = null;
   }
 
@@ -169,6 +186,10 @@ export class Editor {
       this.paint([tile]);
       return;
     }
+    if (INDOOR_TOOLS.has(this.tool)) {
+      this.rooms.click(this.tool as RoomTool, tile);
+      return;
+    }
     const here = this.itemsAt(x, y);
     const i = this.selected ? here.indexOf(this.selected) : -1;
     this.select(here[i >= 0 ? (i + 1) % here.length : 0] ?? null);
@@ -179,6 +200,10 @@ export class Editor {
     const { renderer } = this.host;
     if (GROUND_TOOLS.has(this.tool)) {
       renderer.ghost = this.groundPreview([this.host.tileAt(x, y)]);
+      return true;
+    }
+    if (INDOOR_TOOLS.has(this.tool)) {
+      renderer.ghost = this.rooms.hover(this.tool as RoomTool, this.host.tileAt(x, y));
       return true;
     }
     if (this.tool === 'add' && this.adding) {
@@ -213,7 +238,11 @@ export class Editor {
     } else if (change.kind === 'map') {
       for (const before of change.before) before.restore();
       this.host.sim().edited(level);
+    } else if (change.kind === 'floor') {
+      if (change.added) this.rooms.takeFloor(change.added);
+      if (change.removed) this.rooms.buildFloor(change.removed);
     }
+    this.rooms.clear();
     this.keep(level);
     this.select(null);
     this.say('Undone.');
@@ -222,11 +251,13 @@ export class Editor {
   /** Press on a piece of furniture with the move tool: drag it somewhere else. */
   grab(x: number, y: number): Grab | null {
     if (this.tool === 'road' || this.tool === 'path' || this.tool === 'erase') return this.stroke(this.host.tileAt(x, y));
+    if (this.tool === 'room') return this.rooms.grab(this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
     if (this.tool !== 'move') return null;
     // Drag what's selected if you press on it, even with something else drawn on top.
     const here = this.itemsAt(x, y);
     const item = this.selected && here.includes(this.selected) ? this.selected : here[0];
-    if (!item) return null;
+    // Stairs stay where they are: they're how you get up there.
+    if (!item || item.def.t === 'stairs') return null;
     const start = this.host.tileAt(x, y);
     const offset: Tile = [item.def.p[0] - start[0], item.def.p[1] - start[1]];
     const target = (cx: number, cy: number): Tile => {
@@ -248,9 +279,17 @@ export class Editor {
   /** Keep the picker in step with the level on screen (indoors and out offer different things). */
   update(): void {
     if (!this.active) return;
-    const outside = this.outside();
-    for (const b of this.bar.querySelectorAll<HTMLButtonElement>('[data-tool]')) b.disabled = GROUND_TOOLS.has(b.dataset.tool as Tool) && !outside;
-    if (GROUND_TOOLS.has(this.tool) && !outside) this.setTool('move');
+    // Only the tools this place has any use for: roads, paths and turning houses round are for the town.
+    const scene = this.outside() ? 'outside' : 'inside';
+    if (this.bar.dataset.scene !== scene) {
+      this.bar.dataset.scene = scene;
+      for (const group of this.bar.querySelectorAll<HTMLElement>('[data-scene]')) group.hidden = group.dataset.scene !== scene;
+      const move = this.bar.querySelector<HTMLElement>('[data-tool="move"]')!;
+      const label = scene === 'outside' ? 'Move: drag furniture or a building to move it' : 'Move: drag furniture to move it';
+      move.title = label;
+      move.setAttribute('aria-label', label);
+    }
+    if ((GROUND_TOOLS.has(this.tool) && scene !== 'outside') || (INDOOR_TOOLS.has(this.tool) && scene === 'outside')) this.setTool('move');
     if (this.tool === 'add' && this.pickerLevel !== this.host.renderer.level) this.fillPicker();
   }
 
@@ -258,6 +297,7 @@ export class Editor {
     this.tool = tool;
     for (const b of this.bar.querySelectorAll<HTMLElement>('[data-tool]')) b.setAttribute('aria-pressed', String(b.dataset.tool === tool));
     this.picker.hidden = tool !== 'add';
+    if (tool !== 'room') this.rooms.clear();
     if (tool === 'add') {
       this.select(null);
       this.fillPicker();
@@ -265,6 +305,9 @@ export class Editor {
     } else if (GROUND_TOOLS.has(tool)) {
       this.select(null);
       this.say(GROUND_HINTS[tool as keyof typeof GROUND_HINTS]);
+    } else if (INDOOR_TOOLS.has(tool)) {
+      this.select(null);
+      this.say(ROOM_HINTS[tool as RoomTool]);
     } else {
       this.say(this.outside() ? 'Drag furniture or a building to move it, or click it to select it.' : 'Drag furniture to move it, or click it to select it.');
     }
@@ -328,6 +371,12 @@ export class Editor {
 
   private deleteSelected(): void {
     const item = this.selected;
+    // Stairs up to a floor you added: the floor comes away with them.
+    if (item?.def.t === 'stairs') {
+      this.rooms.removeFloorAbove(item);
+      this.select(null);
+      return;
+    }
     if (!item || this.building(item)) {
       this.say(item ? 'Buildings stay: move them instead.' : 'Click something to select it first.', true);
       return;
@@ -511,7 +560,7 @@ export class Editor {
    * has the place), remembering how both were for undo. `change` returns a
    * problem to stop (the running town's say goes). Returns whether it happened.
    */
-  private reshape(level: string, change: (world: WorldDef) => string | null): boolean {
+  reshape(level: string, change: (world: WorldDef) => string | null): boolean {
     const sim = this.host.sim();
     const worlds = [sim.world, ...(this.designed(level) ? [this.host.design()] : [])];
     const before = worlds.map((w) => snapshot(w, level));
@@ -569,7 +618,7 @@ export class Editor {
     return this.host.sim().activeItems().find((i) => i.level === level && i.def.t === t && i.def.p[0] === x && i.def.p[1] === y);
   }
 
-  private remember(change: Change): void {
+  remember(change: Change): void {
     this.undos.push(change);
     if (this.undos.length > UNDO_STEPS) this.undos.shift();
     this.showUndo();
@@ -587,7 +636,12 @@ export class Editor {
       const design = this.host.design();
       if (place) {
         design.overrides ??= {};
-        design.overrides[level] = { size: [...place.size], furniture: structuredClone(place.furniture.filter((f) => !PASSING.has(f.t))) };
+        design.overrides[level] = {
+          size: [...place.size],
+          furniture: structuredClone(place.furniture.filter((f) => !PASSING.has(f.t))),
+          rooms: structuredClone(place.rooms),
+          doors: structuredClone(place.doors),
+        };
       }
     }
     this.host.saved();
@@ -639,7 +693,9 @@ export class Editor {
     const level = design().levels.find((l) => l.id === renderer.level);
     // In a place the story built (a startup's office), everything there is the story's; elsewhere, only what's in the design.
     // Buildings move as a whole, outside, unless a crew's about to build on it.
-    const movable = (item: Item) => (this.building(item) ? !sim().construction.reserved(item) : !NOT_PLACEABLE.has(item.def.t) && !interiorOf(sim(), item));
+    // (And stairs up to a floor you added: selecting them is how the floor comes away.)
+    const movable = (item: Item) =>
+      this.building(item) ? !sim().construction.reserved(item) : (!NOT_PLACEABLE.has(item.def.t) && !interiorOf(sim(), item)) || (item.def.t === 'stairs' && this.rooms.leadsUp(item));
     const editable = (item: Item) => (!level || level.furniture.some((f) => f.t === item.def.t && f.p[0] === item.def.p[0] && f.p[1] === item.def.p[1])) && movable(item);
     const [tx, ty] = this.host.tileAt(x, y);
     const covers = (item: Item) => tx >= item.def.p[0] && ty >= item.def.p[1] && tx < item.def.p[0] + item.type.size[0] && ty < item.def.p[1] + item.type.size[1];
@@ -650,7 +706,7 @@ export class Editor {
   }
 
   /** Is this level in the design, or did the story build it (a startup's office)? */
-  private designed(level: string): boolean {
+  designed(level: string): boolean {
     return this.host.design().levels.some((l) => l.id === level);
   }
 
@@ -659,7 +715,7 @@ export class Editor {
     return { rect: [x, y, w, h], tone: problem ? 'bad' : 'ok' };
   }
 
-  private say(text: string, bad = false): void {
+  say(text: string, bad = false): void {
     this.status.hidden = false;
     this.status.textContent = text;
     this.status.classList.toggle('bad', bad);

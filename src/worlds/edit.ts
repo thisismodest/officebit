@@ -7,6 +7,7 @@ import { TO_LET } from '../sim/housing.ts';
 import { PRESETS } from '../sim/personality.ts';
 import type { DepartmentDef, FurnitureDef, LevelDef, PersonDef, PortalDef, Rect, RoomDef, Tile, WorldDef } from '../sim/world.ts';
 import { CLEARABLE, groundProblem } from './ground.ts';
+import { outerRoom } from './rooms.ts';
 import { buildHome, type HomeStyle } from './homes.ts';
 import { placementProblem, type Problem } from './placement.ts';
 
@@ -381,6 +382,109 @@ function overlapsRect(f: FurnitureDef, [x, y, w, h]: Rect): boolean {
   return x < f.p[0] + fw && f.p[0] < x + w && y < f.p[1] + fh && f.p[1] < y + h;
 }
 
+// ── Floors ──────────────────────────────────────────────────────────────────
+
+const ORDINALS = ['Ground floor', 'First floor', 'Second floor', 'Third floor', 'Fourth floor', 'Fifth floor', 'Sixth floor'];
+
+/** A floor, and everything that joins it on: the stairs up to it (a portal, and the stairs on the floor below), and the companies it's part of. */
+export interface Floor {
+  level: LevelDef;
+  portal: PortalDef;
+  /** The level the stairs come up from, and the stairs there. */
+  below: string;
+  stairs: FurnitureDef;
+  companies: string[];
+}
+
+/**
+ * A new floor above `below`, up stairs at `at`: the same size, one room within
+ * the same outside walls, and stairs back down in the same spot. It's part of
+ * the same home (or company). Nothing's changed until you `addFloor` it.
+ */
+export function planFloor(world: WorldDef, below: string, at: Tile): string | Floor {
+  const parent = world.levels.find((l) => l.id === below);
+  if (!parent || parent.kind === 'outside') return 'Floors go in buildings.';
+  const problem = placementProblem(parent, world.portals, 'stairs', at);
+  if (problem) return problem;
+  const outer = outerRoom(parent);
+  if (!outer) return 'This place has no outside walls to build up from.';
+  const base = parent.floorOf ?? parent.id;
+  const storeys = building(world, parent.id).length;
+  const name = ORDINALS[storeys] ?? `Floor ${storeys}`;
+  const taken = new Set(world.levels.map((l) => l.id));
+  let n = storeys;
+  while (taken.has(`${base}-floor-${n}`)) n++;
+  const id = `${base}-floor-${n}`;
+  const stairs: FurnitureDef = { t: 'stairs', p: at };
+  return {
+    level: {
+      id,
+      name,
+      kind: parent.kind,
+      size: [...parent.size],
+      rooms: [{ id: `${id}-room`, name, rect: [...outer.rect], floor: outer.floor, walled: true }],
+      doors: [],
+      furniture: [{ t: 'stairs', p: [...at] }],
+      floorOf: base,
+    },
+    portal: { kind: 'stairs', a: { level: parent.id, p: [...at] }, b: { level: id, p: [...at] } },
+    below: parent.id,
+    stairs,
+    companies: world.companies.filter((c) => c.levels.includes(parent.id)).map((c) => c.id),
+  };
+}
+
+/** Build a planned floor into a world. */
+export function addFloor(world: WorldDef, floor: Floor): void {
+  world.levels.push(structuredClone(floor.level));
+  world.portals.push(structuredClone(floor.portal));
+  world.levels.find((l) => l.id === floor.below)?.furniture.push(structuredClone(floor.stairs));
+  for (const company of world.companies) if (floor.companies.includes(company.id)) company.levels.push(floor.level.id);
+}
+
+/** A floor you added, as it stands, ready to take away (or put back): only the top floor of a stack comes off. */
+export function floorToRemove(world: WorldDef, id: string): string | Floor {
+  const level = world.levels.find((l) => l.id === id);
+  if (!level?.floorOf) return 'Only floors you’ve added come away.';
+  // Stairs up to a floor run from the floor below (a) to it (b), so a floor's stairs down are the ones that end on it.
+  const portal = world.portals.find((p) => p.kind === 'stairs' && p.b.level === id);
+  if (!portal) return 'There are no stairs up to it.';
+  if (world.portals.some((p) => p.kind === 'stairs' && p.a.level === id)) return 'Take the floor above it off first.';
+  const down = portal.a;
+  const below = world.levels.find((l) => l.id === down.level);
+  const stairs = below?.furniture.find((f) => f.t === 'stairs' && f.p[0] === down.p[0] && f.p[1] === down.p[1]);
+  if (!below || !stairs) return 'There are no stairs up to it.';
+  return {
+    level: structuredClone(level),
+    portal: structuredClone(portal),
+    below: below.id,
+    stairs: structuredClone(stairs),
+    companies: world.companies.filter((c) => c.levels.includes(id)).map((c) => c.id),
+  };
+}
+
+/** Take a floor away from a world: the level, its stairs up, and its place in any company. */
+export function removeFloor(world: WorldDef, floor: Floor): void {
+  const id = floor.level.id;
+  world.levels = world.levels.filter((l) => l.id !== id);
+  world.portals = world.portals.filter((p) => p.a.level !== id && p.b.level !== id);
+  const below = world.levels.find((l) => l.id === floor.below);
+  if (below) below.furniture = below.furniture.filter((f) => !(f.t === 'stairs' && f.p[0] === floor.stairs.p[0] && f.p[1] === floor.stairs.p[1]));
+  for (const company of world.companies) company.levels = company.levels.filter((l) => l !== id);
+}
+
+/** Every floor of the building a level's in, found by following the stairs. */
+function building(world: WorldDef, level: string): string[] {
+  const floors = [level];
+  for (let i = 0; i < floors.length; i++) {
+    for (const p of world.portals) {
+      if (p.kind !== 'stairs') continue;
+      for (const [from, to] of [[p.a, p.b], [p.b, p.a]] as const) if (from.level === floors[i] && !floors.includes(to.level)) floors.push(to.level);
+    }
+  }
+  return floors;
+}
+
 // ── Undo ────────────────────────────────────────────────────────────────────
 
 /** How a map is now, ready to be put back. */
@@ -389,7 +493,7 @@ export interface Snapshot {
 }
 
 /**
- * Remember a map's ground, furniture and doors, to put back later (undo). It
+ * Remember a map's ground or rooms, doorways, furniture and doors, to put back later (undo). It
  * keeps the very same furniture, just where it was, so putting it back brings
  * back the same pieces rather than copies.
  */
@@ -397,12 +501,14 @@ export function snapshot(world: WorldDef, map: string): Snapshot {
   const level = world.levels.find((l) => l.id === map);
   if (!level) return { restore: () => {} };
   const rooms = structuredClone(level.rooms);
+  const doorways = structuredClone(level.doors);
   const furniture = [...level.furniture];
   const places = furniture.map((f) => ({ f, p: f.p, faces: f.faces }));
   const doors = world.portals.flatMap((portal) => [portal.a, portal.b]).filter((end) => end.level === map).map((end) => ({ end, p: end.p }));
   return {
     restore: () => {
       level.rooms = structuredClone(rooms);
+      level.doors = structuredClone(doorways);
       level.furniture = [...furniture];
       for (const { f, p, faces } of places) {
         f.p = p;

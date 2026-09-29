@@ -49,7 +49,10 @@ export function validate(world: WorldDef): string[] {
     const entrances = world.portals.flatMap((pt) => [pt.a, pt.b]).filter((end) => end.level === level.id);
     const reached = flood(grid, entrances.map((end) => end.p));
     checkFurniture(level, grid, reached, problems);
-    if (level.kind === 'home' && !level.furniture.some((f) => CATALOG[f.t]?.bed)) problems.push(`${level.name}: no bed`);
+    if (level.floorOf && !levels.has(level.floorOf)) problems.push(`${level.name}: a floor of "${level.floorOf}", which doesn't exist`);
+    // A home needs a bed somewhere in it (upstairs will do).
+    const floors = [level, ...world.levels.filter((l) => l.floorOf === level.id)];
+    if (level.kind === 'home' && !level.floorOf && !floors.some((l) => l.furniture.some((f) => CATALOG[f.t]?.bed))) problems.push(`${level.name}: no bed`);
   }
 
   for (const id of unreachableLevels(world)) problems.push(`${levels.get(id)!.name}: no doors or stairs lead here`);

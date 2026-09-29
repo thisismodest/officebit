@@ -81,12 +81,13 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
 src/worlds/   starter.ts (people, 2-floor office, venues, homes), town.ts (the 160×160 town, house plots, lots),
               ground.ts (roads, paths, crossings, generated pavements), layout.ts (LevelBuilder),
               homes.ts (terrace/house/detached interiors), offices.ts (startup tier 1/2), venues.ts (diner, shop),
-              school.ts, edit.ts (world edits: moving buildings, turning houses, team), placement.ts (safe zones)
+              school.ts, edit.ts (world edits: moving buildings, turning houses, floors, team), placement.ts (safe zones),
+              rooms.ts (walled rooms and doorways)
 src/render/   renderer.ts (one level through a camera; y-sorted props+people; night lighting),
               camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, cars.ts,
               palette.ts, pixels.ts, props/* (one painter per catalog type)
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
-              editor.ts (map editor), share-menu.ts + world-io.ts (save, share links, files),
+              editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), share-menu.ts + world-io.ts (save, share links, files),
               timekeeper.ts (live/sandbox), time-jump.ts (jumping ahead), controls.ts (pan/zoom/click),
               place-card.ts, describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects);
@@ -162,10 +163,11 @@ Working and verified in the browser:
 - **UI:** World/People/News sidebar (hideable) with profiles and per-person
   histories, clickable buildings and doors, follow, eased zoom, a phone layout,
   time modes (Live runs since its start date; Sandbox; jumping ahead), the map
-  editor (furniture, buildings, roads, paths, crossings, rub out), save and share
+  editor (furniture, buildings, roads, paths, crossings, rub out, rooms, doorways,
+  floors; it saves as you go, story-built places as overrides), a landing page, save and share
   links, interactions, feeds, opt-in music and sounds with volumes.
 
-108 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+116 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

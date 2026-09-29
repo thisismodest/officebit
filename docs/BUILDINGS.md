@@ -46,7 +46,8 @@ home otherwise. Commuting falls out of that. `worlds/homes.ts` has an
 interior for each size of house on the town map: a `terrace` (3 wide) is a
 one-bed, a `house` (a semi, 4 wide) a two-bed with a desk in the second
 bedroom, and a `detached` house (5 wide) a family home with a kids' room and a
-study. Put one on the town map and a door portal to link them. Buildings open onto the row below their footprint; a house with
+study. A home can have more floors (built in the editor, `floorOf` its ground
+floor: see [BUILDER](BUILDER.md#floors)), and all of them are home. Put one on the town map and a door portal to link them. Buildings open onto the row below their footprint; a house with
 `"faces": "up"` opens onto the row above instead, so streets can have houses
 on both sides.
 

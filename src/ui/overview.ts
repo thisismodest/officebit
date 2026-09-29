@@ -70,11 +70,11 @@ export class Overview {
     });
     const companyLevels = new Set([...sim.companies.values()].flatMap((c) => c.levels));
     const venues = sim.world.levels
-      .filter((l) => l.kind === 'venue' && !companyLevels.has(l.id))
-      .map((l) => place('cup', l.name, `${count([l])} in`, l.id));
-    const schools = sim.world.levels.filter((l) => l.kind === 'school').map((l) => {
+      .filter((l) => l.kind === 'venue' && !l.floorOf && !companyLevels.has(l.id))
+      .map((l) => place('cup', l.name, `${count(levelsOf(sim.floorsOf(l.id)))} in`, l.id));
+    const schools = sim.world.levels.filter((l) => l.kind === 'school' && !l.floorOf).map((l) => {
       const pupils = sim.people.filter((p) => p.role === 'child' && p.works === l.id).length;
-      return place('school', l.name, `${pupils} pupils · ${count([l])} in`, l.id);
+      return place('school', l.name, `${pupils} pupils · ${count(levelsOf(sim.floorsOf(l.id)))} in`, l.id);
     });
     const town = sim.world.levels.find((l) => l.kind === 'outside');
 
@@ -83,8 +83,9 @@ export class Overview {
       .filter((j) => !j.finished)
       .map((j) => place('building', j.label, j.siteItem ? `${Math.round((j.site.progress ?? 0) * 100)}% built` : 'crew on the way'));
 
-    const homes = sim.world.levels.filter((l) => l.kind === 'home');
-    const athome = count(homes);
+    const homes = sim.world.levels.filter((l) => l.kind === 'home' && !l.floorOf);
+    // People on any floor of a house are at home.
+    const athome = count(sim.world.levels.filter((l) => l.kind === 'home'));
     const low = homes.filter((h) => sim.pantry(h.id) < LOW_PANTRY).length;
     const toLet = sim.housing.vacant().length;
 

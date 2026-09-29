@@ -165,7 +165,7 @@ export class PersonalityBrain implements Brain {
 
     // Evenings and weekends: the side project.
     if (phase === 'home' && sim.ventures.wantsToHustle(p)) {
-      const desk = sim.activeItems().find((item) => item.type.study && item.level === p.home && sim.freeSpots(item.index) > 0);
+      const desk = sim.activeItems().find((item) => item.type.study && sim.floorsOf(p.home!).includes(item.level) && sim.freeSpots(item.index) > 0);
       const keen = (0.25 + 0.6 * t.ambition) * (0.3 + 0.7 * p.needs.energy) * (isWeekend(sim.tick) ? 1.2 : 1);
       if (desk) options.push({ intent: { kind: 'hustle', item: desk.index }, score: keen + noise() });
     }
@@ -254,7 +254,7 @@ export class PetBrain implements Brain {
       if (q === p || q.species !== 'human' || q.level !== p.level || !sim.present(q) || asleep(q)) continue;
       options.push({ intent: { kind: 'chat', with: q.id }, score: 0.15 + urgency(p.needs, 'social') + urgency(p.needs, 'fun') + noise() });
     }
-    const wander = stroll(p, sim, [p.home]);
+    const wander = stroll(p, sim, sim.floorsOf(p.home));
     if (wander) options.push({ intent: wander, score: 0.2 + noise() });
     return best(options) ?? idle(p);
   }
@@ -298,8 +298,10 @@ function stroll(p: Person, sim: Simulation, area: string[]): Intent | null {
 /** Their bed at home (pets: a basket or the sofa), until `until` or their next wake-up. */
 function sleep(p: Person, sim: Simulation, until = sim.nextWake(p)): Intent | null {
   const pet = p.species !== 'human';
+  // Any floor of the house: a bedroom upstairs will do.
+  const floors = p.home ? sim.floorsOf(p.home) : [];
   const beds = sim.activeItems().filter(
-    (item) => item.level === p.home && (pet ? item.type.petBed || item.type.seat : item.type.bed) && sim.freeSpots(item.index) > 0,
+    (item) => floors.includes(item.level) && (pet ? item.type.petBed || item.type.seat : item.type.bed) && sim.freeSpots(item.index) > 0,
   );
   // Their own bed first, then unclaimed ones, then anyone's.
   const rank = (item: Item) => (item.def.owner === p.id ? 0 : item.def.owner ? 2 : 1);

@@ -965,6 +965,11 @@ button.icon-button {
     margin: 2px 0;
     background: var(--mdst-color-subtle);
   }
+
+  /* Tools for one kind of place (the town's roads): laid out as if they weren't wrapped, and gone elsewhere. */
+  & .group {
+    display: contents;
+  }
 }
 
 .editor-status {
@@ -977,6 +982,27 @@ button.icon-button {
   padding: var(--mdst-space-xs) var(--mdst-space-sm);
   background: var(--mdst-color-bg);
   border: var(--mdst-border-width) solid var(--mdst-color-border);
+}
+
+/* The selected room: its name, its floor, and knocking it through. Bottom left, clear of the status line. */
+.editor-room {
+  position: absolute;
+  bottom: var(--mdst-space-sm);
+  left: calc(var(--mdst-space-sm) + 2.75rem);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mdst-space-sm);
+  width: 14rem;
+  padding: var(--mdst-space-sm);
+  background: var(--mdst-color-bg);
+
+  & label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--mdst-text-xs);
+  }
 }
 
 .editor-picker {

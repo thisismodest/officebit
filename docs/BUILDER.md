@@ -12,6 +12,10 @@ this browser a moment after each change (and each undo). A town opened from a
 link then lives here: the link comes off the address, so a reload keeps your
 edits rather than opening the link again.
 
+The toolbar only shows the tools the place has any use for: roads, paths,
+crossings and turning houses round in the town; rooms, doorways and stairs
+indoors.
+
 | Tool | Does |
 |---|---|
 | **Move** | Drag a piece of furniture, or outside a building, somewhere else. Click it to select it. It keeps its owner, so a desk stays someone's. |
@@ -20,7 +24,10 @@ edits rather than opening the link again.
 | **Crossing** | Click a road to put in a zebra crossing, two tiles wide, straight across it. |
 | **Rub out** | Drag over roads, paths, pavements and crossings to turn them back to grass. Pavement never runs across the end of a road, so a gap you rub out goes to grass (a one-tile gap keeps the pavements either side joined). Rubbed-out pavement leaves a patch of verge that pavement isn't laid over again (until you draw a path or road there). |
 | **Turn round** | Turns the selected house to face the other way. |
-| **Delete** | Deletes what's selected (or press Delete). Buildings stay: move them instead. |
+| **Room** | Indoors: drag a box to build a walled room; click a room to rename it, change its floor or knock it through; drag a selected room's wall to move it (see below). |
+| **Doorway** | Indoors: click a wall to open a doorway, or a doorway to close it. |
+| **Stairs up** | Indoors: click where the stairs go, and a floor is built above (see below). |
+| **Delete** | Deletes what's selected (or press Delete). Buildings stay: move them instead. Deleting the stairs up to a floor you added takes that floor away (it asks first). |
 | **Undo** | Undoes the last change (or Ctrl/Cmd+Z), up to 50 steps back. The steps are forgotten when you finish editing. A desk put back is its owner's again. |
 | **Done** | Closes the editor (so does the pencil, or using any other part of the interface, like the sidebar or the menu bar). |
 
@@ -69,6 +76,39 @@ builds that place again at the same moment, and the sim lays it out as you
 left it (`sim.arranged`). A bigger office is a new layout, so it starts from
 its own. People keep the desks they had.
 
+## Rooms
+
+`src/worlds/rooms.ts` (the tools are `src/ui/room-tools.ts`). A walled room is
+a rectangle whose edge is its wall, as the buildings are made; rooms side by
+side overlap by a tile, so they share one wall.
+
+- **Building a room:** drag a box. Its edges snap onto walls within a tile, so
+  it shares them rather than standing a wall next to a wall (unless snapping
+  would put it somewhere it can't go). It must fit inside the building's
+  outside walls, sit inside or beside other rooms but never across them, have
+  at least a tile of floor inside, and not have a wall go through furniture or
+  across the stairs. It gets a doorway, in the wall nearest the way in.
+- **Changing one:** click it. The card (bottom left) renames it, changes its
+  floor, or knocks it through (its walls and their doorways go; what's in it
+  stays). Drag one of its walls to move it; doorways still in the wall stay.
+- **Doorways** go along a wall, not at a corner, with floor either side. The
+  front door and the stairs stay as they are, the outside walls get none, and
+  every room keeps at least one.
+- **Nothing gets cut off:** no change may leave a door, the stairs, or
+  somewhere people use furniture from out of reach of the way in.
+
+## Floors
+
+**Stairs up** builds a floor above wherever you click (where a 2×2 staircase
+fits): the same size, one room inside the same outside walls, and stairs back
+down in the same spot (`planFloor` in `src/worlds/edit.ts`). It's named in
+order (First floor, Second floor…), and it's part of the same building
+(`floorOf`, the ground floor's level id): every floor of a house is home, so
+a bed upstairs is where they'll sleep and a kitchen upstairs cooks from the
+same cupboard; a new office floor joins its company. Only floors you added
+come away, from the top down, by deleting their stairs. Floors go in places
+that are part of the design (not a startup's office the story built).
+
 ## Safe zones
 
 Furniture only goes where it's safe (`src/worlds/placement.ts`). The outline
@@ -107,6 +147,5 @@ says why.
 ## Coming next
 
 Team editing (adding people, departments, paste-a-list) is written and tested
-in `src/worlds/edit.ts`, waiting for its dialog. Rooms, doors and floors come
-back once they have rules that stop walls stacking up. New houses and lots from
-the picker, and naming roads.
+in `src/worlds/edit.ts`, waiting for its dialog. New houses and lots from the
+picker, and naming roads.
