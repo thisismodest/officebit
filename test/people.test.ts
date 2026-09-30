@@ -67,6 +67,18 @@ test('leaving town: the household walks off, and the home goes up to let', () =>
   assert.deepEqual(validate(w), []);
 });
 
+test('the last one at home moving out takes the pets with them, so a house to let is empty', () => {
+  const sim = new Simulation(world());
+  const mo = sim.person('mo')!;
+  const plan = planFamily(sim.world, mo.home!, 'pet', 'Tibbs') as NewFamily;
+  sim.arrivals.welcome(plan.def, false);
+  run(sim, 600);
+  sim.moveOut(mo);
+  run(sim, TICKS_PER_DAY);
+  assert.equal(sim.person('tibbs'), undefined, 'the cat went too');
+  assert.ok(sim.housing.vacant().some((h) => h.level.id === 'home-mo'), 'and it really is to let');
+});
+
 test('editing someone: a new name renames their house; a new personality changes their days', () => {
   const sim = new Simulation(world());
   const ines = sim.person('ines')!;

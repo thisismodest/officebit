@@ -699,8 +699,9 @@ export class Simulation {
     this.log(`👋 ${p.name}${household.length ? ` and ${household.length === 1 ? household[0]!.name : 'their household'}` : ''} left town`, [p.id, ...household.map((q) => q.id)]);
   }
 
-  /** One person (or pet) moves out of town, leaving everyone else as they are. */
+  /** One person (or pet) moves out of town, leaving everyone else as they are. If it's the last person whose home it is, their family and pets go with them. */
   moveOut(p: Person): void {
+    if (this.lastAtHome(p)) return this.leaveTown(p);
     this.depart(p);
     this.log(`👋 ${p.name} moved out of town`, [p.id]);
   }
@@ -735,6 +736,12 @@ export class Simulation {
   }
 
   // ── Internals ─────────────────────────────────────────────────────────────
+
+  /** Is `p` the last one living at home whose home it is (anyone on the team, or staff), with only family and pets besides? */
+  lastAtHome(p: Person): boolean {
+    const householder = (q: Person) => !q.npc || q.role === 'staff';
+    return !!p.home && householder(p) && !this.people.some((q) => q !== p && q.home === p.home && !q.leaving && householder(q));
+  }
 
   /** Off to the edge of town, for good. */
   private depart(p: Person): void {

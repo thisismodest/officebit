@@ -88,7 +88,8 @@ and pets (not staff, crews or passers-by), changes someone in the running town
   up. They arrive like anyone new (`sim/arrivals.ts`): a baby is dropped off by
   car at the nearest road to the house and crawls in through the front door
   (slowly, low down); anyone else walks in from the edge of town. **Move out**
-  sees a family member off, for good.
+  sees one of them off, for good; if that's the last person whose home it is, the
+  family and pets go with them, so a house to let is always empty.
 - **Works at**: any workplace (a free desk there, or it says there isn't one:
   `giveJob`), or **Out of work**, and they look for work elsewhere (see
   [CAREERS](CAREERS.md)). Someone let go never applies back to where they were

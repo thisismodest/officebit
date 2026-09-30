@@ -203,9 +203,13 @@ export class PersonEditor {
   private moveOut(id: string): { say: string; rebuild: boolean } | null {
     const sim = this.host.sim();
     const q = sim.person(id);
-    if (!q || !confirm(`${q.name} moves out of town, for good?`)) return null;
+    if (!q) return null;
+    // The last one whose home it is takes the family and pets with them.
+    const household = sim.lastAtHome(q);
+    if (!confirm(`${q.name} moves out of town, for good${household ? ', with the family and pets they live with' : ''}?`)) return null;
     sim.moveOut(q);
-    removeFamily(this.host.design(), id);
+    if (q.npc) removeFamily(this.host.design(), id);
+    else removePerson(this.host.design(), id);
     this.host.saved();
     return { say: `${q.name} is moving out.`, rebuild: true };
   }
