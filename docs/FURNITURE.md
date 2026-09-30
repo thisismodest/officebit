@@ -71,6 +71,11 @@ tags: its title (the card's heading is the name before any tagline), its line, a
 - **Pixelated to fit.** Each panel draws its spotlight shrunk to the panel and down to a
   few colours. A banner is cropped to fill the panel; a logo (squarer than 1.3:1)
   is framed on its own background colour.
+- **Posters show the icon.** A bus stop's poster is portrait, where a landscape
+  picture won't fit, so it shows the site's icon instead, whole and centred: its
+  apple-touch-icon, else an SVG icon, else its favicon, fetched with the picture.
+  Behind an icon with see-through edges goes paper for a dark icon, the night sky
+  for a light one. Clicked, every panel's card shows the picture.
 - **Taking turns.** A new one each game hour, each panel a step ahead of the one before
   (in the order they were put up), so no two show the same one.
 - **The house spotlight.** A spotlight that couldn't be fetched shows officebit's own (its share

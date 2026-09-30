@@ -18,20 +18,28 @@ export interface SpotlightInfo {
   description: string;
   /** Its picture, a file beside the index. */
   image: string;
+  /** Its icon, for posters (portrait panels), if it has one. */
+  icon?: string;
 }
 
-/** A spotlight ready to show: its picture once it's loaded. */
-export interface Spotlight extends Omit<SpotlightInfo, 'image'> {
+/** A spotlight ready to show: its picture (and icon) once they're loaded. */
+export interface Spotlight extends Omit<SpotlightInfo, 'image' | 'icon'> {
   host: string;
   image: HTMLImageElement | null;
+  /** For posters, which are portrait: a landscape picture won't fit, so the site's icon, centred. */
+  icon: HTMLImageElement | null;
   /** officebit's own, shown when a spotlight couldn't be fetched. */
   house?: boolean;
 }
 
-/** Colour levels per channel, for the 8-bit look; a picture's shape (width over height) below which it's a logo, framed rather than cropped; and behind a logo with see-through edges, the stage's colour. */
+/** Colour levels per channel, for the 8-bit look; a picture's shape (width over height) below which it's a logo, framed rather than cropped; and behind a light logo with see-through edges, the stage's colour. */
 const LEVELS = 6;
 const LOGO_SHAPE = 1.3;
 const BACKDROP = '#1f1d29';
+/** Behind a dark logo with see-through edges: paper. */
+const PAPER = '#f4f1ea';
+/** How big to draw an SVG icon that doesn't give its size (px, before shrinking). */
+const SVG_SIZE = 64;
 
 export class Spotlights {
   private readonly spotlights: Spotlight[];
@@ -48,15 +56,18 @@ export class Spotlights {
       name: 'officebit',
       description: 'A tiny 8-bit town that gets on with its day.',
       image: picture(new URL('og-image.png', base).href),
+      icon: picture(new URL('apple-touch-icon.png', base).href),
       house: true,
     };
-    this.spotlights = SPOTLIGHTS.map((url) => ({ ...this.house, url, host: new URL(url).host, image: null, house: true }));
+    this.spotlights = SPOTLIGHTS.map((url) => ({ ...this.house, url, host: new URL(url).host, image: null, icon: null, house: true }));
     void fetch(new URL('spotlights/index.json', base))
       .then((r): Promise<Record<string, SpotlightInfo>> | Record<string, SpotlightInfo> => (r.ok ? r.json() : {}))
       .then((index) => {
         for (const [i, url] of SPOTLIGHTS.entries()) {
           const info = index[url];
-          if (info) this.spotlights[i] = { ...info, host: new URL(url).host, image: picture(new URL(`spotlights/${info.image}`, base).href) };
+          if (!info) continue;
+          const file = (name: string) => picture(new URL(`spotlights/${name}`, base).href);
+          this.spotlights[i] = { ...info, host: new URL(url).host, image: file(info.image), icon: info.icon ? file(info.icon) : null };
         }
         this.art.clear();
       })
@@ -69,21 +80,22 @@ export class Spotlights {
     return spot.house ? this.house : spot;
   }
 
-  /** A spotlight's picture, pixelated to a panel `w`×`h` pixels, or null while it loads. */
+  /** A spotlight pixelated to a panel `w`×`h` pixels (a portrait poster shows its icon, centred; anything else its picture), or null while it loads. */
   pixels(spot: Spotlight, w: number, h: number): HTMLCanvasElement | null {
-    const image = spot.image;
-    if (!image?.complete || !image.naturalWidth) return null;
+    const poster = h > w && !!spot.icon;
+    const image = poster ? spot.icon : spot.image;
+    if (!image?.complete || !sizeOf(image)) return null;
     const key = `${image.src}|${w}x${h}`;
     let art = this.art.get(key);
     if (!art) {
-      art = pixelate(image, w, h);
+      art = pixelate(image, w, h, poster);
       this.art.set(key, art);
     }
     return art;
   }
 }
 
-/** A logo's background: the colour just inside its edge (a corner, then the middle of each side), if it's solid there. */
+/** A logo's background: the colour just inside its edge (a corner, then the middle of each side), if it's solid there; if it's see-through, light behind a dark logo and dark behind a light one. */
 function backdrop(image: HTMLImageElement): string {
   const size = 16;
   const probe = document.createElement('canvas');
@@ -94,7 +106,16 @@ function backdrop(image: HTMLImageElement): string {
     const [r, g, b, a] = ctx.getImageData(x, y, 1, 1).data;
     if (a! > 200) return `rgb(${r},${g},${b})`;
   }
-  return BACKDROP;
+  // How light the logo itself is, over its solid pixels (0 black, 1 white).
+  const { data } = ctx.getImageData(0, 0, size, size);
+  let light = 0;
+  let solid = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3]! < 128) continue;
+    light += (0.3 * data[i]! + 0.59 * data[i + 1]! + 0.11 * data[i + 2]!) / 255;
+    solid++;
+  }
+  return solid && light / solid < 0.5 ? PAPER : BACKDROP;
 }
 
 /** Which of `count` spotlights a panel shows at a tick: the next each game hour, each panel one ahead of the one before. */
@@ -108,15 +129,21 @@ function picture(src: string): HTMLImageElement {
   return image;
 }
 
-/** Shrunk to the panel (a banner cropped to fill it, a logo framed on its own background colour), then down to a few colours. */
-function pixelate(image: HTMLImageElement, w: number, h: number): HTMLCanvasElement {
+/** A picture's size in pixels; an SVG that doesn't say is drawn as if it were this big. Null if it didn't load. */
+function sizeOf(image: HTMLImageElement): [number, number] | null {
+  if (image.naturalWidth) return [image.naturalWidth, image.naturalHeight];
+  return /\.svg$/.test(image.src) ? [SVG_SIZE, SVG_SIZE] : null;
+}
+
+/** Shrunk to the panel (a banner cropped to fill it; a logo, or anything `framed`, whole on its own background colour), then down to a few colours. */
+function pixelate(image: HTMLImageElement, w: number, h: number, framed = false): HTMLCanvasElement {
   const art = document.createElement('canvas');
   art.width = w;
   art.height = h;
   const ctx = art.getContext('2d', { willReadFrequently: true })!;
   ctx.imageSmoothingQuality = 'high';
-  const [iw, ih] = [image.naturalWidth, image.naturalHeight];
-  if (iw / ih < LOGO_SHAPE && w / h > LOGO_SHAPE) {
+  const [iw, ih] = sizeOf(image)!;
+  if (framed || (iw / ih < LOGO_SHAPE && w / h > LOGO_SHAPE)) {
     // A logo: its own background colour behind it, and the whole of it in the middle.
     ctx.fillStyle = backdrop(image);
     ctx.fillRect(0, 0, w, h);

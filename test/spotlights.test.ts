@@ -17,10 +17,21 @@ test('a spotlight page’s title, name, line and picture, from its Open Graph ta
     name: 'QuestBar',
     description: 'Keep your task in sight & done.',
     image: 'https://questbar.app/images/app-icon.png',
+    icons: ['https://questbar.app/favicon.ico'],
   });
   // No Open Graph: the page's own title and description, and a Twitter card's picture.
   const plain = readMeta('<title>modest-ui | A CSS library</title><meta name="description" content="Minimal."><meta name="twitter:image" content="https://x.test/a.png">', 'https://modest-ui.com');
   assert.deepEqual([plain.name, plain.description, plain.image], ['modest-ui', 'Minimal.', 'https://x.test/a.png']);
+});
+
+test('a spotlight’s icon, for the posters: an apple-touch-icon first, then an SVG icon, any other, and the favicon', () => {
+  const html = `<link rel="icon" href="/favicon.png" sizes="32x32"><link rel="icon" type="image/svg+xml" href="./favicon.svg"><link rel="apple-touch-icon" href="images/app-icon.png">`;
+  assert.deepEqual(readMeta(html, 'https://vimscoops.dev/').icons, [
+    'https://vimscoops.dev/images/app-icon.png',
+    'https://vimscoops.dev/favicon.svg',
+    'https://vimscoops.dev/favicon.png',
+    'https://vimscoops.dev/favicon.ico',
+  ]);
 });
 
 test('the panels take turns: a new spot each game hour, each panel a step ahead of the one before', () => {

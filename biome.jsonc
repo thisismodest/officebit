@@ -1,6 +1,6 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
-  "files": { "includes": ["**", "!**/dist", "!**/node_modules"] },
+  "files": { "includes": ["**", "!**/dist", "!**/node_modules", "!**/.cache"] },
   // The house style: two spaces, single quotes, long lines.
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 160 },
   "javascript": { "formatter": { "quoteStyle": "single" } },
