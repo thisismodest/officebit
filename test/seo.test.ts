@@ -15,7 +15,7 @@ const pngSize = (path: string) => {
   return [png.readUInt32BE(16), png.readUInt32BE(20)];
 };
 
-for (const path of ['index.html', 'town/index.html', 'changelog/index.html']) {
+for (const path of ['index.html', 'about/index.html', 'changelog/index.html']) {
   test(`${path}: a title, a description, and everything a link preview needs`, () => {
     const html = page(path);
     const title = html.match(/<title>\s*([^<]+?)\s*<\/title>/)?.[1] ?? '';
@@ -40,13 +40,13 @@ test('the share image and icons are the sizes they say', () => {
   assert.deepEqual(pngSize('icon-512.png'), [512, 512]);
 });
 
-test('the landing page describes itself for search engines, in JSON-LD', () => {
-  const json = page('index.html').match(/<script\s+type="application\/ld\+json"\s*>([\s\S]*?)<\/script>/)?.[1];
+test('the about page describes officebit for search engines, in JSON-LD', () => {
+  const json = page('about/index.html').match(/<script\s+type="application\/ld\+json"\s*>([\s\S]*?)<\/script>/)?.[1];
   const data = JSON.parse(json ?? '');
   const types = data['@graph'].map((node: { '@type': string }) => node['@type']);
   assert.deepEqual(types, ['WebSite', 'WebApplication', 'SoftwareSourceCode']);
   const app = data['@graph'][1];
-  assert.equal(app.url, `${SITE.url}town/`);
+  assert.equal(app.url, SITE.url, 'the town is at the root');
   assert.equal(app.offers.price, '0');
   assert.equal(data['@graph'][2].codeRepository, SITE.repo);
 });
@@ -54,7 +54,7 @@ test('the landing page describes itself for search engines, in JSON-LD', () => {
 test('the sitemap lists every page, and the manifest its icons', () => {
   const sitemap = page('sitemap.xml');
   assert.match(sitemap, /<loc>https:\/\/example\.github\.io\/officebit\/<\/loc>/);
-  assert.match(sitemap, /<loc>https:\/\/example\.github\.io\/officebit\/town\/<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/example\.github\.io\/officebit\/about\/<\/loc>/);
   assert.match(sitemap, /<loc>https:\/\/example\.github\.io\/officebit\/changelog\/<\/loc>/);
   assert.ok(JSON.parse(page('site.webmanifest')).icons.length >= 3);
   assert.ok(SITE_PAGES.has('.webmanifest'));
@@ -64,4 +64,12 @@ test('robots.txt lets search engines in and points them to the sitemap', () => {
   const robots = page('robots.txt');
   assert.match(robots, /^User-agent: \*$/m);
   assert.match(robots, new RegExp(`^Sitemap: ${SITE.url}sitemap.xml$`, 'm'));
+});
+
+test('the changelog’s newest release is the version in package.json, and each has a date', () => {
+  const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
+  const html = page('changelog/index.html');
+  const releases = [...html.matchAll(/<h2>(\d+\.\d+(?:\.\d+)?) <small>· <time datetime="(\d{4}-\d\d-\d\d)">/g)].map((m) => m[1]!);
+  assert.ok(releases.length > 1, 'a heading per release: its version and date');
+  assert.equal(releases[0], version.replace(/\.0$/, ''), `newest ${releases[0]}, package.json ${version}`);
 });

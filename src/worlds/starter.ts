@@ -11,6 +11,7 @@ import { buildDiner, buildShop } from "./venues.ts";
 import { LevelBuilder, portal } from "./layout.ts";
 import { DINER_DOOR, OFFICE_DOOR, PLOTS, SCHOOL_DOOR, SHOP_DOOR, SPAWN, buildTown, type Plot } from "./town.ts";
 import { resolveTraits } from "../sim/personality.ts";
+import { VERSION } from "./upgrades.ts";
 
 const COMPANIES: CompanyDef[] = [
   { id: "head", name: "Head office", levels: ["ground", "first"] },
@@ -340,6 +341,7 @@ const homes = housed.map(({ person, style, plot }, i) => {
 export const STARTER: WorldDef = {
   v: 2,
   name: "Starter town",
+  version: VERSION,
   seed: 20260929,
   companies: COMPANIES,
   departments: DEPARTMENTS,

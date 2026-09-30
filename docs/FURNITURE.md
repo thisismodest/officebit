@@ -74,7 +74,7 @@ tags: its title (the card's heading is the name before any tagline), its line, a
 - **Taking turns.** A new one each game hour, each panel a step ahead of the one before
   (in the order they were put up), so no two show the same one.
 - **The house spotlight.** A spotlight that couldn't be fetched shows officebit's own (its share
-  image, linking to the landing page) in its place.
+  image, linking to the About page) in its place.
 - **At night** the panels are lit. Nobody in town pays them any mind: they're just to look at.
 
 A painter's `poster` rectangle says where the spotlight goes; the renderer draws it live, as it does screens.

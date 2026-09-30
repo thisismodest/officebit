@@ -477,6 +477,41 @@ main {
   }
 }
 
+/* The welcome card (welcome.ts): in the middle of the map, on a first visit and from the ? on the tool rail. */
+.welcome {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 5;
+  width: min(22rem, calc(100% - 2rem));
+  transform: translate(-50%, -50%);
+  background: var(--mdst-color-bg);
+  box-shadow: 0 0.25rem 0 rgba(0, 0, 0, 0.35);
+
+  & h2 {
+    margin: 0 0 var(--mdst-space-sm);
+    font-size: 1.25rem;
+  }
+
+  & p {
+    margin: 0 0 var(--mdst-space-md);
+  }
+
+  & p:last-child {
+    margin-bottom: 0;
+  }
+
+  & .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mdst-space-sm);
+
+    & a {
+      text-decoration: none;
+    }
+  }
+}
+
 .place-card {
   position: absolute;
   top: 0;

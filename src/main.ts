@@ -19,6 +19,8 @@ import { Editor } from './ui/editor.ts';
 import { icon } from './ui/icons.ts';
 import { popover } from './ui/popover.ts';
 import { ShareMenu } from './ui/share-menu.ts';
+import { upgrade } from './worlds/upgrades.ts';
+import { Welcome } from './ui/welcome.ts';
 import { attachTabs } from './ui/tabs.ts';
 import { checkWorld, fromHash, loadLocal, saveLocal } from './ui/world-io.ts';
 import { validate } from './sim/validate.ts';
@@ -49,6 +51,10 @@ const loaded = await loadDesign();
 let design: WorldDef = loaded.world;
 // A shared link is someone else's story: it keeps their seed. Otherwise the town runs on this browser's own.
 if (!loaded.fromLink) design.seed = storySeed();
+// A town made before this release: what's new is on its way, with a crew to put it up (docs/UPGRADES.md).
+const today = new Date();
+const now = { year: today.getFullYear(), month: today.getMonth() + 1, day: today.getDate(), hour: today.getHours() };
+if (upgrade(design, now) > 0 && !loaded.fromLink) saveLocal(design);
 let sim = newSim();
 
 async function loadDesign(): Promise<{ world: WorldDef; note: string; fromLink: boolean }> {
@@ -143,6 +149,7 @@ document.addEventListener('pointerdown', (event) => {
   const target = event.target as Node;
   if (editor.active && target !== renderer.canvas && !editor.contains(target) && !editButton.contains(target)) setEditing(false);
 });
+new Welcome(stage, $('#help'));
 new ShareMenu($('#share'), { design: () => design, starter: () => ({ ...structuredClone(STARTER), seed: storySeed() }), apply: applyDesign });
 
 // Music and sounds (docs/AUDIO.md): opt-in, from the speaker in the menu bar.

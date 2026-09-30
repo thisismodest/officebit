@@ -26,4 +26,5 @@ shareable JSON world and runs in the browser.
 | [INTERACTIONS](INTERACTIONS.md) | Pizza, fire drills, taking control |
 | [MOVEMENT](MOVEMENT.md) | How anything moves: the movers, their speeds and manners, what blocks them, one stepper, and collision |
 | [TRAFFIC](TRAFFIC.md) | Cars: roads, through-traffic on the highway, visitors, parking and charging |
+| [UPGRADES](UPGRADES.md) | Versions, and crews bringing what a release adds to towns made before it |
 | [BUILDER](BUILDER.md) | The map editor (furniture, buildings, roads and paths), safe zones, saving and sharing worlds |

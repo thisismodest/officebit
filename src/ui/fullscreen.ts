@@ -37,5 +37,5 @@ export function installed(): boolean {
 /** Make officebit installable, and open offline: the service worker lives at the site's root, so it looks after every page. */
 export function registerApp(): void {
   if (!('serviceWorker' in navigator)) return;
-  addEventListener('load', () => void navigator.serviceWorker.register(new URL('../sw.js', location.href)).catch(() => {}));
+  addEventListener('load', () => void navigator.serviceWorker.register(new URL('./sw.js', location.href)).catch(() => {}));
 }

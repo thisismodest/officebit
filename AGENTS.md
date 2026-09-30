@@ -87,11 +87,12 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   visitors.ts     cars that turn off the highway to eat or charge, and cars out for a drive round town
   arrivals.ts     new family members coming home: a baby dropped off by car (it crawls in), others on foot
   interactions.ts pizza (rider), fire drills, taking control (ControlledBrain)
+  works.ts        what a newer release adds to an older town, put up by crews (docs/UPGRADES.md)
   places.ts       buildings on the map and what's inside (for the click card); validate.ts: world checks
 src/worlds/   starter.ts (people, 2-floor office, venues, homes), town.ts (the 160×160 town, house plots, lots),
               ground.ts (roads, paths, crossings, generated pavements), layout.ts (LevelBuilder),
               homes.ts (terrace/house/detached interiors), offices.ts (startup tier 1/2), venues.ts (diner, shop),
-              school.ts, edit.ts (world edits: moving buildings, turning houses, floors, team), placement.ts (safe zones),
+              school.ts, upgrades.ts (VERSION, and what each release adds to older towns), edit.ts (world edits: moving buildings, turning houses, floors, team), placement.ts (safe zones),
               rooms.ts (walled rooms and doorways)
 src/render/   renderer.ts (one level through a camera; y-sorted props+people; night lighting),
               camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, cars.ts,
@@ -100,11 +101,12 @@ src/render/   renderer.ts (one level through a camera; y-sorted props+people; ni
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
               editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (save, share links, files),
               timekeeper.ts (live/sandbox), time-jump.ts (jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
-              place-card.ts, fullscreen.ts, describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
+              place-card.ts, fullscreen.ts, welcome.ts (the first-visit card and ?), describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects), noise.ts;
               ui/soundscape.ts decides which effects play, ui/audio-menu.ts the switches and volumes
 src/feeds/    protocol.ts (validated data-only messages), local.ts (console + postMessage)
-public/       index.html + landing.css (the landing page), changelog/ (what's new, for players: add a line when something ships), town/index.html + style.css (the town), sw.js (the app's service worker), og-image.png, icons,
+public/       index.html + style.css (the town, at the site's root), about/ + landing.css (what officebit is), changelog/ (what's new,
+              for players: add a line when something ships), sw.js (the app's service worker), og-image.png, icons,
               site.webmanifest, sitemap.xml (addresses filled in from package.json `homepage`: docs/DEVELOPING.md#deploying)
 scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports, site address), probe.ts, bench.ts, spotlights.ts (fetches the spotlights with the site)
 test/         node:test suites, one per area
@@ -133,6 +135,8 @@ Dijkstra over portal anchors between levels); driving in `docs/TRAFFIC.md`.
   navigator and fire `onChange`, which the renderer and panel listen to.
 - **Change a person's level with `sim.setLevel`**: it keeps the index of who's
   where (`peopleOn`) up to date. A speed-up must leave `npm run probe -- 336` identical.
+- **Shipping something new in the starter town?** Add it to `UPGRADES` too, or
+  saved towns never get it (docs/UPGRADES.md). Bump `package.json`, `VERSION` and the changelog together.
 - **Only erasable TypeScript**: no `enum`, `namespace` or parameter properties.
 - **Avoid runtime import cycles**: `person.ts` holds shared runtime helpers so
   `brain.ts` and `sim.ts` don't import values from each other. `roles.ts` names
@@ -184,10 +188,10 @@ Working and verified in the browser:
   histories, clickable buildings and doors, follow, eased zoom, a phone layout,
   time modes (Live runs since its start date; Sandbox; jumping ahead), the map
   editor (furniture, buildings, roads, paths, crossings, rub out, rooms, doorways,
-  areas without walls, floors; it saves as you go, story-built places as overrides), a landing page, save and share
+  areas without walls, floors; it saves as you go, story-built places as overrides), an About page and a welcome card, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-155 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+159 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

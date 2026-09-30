@@ -84,13 +84,26 @@ homepage.
 **Spotlights:** the build fetches the spotlights' pages and pictures into `dist/spotlights/`
 ([FURNITURE](FURNITURE.md#spotlights)); one that can't be fetched gets the house spotlight.
 
-**What's new:** `public/changelog/index.html` lists what's changed, a dated
-line each in plain words ("Friends make plans: frisbee and picnics on the
-Green"), newest first. Add a line when something people will notice ships.
+**Pages:** the town is the front page (`public/index.html`), with `about/` (what
+officebit is) and `changelog/` (what's new).
+
+**What's new and versions:** `public/changelog/index.html` lists what's changed
+in plain words ("Friends make plans: frisbee and picnics on the Green"), newest
+first, a section per release: its version and date. Versions are semver, and
+`package.json`'s `version` is the one source (a test checks the changelog's
+newest matches):
+- **Minor** for anything people will notice (a changelog section).
+- **Patch** for fixes, which aren't listed.
+- **Major** only if old saved towns or share links stop working. Below 1.0
+  we're not promising yet.
+
+Each release is tagged (`v0.4.0`) on the commit that ships it. To release:
+bump the version, add the changelog section, add anything new to the starter
+town to its upgrade ([UPGRADES](UPGRADES.md)), commit, tag, push.
 
 **Search and sharing:** every page has a description, a canonical link,
 Open Graph and Twitter card tags, and `og-image.png` (1200×630, a screenshot
-of the town); the landing page has JSON-LD (`WebSite`, `WebApplication`,
+of the town); the About page has JSON-LD (`WebSite`, `WebApplication`,
 `SoftwareSourceCode`); `sitemap.xml` lists them all, and `robots.txt` points to
 it. `test/seo.test.ts` checks all this.
 

@@ -221,6 +221,12 @@ main > section {
   & h2 {
     font-size: clamp(1.15rem, 3.5vw, 1.4rem);
   }
+
+  & h2 small {
+    font-size: 0.75em;
+    font-weight: normal;
+    color: var(--mdst-color-muted);
+  }
 }
 
 .changes {

@@ -34,6 +34,7 @@ import { Careers } from './careers.ts';
 import { DEFAULT_CALENDAR, dateOf, daylightAt, type Calendar, type CalendarDate } from './calendar.ts';
 import { bankHoliday, holidayOn, type Holiday } from './holidays.ts';
 import { Construction } from './construction.ts';
+import { Works } from './works.ts';
 import { Ventures } from './ventures.ts';
 import type { CompanyDef, FurnitureDef, LevelDef, NpcDef, PersonDef, Place, PortalDef, Tile, WorldDef } from './world.ts';
 
@@ -116,6 +117,7 @@ export class Simulation {
   readonly festivities: Festivities;
   readonly foodTrucks: FoodTrucks;
   readonly plans: Plans;
+  readonly works: Works;
   /** Where every body is, on foot and on wheels (collision.ts), for who's in whose way. */
   readonly space = new Space();
   /** Each person as a body in the space: live views, so always where the person is. */
@@ -178,6 +180,7 @@ export class Simulation {
     this.festivities = new Festivities(this);
     this.foodTrucks = new FoodTrucks(this);
     this.plans = new Plans(this);
+    this.works = new Works(this);
     this.mindVenues(false);
     // Households start out close.
     const humans = this.people.filter((p) => p.species === 'human' && p.home);
@@ -260,7 +263,9 @@ export class Simulation {
 
   /** Could `p` use this item during `phase`? Their area, or street food at lunch; and at home, only with ingredients in. */
   canUse(p: Person, item: Item, phase: DayPhase): boolean {
-    if (item.gone || !this.isOpen(item)) return false;
+    // Staff are who opens up: their own venue being shut (nobody minding it yet) doesn't keep them out.
+    const opening = p.role === 'staff' && !!p.works && p.works === this.baseOf(item.level);
+    if (item.gone || !(opening ? this.withinHours(item) : this.isOpen(item))) return false;
     const needs = item.type.usesPantry ?? 0;
     if (needs > 0 && this.levels.get(item.level)?.kind === 'home' && this.pantry(this.baseOf(item.level)) < needs) return false;
     return this.areaOf(p, phase).includes(item.level) || (phase === 'work' && !!item.type.street);
@@ -477,6 +482,7 @@ export class Simulation {
       this.love.hourly();
       this.festivities.hourly();
       this.plans.hourly();
+      this.works.hourly();
     }
     this.festivities.step();
     this.mindVenues(true);

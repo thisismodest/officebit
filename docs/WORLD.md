@@ -18,7 +18,9 @@ to be shared: small, plain data, never code.
   "people": [{ "id": "dev", "name": "Dev", "dept": "eng", "look": [3, 2, 3, 0], "preset": "introvert", "home": "home-dev" }],
   "npcs": [{ "id": "miso", "name": "Miso", "species": "cat", "look": [1], "home": "home-ines" }],
   "feed": { "ids": { "U024BE7LH": "dev" } },     // optional: external ids → people
-  "overrides": { "venture-1-hana-office": { "size": [14, 10], "furniture": [/* … */], "rooms": [/* … */], "doors": [/* … */] } }  // optional: places the story builds, as you arranged them
+  "overrides": { "venture-1-hana-office": { "size": [14, 10], "furniture": [/* … */], "rooms": [/* … */], "doors": [/* … */] } },  // optional: places the story builds, as you arranged them
+  "version": "0.4.0",  // optional: the officebit version it was made with (docs/UPGRADES.md)
+  "works": [{ "version": "0.4.0", "from": [2026, 9, 30, 22], "level": "town", "furniture": { "t": "billboard", "p": [40, 12] } }]  // optional: what newer releases add, for crews to put up
 }
 ```
 

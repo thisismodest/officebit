@@ -3,7 +3,7 @@
   "name": "officebit",
   "short_name": "officebit",
   "description": "A tiny 8-bit town that gets on with its day.",
-  "start_url": "./town/",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#1f1d29",

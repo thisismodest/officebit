@@ -42,7 +42,7 @@ export class Spotlights {
   /** `base`: the site's root, where `spotlights/` and the house spotlight's picture are. */
   constructor(base: URL) {
     this.house = {
-      url: base.href,
+      url: new URL('about/', base).href,
       host: base.host,
       title: 'officebit',
       name: 'officebit',

@@ -73,7 +73,7 @@ export class Renderer {
   private unsubscribe = () => {};
 
   /** The spotlights on the billboards and posters (render/spotlights.ts). */
-  readonly spotlights = new Spotlights(new URL('../', location.href));
+  readonly spotlights = new Spotlights(new URL('./', location.href));
 
   constructor(host: HTMLElement, sim: Simulation, level: string) {
     this.canvas = document.createElement('canvas');

@@ -37,6 +37,18 @@ export interface WorldDef {
   feed?: { ids?: Record<string, string> };
   /** Your changes to places the story builds (a startup's office), by level id: used whenever the story builds that place, at that size. */
   overrides?: Record<string, LevelOverride>;
+  /** The officebit version it was made with, or last brought up to date to (docs/UPGRADES.md). Missing: before 0.4. */
+  version?: string;
+  /** What newer releases add to a town made before them, for crews to put up (docs/UPGRADES.md). */
+  works?: WorksDef[];
+}
+
+/** A piece a release adds to an older town: a crew comes to put it up from this moment (the hour the town was opened), or the story's start, if later. */
+export interface WorksDef {
+  version: string;
+  from: [year: number, month: number, day: number, hour: number];
+  level: string;
+  furniture: FurnitureDef;
 }
 
 /** A place the story builds, as you arranged it: its furniture, for a layout of this size (a bigger office is a new layout, and starts from its own). */

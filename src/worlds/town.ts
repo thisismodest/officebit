@@ -38,6 +38,13 @@ export const SCHOOL_DOOR: Tile = [87, 104];
 /** Where newcomers and crews walk in: the east end of Main Street. */
 export const SPAWN: Tile = [TOWN - 1, 49];
 
+/** Spotlights (docs/FURNITURE.md#spotlights): billboards along the highway, and a bus stop on Main Street. Older towns get them from crews (worlds/upgrades.ts). */
+export const SPOTLIGHT_SPOTS: FurnitureDef[] = [
+  { t: 'billboard', p: [40, 12] },
+  { t: 'billboard', p: [102, 12] },
+  { t: 'busStop', p: [65, 26] },
+];
+
 /** The highway across the top of the map: two lanes each way, eastbound on the north side (we drive on the left). */
 const HIGHWAY: Rect = [0, 4, TOWN, 4];
 
@@ -210,11 +217,8 @@ export function buildTown(residents: Resident[]): LevelBuilder {
     .named('supermarket', ...SHOP, 'Corner Shop')
     .room('shop-path', 'Path', [SHOP_DOOR[0], SHOP_DOOR[1], 1, 1], 'path')
     .row('lamppost', [22, 34, 46, 70, 86, 98, 112, 124, 136], 48)
-    .row('lamppost', [44, 60, 74, 88, 102, 116, 130], 26)
-    // Spotlights (docs/FURNITURE.md#spotlights): billboards along the highway, and a bus stop on Main Street.
-    .put('billboard', 40, 12)
-    .put('billboard', 102, 12)
-    .put('busStop', 65, 26);
+    .row('lamppost', [44, 60, 74, 88, 102, 116, 130], 26);
+  for (const f of SPOTLIGHT_SPOTS) b.put(f.t, ...f.p);
   for (const [x, y] of LOTS) b.put('lot', x, y);
   chargingStation(b, CHARGING);
 
