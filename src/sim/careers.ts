@@ -2,8 +2,10 @@
 //
 //   Friday 17:00  weekly review: slackers may be let go, the fed-up may quit,
 //                 the unambitious may fancy a simpler job at the shop
-//   weekdays 09:00  anyone out of work looks for a free desk; companies with
-//                 desks empty for a while hire a newcomer from out of town
+//   weekdays 09:00  anyone out of work applies anywhere with a free desk (the
+//                 office, the shop, the diner, the school…), just not where
+//                 they were let go; companies with desks empty for a while
+//                 hire a newcomer from out of town
 //
 // Venture teams are exempt: they answer to themselves.
 import { TICKS_PER_DAY, dayOf, hourOf, isWeekend } from './clock.ts';
@@ -53,6 +55,7 @@ export class Careers {
     if (!company) return;
     // Only those who walked out might be taken back; the let-go and the change-seekers look elsewhere.
     p.formerCompany = why === 'quit' ? company.id : undefined;
+    p.leftCompany = company.id;
     sim.unemploy(p);
     const lines = {
       quit: `${p.name} had enough of the interruptions and quit ${company.name}`,
@@ -88,13 +91,15 @@ export class Careers {
     this.recruit();
   }
 
-  /** Everyone out of work applies for a free desk: their old job if it's going, otherwise anywhere that takes walk-ins. */
+  /** Everyone out of work applies for a free desk: their old job if they walked out and it's going, otherwise anywhere but where they left. */
   private jobHunt(): void {
     const { sim } = this;
     for (const p of sim.people) {
       if (p.npc || p.company || p.venture) continue;
-      const hiring = [...sim.companies.values()].filter((c) => !sim.ventures.isVenture(c.id) && this.freeDesk(c.id));
-      const job = hiring.find((c) => c.id === p.formerCompany) ?? hiring.find((c) => c.walkIn);
+      const hiring = [...sim.companies.values()].filter(
+        (c) => !sim.ventures.isVenture(c.id) && this.freeDesk(c.id) && (c.id !== p.leftCompany || c.id === p.formerCompany),
+      );
+      const job = hiring.find((c) => c.id === p.formerCompany) ?? hiring[sim.rng.int(0, hiring.length - 1)];
       if (!job || sim.rng.next() > HIRE_CHANCE) continue;
       sim.employ(p, job.id, this.freeDesk(job.id)!.level);
       sim.log(job.id === p.formerCompany ? `${p.name} got their old job back at ${job.name}` : `${p.name} started a new job at ${job.name}`, [p.id]);

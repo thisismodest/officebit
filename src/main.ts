@@ -28,6 +28,7 @@ import { ViewHistory } from './ui/history.ts';
 import { TimeJump } from './ui/time-jump.ts';
 import { TICK_MS, Timekeeper, liveTick, type Mode } from './ui/timekeeper.ts';
 import { narrow } from './ui/html.ts';
+import { PersonEditor } from './ui/person-editor.ts';
 import { STARTER } from './worlds/starter.ts';
 
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -97,7 +98,7 @@ const profile = new Profile(stage, renderer, {
   },
   pick: (id) => select(id),
   control: steer,
-});
+}, new PersonEditor({ sim: () => sim, design: () => design, saved: () => saveSoon() }));
 const directory = new Directory($('#directory'), renderer, (id) => select(renderer.selected === id ? null : id));
 const overview = new Overview($('#overview'), visit, (company, event) => {
   const problem = event === 'pizza' ? sim.interactions.pizza(company) : sim.interactions.drill(company);

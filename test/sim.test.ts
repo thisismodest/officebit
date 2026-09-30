@@ -267,7 +267,7 @@ test('groceries: cooking uses the pantry, and people shop before it runs dry', (
   assert.ok(empty < homeHours * 0.02, `kitchens were bare for ${empty} of ${homeHours} home-hours`);
 });
 
-test('careers: leaving frees a desk; the fired end up at the shop, and the walked-out can be taken back', () => {
+test('careers: leaving frees a desk; the let-go find work somewhere else, and the walked-out can be taken back', () => {
   const sim = until(fresh(), 8);
   const cal = sim.person('cal')!;
   const sam = sim.person('sam')!;
@@ -277,7 +277,7 @@ test('careers: leaving frees a desk; the fired end up at the shop, and the walke
   assert.equal(cal.desk, -1);
   // A 50% chance each weekday: three weeks is plenty.
   for (let day = 0; day < 21 && (!cal.company || !sam.company); day++) run(sim, TICKS_PER_DAY);
-  assert.equal(cal.company, 'shop', 'the let-go look for walk-in work');
+  assert.ok(cal.company && cal.company !== 'head', `the let-go work somewhere else now (${cal.company})`);
   assert.equal(sam.company, 'head', 'the walked-out can be taken back');
   assert.deepEqual(validate(sim.world), []);
 });

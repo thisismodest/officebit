@@ -736,22 +736,40 @@ aside {
     transform: translateX(0);
   }
 
+  /* Portrait, then name (and close), role, and the personality badge with the follow, control and edit icons along from it. */
   & header {
     display: flex;
     align-items: flex-start;
     gap: var(--mdst-space-sm);
-    margin-bottom: var(--mdst-space-sm);
+    margin-bottom: var(--mdst-space-md);
 
-    & > div {
+    & .who {
       flex: 1;
+      min-width: 0;
+    }
+
+    & .title {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--mdst-space-xs);
     }
 
     & h2 {
       margin: 0;
+      overflow-wrap: anywhere;
     }
 
     & p {
       margin: 0 0 var(--mdst-space-xs);
+    }
+
+    & .meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--mdst-space-xs);
     }
   }
 
@@ -765,13 +783,14 @@ aside {
     font-size: var(--mdst-text-sm);
   }
 
+  /* Follow, take control and edit: icons, pressed while they're on. */
   & .actions {
     display: flex;
     gap: var(--mdst-space-xs);
-    margin-bottom: var(--mdst-space-md);
 
-    & button {
-      flex: 1;
+    & [aria-pressed='true'] {
+      background: var(--mdst-color-fg);
+      color: var(--mdst-color-bg);
     }
   }
 
@@ -819,6 +838,82 @@ aside {
     flex-wrap: wrap;
     gap: var(--mdst-space-xs);
     margin-top: var(--mdst-space-xs);
+  }
+
+  /* Editing someone: name, look, department, personality, household, and leaving. */
+  & .person-edit {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mdst-space-sm);
+
+    & label,
+    & .field {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: var(--mdst-text-xs);
+    }
+
+    & .swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--mdst-space-xs);
+    }
+
+    & .swatch {
+      width: 1.75rem;
+      min-height: 1.75rem;
+      padding: 0;
+      background: var(--swatch);
+    }
+
+    & .swatches .mdst-button--sm[aria-pressed='true'] {
+      background: var(--mdst-color-fg);
+      color: var(--mdst-color-bg);
+    }
+
+    & .swatch[aria-pressed='true'] {
+      outline: 2px solid var(--mdst-color-fg);
+      outline-offset: 2px;
+    }
+
+    & .household {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-size: var(--mdst-text-sm);
+
+      & li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    /* Adding to the household: who, their name, then Add or Cancel. */
+    & .newcomer {
+      display: flex;
+      flex-direction: column;
+      gap: var(--mdst-space-xs);
+      padding: var(--mdst-space-sm);
+      border: var(--mdst-border-width) solid var(--mdst-color-subtle);
+
+      & .buttons {
+        display: flex;
+        gap: var(--mdst-space-xs);
+      }
+    }
+
+    & [data-action='show-newcomer'] {
+      align-self: flex-start;
+    }
+
+    & .leaving {
+      display: flex;
+      gap: var(--mdst-space-xs);
+      padding-top: var(--mdst-space-sm);
+      border-top: var(--mdst-border-width) solid var(--mdst-color-subtle);
+    }
   }
 
   & h3 {

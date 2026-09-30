@@ -22,6 +22,8 @@ export function buildSchool(id: string, name: string, pupils: string[]): School 
     // Classroom
     .put('blackboard', 5, 1)
     .put('teacherDesk', 5, 3)
+    // For a classroom assistant, if the school takes one on.
+    .put('laptopDesk', 9, 3)
     .desks('schoolDesk', DESKS, pupils)
     .put('bookshelf', 1, 1)
     .put('plant', 11, 1)

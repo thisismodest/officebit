@@ -61,7 +61,8 @@ export class Overview {
     const count = (levels: readonly LevelDef[]) => occupants(sim, levels).filter((p) => p.species === 'human').length;
     const levelsOf = (ids: readonly string[]) => ids.map((id) => sim.levels.get(id)).filter((l): l is LevelDef => !!l);
 
-    const workplaces = [...sim.companies.values()].map((c) => {
+    // Schools are listed under Schools, whoever they employ.
+    const workplaces = [...sim.companies.values()].filter((c) => sim.levels.get(c.levels[0] ?? '')?.kind !== 'school').map((c) => {
       const staff = sim.people.filter((p) => p.company === c.id).length;
       const here = count(levelsOf(c.levels));
       const note = c.levels.length === 0 ? 'working from home while the builders are in' : `${here} here now`;

@@ -17,8 +17,18 @@ New starters get a week's grace before their first review. Leaving frees their d
 
 Anyone out of work applies, with a 50% chance a day of landing something:
 
-1. **Their old job**, if they walked out (quit) and a desk is free. The let-go and the change-seekers aren't taken back.
-2. **A walk-in employer** (`"walkIn": true` on a company, like the Corner Shop), which takes anyone.
+1. **Their old job**, if they walked out (quit) and a desk is free.
+2. **Anywhere else with a free desk**: the office, the Corner Shop's checkouts,
+   the diner's grill, the school's classroom desk, any company that isn't a
+   venture. Just not where they were let go (or left for a change).
+
+Letting someone go from their profile (**Works at: Out of work**) does the same as the Friday review: they
+keep their home and family and start looking the next weekday. Ambitious people
+may start a side project of their own instead (see [VENTURES](VENTURES.md)).
+They won't go back to the place that let them go on their own; **Works at** on
+their profile gives them a job anywhere with a free desk, straight away.
+`"company": ""` in a world file is someone out of work (no `company` means the
+first one).
 
 At the review, a company with free desks and nobody applying may hire a
 newcomer (30% a week), who walks in from the edge of town.

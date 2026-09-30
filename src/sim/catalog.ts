@@ -48,6 +48,8 @@ export interface FurnitureType {
   staff?: boolean;
   /** A construction site: the crew works from its spots. */
   worksite?: boolean;
+  /** A workstation you work standing up (the diner's grill), not sat at. */
+  standing?: boolean;
   /** A game machine (arcades): gamers seek it out whether or not they're bored. */
   game?: boolean;
   /** Something to play on (swings, hopscotch): grown-ups have a go too, when they're feeling playful. */
@@ -146,6 +148,7 @@ export const CATALOG: Record<string, FurnitureType> = {
   produce: { name: 'Fruit and veg', size: [2, 1], solid: true, spots: [[0, 1], [1, 1]], groceries: true, duration: [20, 40], hours: [7, 22] },
   chiller: decor('Chiller', [2, 1]),
   checkout: workstation('Checkout'),
+  grill: { ...workstation('Grill'), standing: true },
 
   // The school
   schoolDesk: workstation('School desk', [1, 1]),

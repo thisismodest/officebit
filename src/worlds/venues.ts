@@ -9,7 +9,7 @@ export interface Venue {
   entry: Tile;
 }
 
-/** A 24/7 diner, 20×12: a long counter with stools, booths, a jukebox, a till. */
+/** A 24/7 diner, 20×12: a long counter with stools, booths, a jukebox, a till, and a grill for a cook it takes on. */
 export function buildDiner(id: string, name: string): Venue {
   const b = new LevelBuilder(id, name, 'venue', 20, 12)
     .room(id, name, [0, 0, 20, 12], 'checker', { walled: true })
@@ -17,6 +17,7 @@ export function buildDiner(id: string, name: string): Venue {
     // Behind the counter
     .put('counter', 1, 1).put('sink', 2, 1).put('counter', 3, 1).put('counter', 4, 1)
     .put('till', 7, 1)
+    .put('grill', 9, 1)
     .put('dinerCounter', 2, 3).put('dinerCounter', 6, 3)
     // Booths: three down the left, two up the right
     .put('booth', 2, 7).put('booth', 5, 7).put('booth', 8, 7)

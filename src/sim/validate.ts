@@ -19,7 +19,7 @@ export function validate(world: WorldDef): string[] {
 
   for (const company of world.companies) {
     for (const id of company.levels) {
-      if (!['building', 'venue'].includes(levels.get(id)?.kind ?? '')) problems.push(`${company.name}: "${id}" isn't an office or venue`);
+      if (!['building', 'venue', 'school'].includes(levels.get(id)?.kind ?? '')) problems.push(`${company.name}: "${id}" isn't an office, venue or school`);
     }
   }
   const companies = new Set(world.companies.map((c) => c.id));

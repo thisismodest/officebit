@@ -77,6 +77,7 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   food-trucks.ts  the trucks' drive in/out as a pure function of the clock
   roads.ts        the road map for vehicles and routes along it; traffic.ts: highway through-traffic and cars
   visitors.ts     cars that turn off the highway; drivers stop to eat or charge, then drive on
+  arrivals.ts     new family members coming home: a baby dropped off by car (it crawls in), others on foot
   interactions.ts pizza (rider), fire drills, taking control (ControlledBrain)
   places.ts       buildings on the map and what's inside (for the click card); validate.ts: world checks
 src/worlds/   starter.ts (people, 2-floor office, venues, homes), town.ts (the 160×160 town, house plots, lots),
@@ -88,7 +89,7 @@ src/render/   renderer.ts (one level through a camera; y-sorted props+people; ni
               camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, cars.ts,
               palette.ts, pixels.ts, props/* (one painter per catalog type)
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
-              editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), share-menu.ts + world-io.ts (save, share links, files),
+              editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (save, share links, files),
               timekeeper.ts (live/sandbox), time-jump.ts (jumping ahead), controls.ts (pan/zoom/click),
               place-card.ts, describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects), noise.ts;
@@ -155,7 +156,8 @@ Working and verified in the browser:
 
 - **Town:** 160×160 tiles in districts with countryside, empty lots, a highway
   with through-traffic, pavements and zebra crossings, a charging station.
-- **People:** personalities and needs, homes with interiors, families, pets,
+- **People:** personalities and needs, homes with interiors, families, pets (all editable from a profile:
+  looks, names, personalities, where they work, a new baby by car, leaving town),
   children at Acacia Primary, relationships, love and moving house, careers,
   ventures whose offices are built by crews, and visitors who stop to eat or charge.
 - **Places:** the two-floor office, the 24/7 Night Owl Diner and the Corner Shop,
@@ -168,7 +170,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), a landing page, save and share
   links, interactions, feeds, opt-in music and sounds with volumes.
 
-120 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+124 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

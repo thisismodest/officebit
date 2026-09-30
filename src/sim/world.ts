@@ -123,7 +123,7 @@ export interface PersonDef {
   id: string;
   name: string;
   look: Look;
-  /** Employer id; defaults to the world's first company. */
+  /** Employer id; defaults to the world's first company. '' for someone out of work. */
   company?: string;
   dept?: string;
   /** Preset name; `traits` overrides individual values. */

@@ -7,7 +7,7 @@ import { atDoorOf, covers, doorOf, endsOn, footprint as footprintOf, inRect, ove
 import { TO_LET } from '../sim/housing.ts';
 import { PRESETS } from '../sim/personality.ts';
 import { hashOf } from '../sim/rng.ts';
-import type { DepartmentDef, FurnitureDef, LevelDef, PersonDef, PortalDef, Rect, RoomDef, Tile, WorldDef } from '../sim/world.ts';
+import type { DepartmentDef, FurnitureDef, LevelDef, NpcDef, PersonDef, PortalDef, Rect, RoomDef, Tile, WorldDef } from '../sim/world.ts';
 import { CLEARABLE, groundProblem } from './ground.ts';
 import { outerRoom } from './rooms.ts';
 import { buildToLet, type HomeStyle } from './homes.ts';
@@ -68,21 +68,105 @@ export function removePerson(world: WorldDef, id: string): Problem {
   return null;
 }
 
-/** Change someone's name, department or personality. */
-export function updatePerson(world: WorldDef, id: string, changes: Partial<NewPerson>): Problem {
+/** Change someone's name, look, department or personality. Family and pets too (just not a department). */
+export function updatePerson(world: WorldDef, id: string, changes: Partial<NewPerson> & { look?: readonly number[] }): Problem {
   const person = world.people.find((p) => p.id === id);
-  if (!person) return 'Nobody by that id.';
+  const other = world.npcs.find((p) => p.id === id);
+  const def = person ?? other;
+  if (!def) return 'Nobody by that id.';
   if (changes.name?.trim()) {
-    person.name = changes.name.trim();
+    def.name = changes.name.trim();
     const home = homes(world).find((h) => h.item.owner === id);
-    if (home) home.level.name = home.level.rooms[0]!.name = `${person.name}'s house`;
+    if (home) home.level.name = home.level.rooms[0]!.name = `${def.name}'s house`;
   }
-  if (changes.dept !== undefined) {
+  if (changes.look) def.look = [...changes.look];
+  if (person && changes.dept !== undefined) {
     const dept = changes.dept.trim() ? departmentFor(world, changes.dept) : undefined;
     if (dept) person.dept = dept.id;
     else delete person.dept;
   }
-  if (changes.preset) person.preset = presetFor(changes.preset);
+  if (changes.preset && (person || other?.species === 'human')) {
+    def.preset = presetFor(changes.preset);
+    delete def.traits;
+  }
+  return null;
+}
+
+/** Give someone a job at `company`: a free desk there (in their department's kind, if there's one). Any desk they had elsewhere is freed. */
+export function giveJob(world: WorldDef, id: string, company: string): Problem {
+  const person = world.people.find((p) => p.id === id);
+  if (!person) return 'Nobody by that id.';
+  if (!world.companies.some((c) => c.id === company)) return 'There’s no such place.';
+  const levels = new Set(world.companies.find((c) => c.id === company)!.levels);
+  for (const level of world.levels) {
+    for (const item of level.furniture) if (item.owner === id && CATALOG[item.t]?.desk && !levels.has(level.id)) delete item.owner;
+  }
+  person.company = company;
+  const owned = world.levels.some((l) => levels.has(l.id) && l.furniture.some((f) => f.owner === id && CATALOG[f.t]?.desk));
+  const desk = owned ? undefined : freeDesk(world, company, world.departments.find((d) => d.id === person.dept));
+  if (desk) desk.owner = id;
+  return null;
+}
+
+/** Let someone go: they keep their home, and look for work elsewhere. Their desk is freed. */
+export function letGo(world: WorldDef, id: string): Problem {
+  const person = world.people.find((p) => p.id === id);
+  if (!person || person.company === '') return 'They don’t work anywhere.';
+  for (const level of world.levels) for (const item of level.furniture) if (item.owner === id && CATALOG[item.t]?.desk) delete item.owner;
+  person.company = '';
+  return null;
+}
+
+// ── Family ──────────────────────────────────────────────────────────────────
+
+export type Newcomer = 'child' | 'partner' | 'pet';
+
+/** Someone new for a household, and the school desk that's theirs (a child's), ready for `addFamily`. */
+export interface NewFamily {
+  def: NpcDef;
+  desk?: { level: string; p: Tile };
+}
+
+/**
+ * A new member of a household: a child (who goes to school), a partner, or a
+ * pet. They need somewhere to sleep, and a child a desk at school; nothing's
+ * changed until you `addFamily` it.
+ */
+export function planFamily(world: WorldDef, home: string, kind: Newcomer, name: string, species: 'cat' | 'dog' = 'cat'): string | NewFamily {
+  const level = world.levels.find((l) => l.id === home && l.kind === 'home');
+  if (!level) return 'They need a home to join.';
+  const floors = world.levels.filter((l) => l.id === home || l.floorOf === home);
+  const places = (fits: (t: FurnitureDef) => boolean) => floors.flatMap((l) => l.furniture.filter(fits)).reduce((n, f) => n + (CATALOG[f.t]?.spots.length ?? 0), 0);
+  const living = [...world.people, ...world.npcs].filter((p) => p.home === home);
+  const id = uniqueId(slug(name) || kind, new Set([...world.people, ...world.npcs].map((p) => p.id)));
+  const human = kind !== 'pet';
+  if (human && places((f) => !!CATALOG[f.t]?.bed) <= living.filter((p) => !('species' in p) || p.species === 'human').length) {
+    return `There’s no bed free for them at ${level.name}: add one in the map editor first.`;
+  }
+  if (!human && places((f) => !!(CATALOG[f.t]?.petBed || CATALOG[f.t]?.seat)) === 0) return `There’s nowhere for a pet to curl up at ${level.name}: add a pet bed first.`;
+  const def: NpcDef = { id, name: name.trim() || (human ? 'Someone' : 'Pet'), species: human ? 'human' : species, look: human ? lookFor(id) : [(hashOf(id, 7) >>> 0) % 5], home };
+  if (human) def.preset = 'regular';
+  if (kind !== 'child') return { def };
+  const school = world.levels.find((l) => l.kind === 'school');
+  const desk = school?.furniture.find((f) => f.t === 'schoolDesk' && !f.owner);
+  if (!school || !desk) return 'There’s no desk free at school for them: add a school desk in the map editor first.';
+  return { def: { ...def, role: 'child', works: school.id }, desk: { level: school.id, p: [...desk.p] } };
+}
+
+/** Put a planned family member into a world, with their school desk. */
+export function addFamily(world: WorldDef, plan: NewFamily): void {
+  world.npcs.push(structuredClone(plan.def));
+  if (!plan.desk) return;
+  const desk = world.levels.find((l) => l.id === plan.desk!.level)?.furniture.find((f) => f.t === 'schoolDesk' && same(f.p, plan.desk!.p));
+  if (desk) desk.owner = plan.def.id;
+}
+
+/** A family member or pet moves out: gone from the world, with anything that was theirs freed. */
+export function removeFamily(world: WorldDef, id: string): Problem {
+  const index = world.npcs.findIndex((p) => p.id === id);
+  if (index < 0) return 'Nobody by that id.';
+  world.npcs.splice(index, 1);
+  for (const level of world.levels) for (const item of level.furniture) if (item.owner === id) delete item.owner;
   return null;
 }
 

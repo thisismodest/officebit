@@ -42,12 +42,13 @@ households never split. Lines: adults only, nobody already spoken for, and
 Rebuilding it a step at a time (see `docs/BUILDER.md`). Done: a floating map
 editor to move, add and delete furniture in safe spots; moving buildings (with
 their doors and paths) and turning houses round; building rooms, doorways and
-floors (stairs up, and every floor of a house is home); drawing roads, paths and zebra
+floors (stairs up, and every floor of a house is home), areas without walls, moving doorways;
+editing people from their profile (look, name, department, personality, household,
+let go, leave town); drawing roads, paths and zebra
 crossings, and rubbing them out; save and share (browser, link, file), validated
 on load. Next, in order:
-- A team dialog (people, departments, paste-a-list; the editing is already in
-  `worlds/edit.ts`).
-- New houses and lots from the picker; naming roads; family, pets and companies.
+- Adding someone new to the team (the profile edits people who are here already).
+- New houses and lots from the picker; naming roads; companies.
 - Furniture can be placed on empty lots; it shouldn't be.
 - Share the town as it is now (a 1:1 link: its people, time and story), not
   just its design. *Open:* Marcus to choose how.
@@ -78,7 +79,6 @@ date), and change the course of their lives.
 - Co-founders and couples visiting each other's homes.
 - Feed transports (WebSocket, SSE, polled JSON) and bridges (Slack, agents).
 - People walking through each other (they don't block each other).
-- The arcade machines are rarely used.
 - Residents' cars: people who live far from work drive in, parking on the street
   or at the charging station (the roads, routing and parking are there: see `docs/TRAFFIC.md`).
 - Town events (a fair on the Green, a market): the town gets busy all at once, with

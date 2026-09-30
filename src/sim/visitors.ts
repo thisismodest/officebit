@@ -219,7 +219,7 @@ function opposite(h: Heading): Heading {
 }
 
 /** The outside lane running `heading`: the one on the kerb side, where cars turn off. */
-function slowLane(lanes: readonly Lane[], heading: Lane['heading']): Lane | undefined {
+export function slowLane(lanes: readonly Lane[], heading: Lane['heading']): Lane | undefined {
   const way = lanes.filter((l) => l.heading === heading);
   return heading === 'left' ? way.at(-1) : way[0];
 }

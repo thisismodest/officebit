@@ -14,7 +14,10 @@ import { resolveTraits } from "../sim/personality.ts";
 
 const COMPANIES: CompanyDef[] = [
   { id: "head", name: "Head office", levels: ["ground", "first"] },
-  { id: "shop", name: "Corner Shop", icon: "cart", walkIn: true, levels: ["shop"] }
+  { id: "shop", name: "Corner Shop", icon: "cart", walkIn: true, levels: ["shop"] },
+  // Background staff run these (Dot, Ray, Maggie); anyone looking for work can be taken on too.
+  { id: "diner", name: "The Night Owl Diner", icon: "cup", walkIn: true, levels: ["diner"] },
+  { id: "school", name: "Acacia Primary", icon: "school", walkIn: true, levels: ["school"] }
 ];
 
 const DEPARTMENTS: DepartmentDef[] = [

@@ -24,6 +24,7 @@ import { phaseAt, wakeHour, type DayPhase } from './schedule.ts';
 import { Social } from './social.ts';
 import { Traffic } from './traffic.ts';
 import { Visitors } from './visitors.ts';
+import { Arrivals } from './arrivals.ts';
 import { Careers } from './careers.ts';
 import { Construction } from './construction.ts';
 import { Ventures } from './ventures.ts';
@@ -31,6 +32,8 @@ import type { CompanyDef, FurnitureDef, LevelDef, NpcDef, PersonDef, Place, Port
 
 /** Tiles per tick. */
 const SPEED = 0.2;
+/** A crawling baby's pace, as a share of walking. */
+const CRAWL = 0.3;
 /** How often (ticks) people reconsider what they're doing. */
 const RETHINK_EVERY = 20;
 const PET_TRAITS: Traits = { social: 0.9, diligence: 0, chaos: 0.7, charisma: 0.9, ambition: 0 };
@@ -69,6 +72,15 @@ export interface SimEvent {
   who: string[];
 }
 
+/** What can be changed about someone from their profile. */
+export interface PersonChanges {
+  name?: string;
+  look?: readonly number[];
+  /** A department id, or '' for none. */
+  dept?: string;
+  preset?: string;
+}
+
 type Spawn = Pick<Person, 'id' | 'name' | 'species' | 'npc' | 'look' | 'dept' | 'company' | 'home' | 'role' | 'works' | 'shift' | 'preset' | 'traits' | 'routine'>;
 
 export class Simulation {
@@ -90,6 +102,7 @@ export class Simulation {
   readonly social: Social;
   readonly traffic: Traffic;
   readonly visitors: Visitors;
+  readonly arrivals: Arrivals;
   nav: Navigator;
   /** The game clock, in ticks (6 game seconds each; see clock.ts). Fractional in live mode. */
   tick = 0;
@@ -139,6 +152,7 @@ export class Simulation {
     for (const def of world.people) this.spawnPerson(def);
     for (const def of world.npcs) this.spawnNpc(def);
     this.visitors = new Visitors(this);
+    this.arrivals = new Arrivals(this);
     this.mindVenues(false);
     // Households start out close.
     const humans = this.people.filter((p) => p.species === 'human' && p.home);
@@ -426,6 +440,8 @@ export class Simulation {
     this.interactions.step();
     this.traffic.step();
     this.visitors.step();
+    this.arrivals.step();
+    const gone: Person[] = [];
     for (const [i, p] of this.people.entries()) {
       p.px = p.x;
       p.py = p.y;
@@ -436,6 +452,11 @@ export class Simulation {
       if (p.distracted > 0) p.distracted = Math.max(0, p.distracted - dt);
       if (p.date && this.tick >= p.date.until) delete p.date;
 
+      // Leaving town: once they're off the edge of it, they're gone.
+      if (p.leaving && p.hidden) {
+        gone.push(p);
+        continue;
+      }
       if (p.hidden) {
         if (this.phaseOf(p) !== 'work') continue;
         p.hidden = false;
@@ -444,12 +465,13 @@ export class Simulation {
         p.transit--;
         continue;
       }
-      if (!p.intent) this.begin(p, this.brainOf(p).decide(p, this));
+      if (!p.intent) this.begin(p, p.leaving ? { kind: 'leave' } : this.brainOf(p).decide(p, this));
       if ((this.steps + i) % RETHINK_EVERY === 0 && this.rethink(p)) continue;
 
       if (p.phase === 'moving') this.move(p);
       else this.act(p);
     }
+    for (const p of gone) this.gone(p);
   }
 
   /**
@@ -641,6 +663,48 @@ export class Simulation {
     this.changed([]);
   }
 
+  /** Someone's definition in the world: a person on the team, or anyone else. */
+  defOf(id: string): PersonDef | NpcDef | undefined {
+    return this.world.people.find((d) => d.id === id) ?? this.world.npcs.find((d) => d.id === id);
+  }
+
+  /** Change someone, as they are now: their name, look, department or personality. (The design has its own copy: worlds/edit.ts.) */
+  editPerson(p: Person, changes: PersonChanges): void {
+    const def = this.defOf(p.id);
+    if (!def) return;
+    if (changes.name?.trim()) p.name = def.name = changes.name.trim();
+    if (changes.look) p.look = def.look = [...changes.look];
+    if (changes.dept !== undefined && 'company' in def) {
+      p.dept = changes.dept || undefined;
+      if (p.dept) def.dept = p.dept;
+      else delete def.dept;
+    }
+    if (changes.preset && p.species === 'human') {
+      // A new personality from scratch: the preset, without any tweaks the old one had.
+      p.preset = def.preset = changes.preset;
+      delete def.traits;
+      p.traits = resolveTraits(p.preset);
+      p.routine = dailyRoutine(p, p.traits, this.seedOf(p.id), p.shift);
+    }
+    const home = this.housing.homeOf(p.home);
+    if (home && changes.name) this.housing.name(home, this.housing.nameFor(this.housing.residents(home)), this.housing.residents(home).find((q) => !q.npc));
+    this.changed(home ? [home.level.id] : []);
+  }
+
+  /** `p` leaves town for good, with the family and pets they live with: off to the edge of town, and their home goes up to let. */
+  leaveTown(p: Person): void {
+    if (p.company) this.unemploy(p);
+    const household = p.home ? this.people.filter((q) => q.npc && q !== p && q.home === p.home && q.role !== 'staff') : [];
+    for (const q of [p, ...household]) this.depart(q);
+    this.log(`👋 ${p.name}${household.length ? ` and ${household.length === 1 ? household[0]!.name : 'their household'}` : ''} left town`, [p.id, ...household.map((q) => q.id)]);
+  }
+
+  /** One person (or pet) moves out of town, leaving everyone else as they are. */
+  moveOut(p: Person): void {
+    this.depart(p);
+    this.log(`👋 ${p.name} moved out of town`, [p.id]);
+  }
+
   /** `p` no longer works anywhere. Their desk is freed. */
   unemploy(p: Person): void {
     const old = this.items[p.desk];
@@ -648,7 +712,7 @@ export class Simulation {
     p.desk = -1;
     p.company = undefined;
     const def = this.world.people.find((d) => d.id === p.id);
-    if (def) delete def.company;
+    if (def) def.company = '';
     this.stop(p);
     this.changed([]);
   }
@@ -671,6 +735,29 @@ export class Simulation {
   }
 
   // ── Internals ─────────────────────────────────────────────────────────────
+
+  /** Off to the edge of town, for good. */
+  private depart(p: Person): void {
+    p.leaving = true;
+    p.crawling = false;
+    this.interactions.control(p, false);
+    this.clearBrain(p.id);
+    this.stop(p);
+  }
+
+  /** Off the edge of town: gone from the world, with anything that was theirs freed, and their home named for whoever's left. */
+  private gone(p: Person): void {
+    const home = this.housing.homeOf(p.home);
+    for (const item of this.items) if (item.def.owner === p.id) delete item.def.owner;
+    const def = this.world.people.findIndex((d) => d.id === p.id);
+    if (def >= 0) this.world.people.splice(def, 1);
+    this.removePerson(p.id);
+    if (home) {
+      const left = this.housing.residents(home);
+      this.housing.name(home, this.housing.nameFor(left), left.find((q) => !q.npc));
+      this.changed([home.level.id]);
+    }
+  }
 
   /** A place the story's building, as you arranged it last time (world.overrides), if it's the same layout. */
   private arranged(level: LevelDef): void {
@@ -752,7 +839,7 @@ export class Simulation {
       ...def,
       species: 'human',
       npc: false,
-      company: def.company ?? this.world.companies[0]?.id,
+      company: def.company === '' ? undefined : (def.company ?? this.world.companies[0]?.id),
       preset: def.preset ?? 'regular',
       traits,
       routine: dailyRoutine({ species: 'human', npc: false }, traits, this.seedOf(def.id), def.shift),
@@ -926,7 +1013,7 @@ export class Simulation {
       this.arrive(p);
       return;
     }
-    let budget = SPEED;
+    let budget = SPEED * (p.crawling ? CRAWL : 1);
     while (budget > 0 && leg.tiles.length > 0) {
       const [tx, ty] = leg.tiles[0]!;
       const dx = tx - p.x;

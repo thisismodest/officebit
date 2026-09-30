@@ -6,7 +6,7 @@ import { EYE, HAIR, OUTLINE, PANTS, SHIRT, SHOE, SKIN, shade } from "./palette.t
 import { canvas, paintAscii, rect, type Ctx } from "./pixels.ts";
 
 export type Facing = "up" | "down" | "left" | "right";
-export type Pose = "stand" | "walkA" | "walkB" | "sitDesk" | "sitSofa" | "sleep";
+export type Pose = "stand" | "walkA" | "walkB" | "sitDesk" | "sitSofa" | "sleep" | "crawlA" | "crawlB";
 
 export const SPRITE_W = 12;
 export const SPRITE_H = 21;
@@ -64,6 +64,18 @@ export const LEGS = {
     stand: ["...oppppo...", "...oppppo...", "...obbbbbo..", "....ooooo..."],
     walk: ["..oppppppo..", ".oppo..oppo.", ".obbo..obbbo", "..oo....ooo."]
   }
+};
+
+/** A baby on hands and knees, under a head held low: two frames of a crawl, front-on and side-on (facing right). */
+const CRAWL = {
+  front: [
+    ["..otttttto..", ".osttttttso.", ".oo.oppo.oo.", "....o..o...."],
+    ["..otttttto..", ".osttttttso.", "..oo.pp.oo..", "...o....o..."]
+  ],
+  side: [
+    ["otttttttso..", "otTtttttoo..", ".oppo.os....", ".obbo..o...."],
+    ["otttttttso..", "otTttttto...", "..oppo.so...", "..obbo..o..."]
+  ]
 };
 
 export interface Look {
@@ -128,6 +140,13 @@ function build(look: Look, facing: Facing, pose: Pose, headphones: boolean): HTM
 
   const view = facing === "down" ? "front" : facing === "up" ? "back" : "side";
   const mirror = facing === "left";
+
+  if (pose === "crawlA" || pose === "crawlB") {
+    const y0 = SPRITE_H - 13;
+    paintAscii(ctx, HEAD[view], colors, 0, y0, mirror);
+    paintAscii(ctx, CRAWL[view === "side" ? "side" : "front"][pose === "crawlA" ? 0 : 1]!, colors, 0, y0 + 9, mirror);
+    return c;
+  }
   const y0 = HEADROOM + (look.child ? CHILD_DROP : 0) + (pose === "sitDesk" ? 2 : pose === "sitSofa" ? 1 : 0);
   const body = (rows: readonly string[]) => (look.child ? childBody(rows) : rows);
   const legRows = (rows: readonly string[]) => (look.child ? childLegs(rows) : rows);

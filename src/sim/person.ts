@@ -24,16 +24,18 @@ export type Intent =
 
 export interface Person {
   readonly id: string;
-  readonly name: string;
+  name: string;
   readonly species: Species;
   /** Not on the team: family, pets, staff, crews, children and so on (roles.ts says what each does). */
   readonly npc: boolean;
-  readonly look: readonly number[];
-  readonly dept?: string;
+  look: readonly number[];
+  dept?: string;
   /** Employer id. Changes when someone quits, is let go, or starts a venture. */
   company?: string;
   /** Where they walked out of, if they're between jobs and might be taken back. */
   formerCompany?: string;
+  /** Where they last worked. They don't apply there again, unless they walked out (`formerCompany`). */
+  leftCompany?: string;
   /** When they started their current job (new starters get a week's grace at review). */
   hiredAt: number;
   /** Id of the venture they're part of, if any. */
@@ -54,9 +56,9 @@ export interface Person {
   readonly works?: string;
   /** Hours they work every day, weekends too, if they work shifts. */
   readonly shift?: [start: number, end: number];
-  readonly preset: string;
-  readonly traits: Traits;
-  readonly routine: Routine;
+  preset: string;
+  traits: Traits;
+  routine: Routine;
   level: string;
   /** Position in tiles, and last tick's position (for render interpolation). */
   x: number;
@@ -77,6 +79,10 @@ export interface Person {
   gains: Partial<Needs>;
   /** Index of their workstation in sim.items, or -1. */
   desk: number;
+  /** A baby on hands and knees, from the car to the front door: slow, and low down. */
+  crawling?: boolean;
+  /** Leaving town for good: off to the edge of it, then gone. */
+  leaving?: boolean;
   /** Offstage: people without a home, outside working hours. */
   hidden: boolean;
   /** Ticks left passing through a door or up the stairs. */

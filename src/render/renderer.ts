@@ -92,6 +92,8 @@ export class Renderer {
     this.level = '';
     this.unsubscribe();
     this.unsubscribe = sim.onChange((levels) => {
+      // Someone's look or department may have changed.
+      this.looks.clear();
       for (const id of levels) {
         this.layers.delete(id);
         this.props.delete(id);
@@ -390,9 +392,11 @@ export class Renderer {
   }
 
   private poseOf(p: Person, pos: { x: number; y: number }): Pose {
+    if (p.crawling) return p.phase === 'moving' && Math.floor((pos.x + pos.y) * 3) % 2 ? 'crawlB' : 'crawlA';
     if (p.phase === 'moving') return (['stand', 'walkA', 'stand', 'walkB'] as const)[Math.floor((pos.x + pos.y) * 4) % 4]!;
     if (asleep(p)) return 'sleep';
-    if (seatedAtDesk(p)) return 'sitDesk';
+    // At work, sat down (or stood, at the diner's grill).
+    if (seatedAtDesk(p)) return p.intent?.kind === 'work' && this.sim.items[p.desk]?.type.standing ? 'stand' : 'sitDesk';
     // Seated facing away (the far side of a booth) looks like sitting at a desk.
     if (p.intent?.kind === 'use' && this.sim.items[p.intent.item]?.type.seat) return p.facing === 'up' ? 'sitDesk' : 'sitSofa';
     return 'stand';

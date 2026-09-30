@@ -235,6 +235,21 @@ export const VENUE: Record<string, Painter> = {
       for (let x = 4; x < 12; x += 2) dot(ctx, x, o, METAL.dark);
     },
   },
+  // The diner's grill, two tiles of counter: a hot plate with a couple of patties, and a pan.
+  grill: {
+    up: 4,
+    paint(ctx, w, h, o) {
+      counterBase(ctx, w, h, o);
+      rect(ctx, 2, o - 3, 18, 5, OUTLINE);
+      rect(ctx, 3, o - 2, 16, 3, '#3d3a38');
+      for (let x = 4; x < 18; x += 3) dot(ctx, x, o - 1, '#e4793a');
+      pill(ctx, 5, o - 2, 4, 2, '#8a5a3b');
+      pill(ctx, 10, o - 2, 4, 2, '#8a5a3b');
+      rect(ctx, 22, o - 3, 7, 4, OUTLINE);
+      rect(ctx, 23, o - 2, 5, 2, METAL.mid);
+      rect(ctx, 28, o - 2, 3, 1, OUTLINE);
+    },
+  },
 };
 
 function window(ctx: Ctx, x: number, y: number, lit: boolean): void {

@@ -23,8 +23,11 @@ Their desk is whichever workstation lists them as `owner`.
 ```
 
 During work hours people choose from their company's floors (offices, or a
-venue like the shop). `icon` (an icon name from `ui/icons.ts`, like `cart`) shows in the panel; `walkIn` companies hire
-anyone looking for work. New companies appear as ventures launch
+venue like the shop, the diner or the school). `icon` (an icon name from `ui/icons.ts`, like `cart`) shows in the panel. Every
+company with a free desk hires people looking for work (see [CAREERS](CAREERS.md));
+`walkIn` marks the simpler jobs (the shop, the diner, the school) that the unambitious
+sometimes leave the office for. Background staff (Dot, Ray, Maggie) run the diner and
+the school alongside anyone they take on. New companies appear as ventures launch
 (see [VENTURES](VENTURES.md)).
 
 ## Departments
@@ -70,6 +73,27 @@ lists them too.
 - **Riders and visitors** (`courier`, `visitor`) pass through: the sim brings
   them in (a pizza delivery, a car off the highway: see
   [TRAFFIC](TRAFFIC.md#visitors)) and sees them off. They're never saved.
+
+## Editing
+
+**Edit** on a profile (`ui/person-editor.ts`), for the team and their families
+and pets (not staff, crews or passers-by), changes someone in the running town
+(`sim.editPerson`) and in the design (`updatePerson` in `worlds/edit.ts`) at once:
+
+- **Name, look and personality.** A look is skin, hair, top and hair style
+  (pets: fur). A new personality starts from its preset and shows in what they
+  do from then on. The team also have a department (type a new one to make it).
+- **Household.** **+ Add to household** asks who (a baby, a partner, a cat or a dog) and their name (`planFamily`): a person
+  needs a free bed at home, a baby a free desk at school, a pet somewhere to curl
+  up. They arrive like anyone new (`sim/arrivals.ts`): a baby is dropped off by
+  car at the nearest road to the house and crawls in through the front door
+  (slowly, low down); anyone else walks in from the edge of town. **Move out**
+  sees a family member off, for good.
+- **Works at**: any workplace (a free desk there, or it says there isn't one:
+  `giveJob`), or **Out of work**, and they look for work elsewhere (see
+  [CAREERS](CAREERS.md)). Someone let go never applies back to where they were
+  let go, so this is how to take them back. **Leave town**, and they and their household walk off the edge of town and
+  are gone; their home goes up to let.
 
 ## Kinds
 
