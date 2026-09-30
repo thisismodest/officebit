@@ -565,7 +565,8 @@ main {
     }
 
     & .actions a {
-      margin-left: auto;
+      flex-basis: 100%;
+      text-align: center;
       text-decoration: none;
     }
   }

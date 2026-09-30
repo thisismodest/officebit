@@ -80,10 +80,7 @@ export class PlaceCard {
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.textContent = `Visit ${spot.host} ↗`;
-    const badge = document.createElement('span');
-    badge.className = 'mdst-badge mdst-badge--muted';
-    badge.textContent = spot.house ? 'officebit' : 'Spotlight';
-    this.show(spot.name, at, [...(art ? [picture] : []), about, badge, link]);
+    this.show(spot.name, at, [...(art ? [picture] : []), about, link]);
     this.root.dataset.kind = 'spotlight';
   }
 
