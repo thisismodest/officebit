@@ -1,5 +1,6 @@
 // One level's tile grid: walls, furniture footprints, rooms, and A* (docs/BUILDINGS.md).
 import { CATALOG } from './catalog.ts';
+import { MOVERS, blocks } from './movement.ts';
 import type { LevelDef, RoomDef, Tile } from './world.ts';
 
 const DIRS: readonly Tile[] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
@@ -21,6 +22,8 @@ export class Grid {
   readonly room: Int16Array;
   /** Cost of stepping onto each tile (1 for anything not in WALK_COST). */
   readonly cost: Float32Array;
+  /** Tiles a parked vehicle stands on, right now (traffic.ts keeps it up to date): walked round, but not if it's where you're going. */
+  readonly parked: Uint8Array;
 
   constructor(level: LevelDef) {
     const [w, h] = level.size;
@@ -30,6 +33,7 @@ export class Grid {
     this.blocked = new Uint8Array(w * h);
     this.room = new Int16Array(w * h).fill(-1);
     this.cost = new Float32Array(w * h).fill(1);
+    this.parked = new Uint8Array(w * h);
 
     // Larger rooms first, so inner rooms claim their tiles.
     const order = level.rooms
@@ -55,7 +59,7 @@ export class Grid {
 
     for (const item of level.furniture) {
       const type = CATALOG[item.t];
-      if (!type?.solid) continue;
+      if (!type || !blocks(type, MOVERS.walker)) continue;
       const [fw, fh] = type.size;
       for (let y = item.p[1]; y < item.p[1] + fh; y++) {
         for (let x = item.p[0]; x < item.p[0] + fw; x++) {
@@ -66,7 +70,7 @@ export class Grid {
     // Spots inside a solid footprint stay reachable (the pillow end of a bed).
     for (const item of level.furniture) {
       const type = CATALOG[item.t];
-      if (!type?.solid) continue;
+      if (!type || !blocks(type, MOVERS.walker)) continue;
       for (const [dx, dy] of type.spots) {
         const inside = dx >= 0 && dy >= 0 && dx < type.size[0] && dy < type.size[1];
         if (inside) this.blocked[this.i(item.p[0] + dx, item.p[1] + dy)] = 0;
@@ -84,6 +88,11 @@ export class Grid {
 
   walkable(x: number, y: number): boolean {
     return this.inBounds(x, y) && this.blocked[this.i(x, y)] === 0;
+  }
+
+  /** Walkable, and no vehicle parked there: somewhere to go and stand. */
+  free(x: number, y: number): boolean {
+    return this.walkable(x, y) && this.parked[this.i(x, y)] === 0;
   }
 
   roomAt(x: number, y: number): number {
@@ -114,6 +123,8 @@ export class Grid {
         const ny = cy + dy;
         if (!this.walkable(nx, ny)) continue;
         const next = this.i(nx, ny);
+        // Round a parked vehicle, unless it's the one you're walking to.
+        if (this.parked[next] && next !== goal) continue;
         const g = cost[current]! + this.cost[next]!;
         if (g >= cost[next]!) continue;
         cost[next] = g;

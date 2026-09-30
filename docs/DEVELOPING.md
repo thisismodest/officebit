@@ -64,9 +64,24 @@ sitemap, the JSON-LD), filled in as they're built (`SITE_URL` overrides the
 homepage for a test build) or served (localhost). Move the site, change the
 homepage.
 
-**Search and sharing:** both pages have a description, a canonical link,
+**What's new:** `public/changelog/index.html` lists what's changed, a dated
+line each in plain words ("Friends make plans: frisbee and picnics on the
+Green"), newest first. Add a line when something people will notice ships.
+
+**Search and sharing:** every page has a description, a canonical link,
 Open Graph and Twitter card tags, and `og-image.png` (1200×630, a screenshot
 of the town); the landing page has JSON-LD (`WebSite`, `WebApplication`,
-`SoftwareSourceCode`); `sitemap.xml` lists both. There's no `robots.txt`
+`SoftwareSourceCode`); `sitemap.xml` lists them all. There's no `robots.txt`
 here, as search engines only read one at the root of the domain: list the
 sitemap in `thisismodest.com`'s own. `test/seo.test.ts` checks all this.
+
+## The app
+
+officebit installs as an app on phones, tablets and desktops (Add to Home
+Screen, or the browser's install button): `public/site.webmanifest` opens the
+town standalone, without the browser's bars, and `public/sw.js`, the service
+worker, makes it installable and lets it open offline. It fetches from the network
+first (so a deploy shows up straight away) and keeps a copy of everything it
+fetches, for next time there's no signal. Change `CACHE` in `sw.js` to clear
+everyone's copies. `ui/fullscreen.ts` registers it, and hides the full screen
+button when it's running as the app.

@@ -20,7 +20,9 @@ export type Intent =
   | { kind: 'sleep'; item: number; until: number }
   /** Wait outside a venue that should be open by now, for up to `wait` ticks once there (then give up). */
   | { kind: 'queue'; level: string; wait: number }
-  | { kind: 'leave' };
+  | { kind: 'leave' }
+  /** A game in the park with friends (catch, frisbee): at their place in the ring, for a plan (plans.ts). */
+  | { kind: 'play'; plan: number; spot: Place };
 
 export interface Person {
   readonly id: string;
@@ -81,8 +83,14 @@ export interface Person {
   desk: number;
   /** A baby on hands and knees, from the car to the front door: slow, and low down. */
   crawling?: boolean;
+  /** The plan they're in today, if any (plans.ts). */
+  plan?: number;
   /** Leaving town for good: off to the edge of it, then gone. */
   leaving?: boolean;
+  /** Steps spent waiting behind someone (movement.ts `giveWay`): after a while they squeeze past. */
+  held?: number;
+  /** How far (tiles) they've stepped to their left to pass someone coming the other way: drawing only. */
+  aside?: number;
   /** Offstage: people without a home, outside working hours. */
   hidden: boolean;
   /** Ticks left passing through a door or up the stairs. */

@@ -69,14 +69,18 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   clock.ts        1 tick = 6 game s; 600 ticks/h; day 1 = Monday 06:00
   calendar.ts     the date of any tick, sunrise and sunset where the town is; holidays.ts: fixed-date days and
                   bank holidays; festivities.ts: what the town does on them (crews put up the tree, the bonfire)
+  movement.ts     how anything moves: MOVERS (walker, crawler, car, truck: speeds per surface, reach), blocks (what's
+                  in whose way, from the catalog), one stepper (advance); parked vehicles block tiles (grid.parked)
+  collision.ts    the other half: bodies in the sim's space (on foot, on wheels), manners, inTheWay (giving way, passing)
   grid.ts         one level's tiles + A*;  navigation.ts: routes across levels via portals
   geometry.ts     shared tile/rect/footprint maths, door rows, portal ends (sim, worlds and the editor all use it)
   catalog.ts      furniture types and affordances (offers, spots, desk, hangout, hours, parking…)
   social.ts       conversations, interruptions, rows, walk-offs; relationships.ts: per-pair compatibility + affinity
   love.ts         sparks, dating, moving in, splitting up;  housing.ts: homes, to let, moving house
-  ventures.ts     side project → launch → grow; each new office is built by a crew (construction.ts)
+  plans.ts        friends' days out: frisbee and picnics in the park, catching up, coworking on laptops
+  ventures.ts     side project → launch → grow; Friday takings (hire, struggle, close; empty offices re-let); offices built by crews (construction.ts)
   careers.ts      Friday review (let go / quit / change) and weekday job hunt
-  food-trucks.ts  the trucks' drive in/out as a pure function of the clock
+  food-trucks.ts  the trucks' lunchtime runs: in on the roads as traffic, onto the pitch, and away again
   roads.ts        the road map for vehicles and routes along it; traffic.ts: highway through-traffic and cars
   visitors.ts     cars that turn off the highway; drivers stop to eat or charge, then drive on
   arrivals.ts     new family members coming home: a baby dropped off by car (it crawls in), others on foot
@@ -89,15 +93,15 @@ src/worlds/   starter.ts (people, 2-floor office, venues, homes), town.ts (the 1
               rooms.ts (walled rooms and doorways)
 src/render/   renderer.ts (one level through a camera; y-sorted props+people; night lighting),
               camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, cars.ts,
-              palette.ts, pixels.ts, seasonal.ts (fairy lights, pumpkins, fireworks), props/* (one painter per catalog type)
+              palette.ts, pixels.ts, seasonal.ts (fairy lights, pumpkins, fireworks), play.ts (frisbees, laptops), props/* (one painter per catalog type)
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
               editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (save, share links, files),
               timekeeper.ts (live/sandbox), time-jump.ts (jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
-              place-card.ts, describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
+              place-card.ts, fullscreen.ts, describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects), noise.ts;
               ui/soundscape.ts decides which effects play, ui/audio-menu.ts the switches and volumes
 src/feeds/    protocol.ts (validated data-only messages), local.ts (console + postMessage)
-public/       index.html + landing.css (the landing page), town/index.html + style.css (the town), og-image.png, icons,
+public/       index.html + landing.css (the landing page), changelog/ (what's new, for players: add a line when something ships), town/index.html + style.css (the town), sw.js (the app's service worker), og-image.png, icons,
               site.webmanifest, sitemap.xml (addresses filled in from package.json `homepage`: docs/DEVELOPING.md#deploying)
 scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports, site address), probe.ts
 test/         node:test suites, one per area
@@ -161,10 +165,13 @@ Working and verified in the browser:
 - **People:** personalities and needs, homes with interiors, families, pets (all editable from a profile:
   looks, names, personalities, where they work, a new baby by car, leaving town),
   children at Acacia Primary, relationships, love and moving house, careers,
-  ventures whose offices are built by crews, and visitors who stop to eat or charge.
+  ventures whose offices are built by crews, and visitors who stop to eat or charge. Friends make plans:
+  frisbee and picnics on the Green, catching up at the diner, working on laptops together.
 - **Places:** the two-floor office, the 24/7 Night Owl Diner and the Corner Shop,
   staffed in shifts (they close when nobody's minding them; customers queue),
   food trucks on weekday lunchtimes, arcades.
+- **Movement:** one engine for everything that moves (movement.ts) and one collision layer (collision.ts):
+  people give way, step aside and never get stuck; cars and food trucks drive the roads alike, trucks by their size.
 - **Time:** a real calendar: daylight follows the sun for the date where you are; UK bank holidays;
   Christmas (a crew-built tree, lights, presents, the office party), New Year, Bonfire Night, Halloween and more.
 - **UI:** World/People/News sidebar (hideable) with profiles and per-person
@@ -172,9 +179,9 @@ Working and verified in the browser:
   time modes (Live runs since its start date; Sandbox; jumping ahead), the map
   editor (furniture, buildings, roads, paths, crossings, rub out, rooms, doorways,
   areas without walls, floors; it saves as you go, story-built places as overrides), a landing page, save and share
-  links, interactions, feeds, opt-in music and sounds with volumes.
+  links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-134 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+148 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

@@ -72,6 +72,8 @@ export interface RoomDef {
   /** Draw walls around the rect's edge (minus doors). */
   walled?: boolean;
   dept?: string;
+  /** A park: open grass where friends play catch or have a picnic (docs/PLANS.md). */
+  park?: boolean;
 }
 
 export interface FurnitureDef {

@@ -320,6 +320,24 @@ export const OUTDOOR: Record<string, Painter> = {
     },
   },
 
+  // A picnic: a checked blanket on the grass, and a basket on it.
+  picnicBlanket: {
+    up: 4,
+    flat: true,
+    paint(ctx, w, h, o) {
+      rect(ctx, 1, o + 1, w - 2, h - 2, '#c8453a');
+      for (let y = 0; y < h - 2; y += 4) for (let x = (y / 4) % 2 ? 4 : 0; x < w - 2; x += 8) rect(ctx, 1 + x, o + 1 + y, 4, 4, '#f4ede0');
+      rect(ctx, 1, o + h - 2, w - 2, 1, 'rgba(20,14,30,0.25)');
+      // The basket, by one corner.
+      rect(ctx, w - 11, o - 2, 8, 6, OUTLINE);
+      rect(ctx, w - 10, o - 1, 6, 4, '#b98452');
+      rect(ctx, w - 10, o - 1, 6, 1, '#d09b67');
+      rect(ctx, w - 9, o - 4, 4, 1, OUTLINE);
+      dot(ctx, w - 9, o - 3, OUTLINE);
+      dot(ctx, w - 6, o - 3, OUTLINE);
+    },
+  },
+
   bench: {
     up: 6,
     paint(ctx, w, h, o) {

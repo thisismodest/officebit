@@ -48,6 +48,12 @@ export interface FurnitureType {
   staff?: boolean;
   /** A construction site: the crew works from its spots. */
   worksite?: boolean;
+  /** Seats a group can get together at (a diner booth): a place for a meet-up (docs/PLANS.md). */
+  gather?: boolean;
+  /** Somewhere to open a laptop and work (a booth, a park bench): a place to work on a project together. */
+  worktop?: boolean;
+  /** Whether it's in the way of people on foot and of vehicles, where that isn't the usual (movement.ts `blocks`). */
+  blocks?: { foot?: boolean; wheels?: boolean };
   /** A town event (the bonfire): worth walking over for, and the town's open to everyone while it's on. */
   event?: boolean;
   /** A workstation you work standing up (the diner's grill), not sat at. */
@@ -206,6 +212,8 @@ export const CATALOG: Record<string, FurnitureType> = {
     duration: [90, 160],
     hangout: true,
     seat: true,
+    gather: true,
+    worktop: true,
   },
   jukebox: {
     name: 'Jukebox',
@@ -286,7 +294,10 @@ export const CATALOG: Record<string, FurnitureType> = {
   tree: decor('Tree', [2, 2]),
   bush: decor('Bush', [1, 1]),
   flowers: decor('Flowers', [1, 1], false),
-  bench: decor('Bench', [2, 1]),
+  // A park bench: sit, rest, or open a laptop (it's only in town, so it's for days out: docs/PLANS.md).
+  bench: { ...decor('Bench', [2, 1]), spots: [[0, 0], [1, 0]], seat: true, worktop: true, offers: { energy: 0.1, social: 0.05 }, duration: [60, 120] },
+  // Laid out on the grass for a picnic, and packed up after (docs/PLANS.md).
+  picnicBlanket: { name: 'Picnic blanket', size: [2, 2], solid: false, spots: around(2, 2), seat: true, offers: { hunger: 0.35, social: 0.3, fun: 0.25 }, duration: [80, 140], hangout: true },
   lamppost: decor('Lamppost', [1, 1]),
   evCharger: { ...decor('Charger', [1, 1]), hardStanding: true },
   chargingCanopy: { ...decor('Canopy', [9, 1], false), hardStanding: true },

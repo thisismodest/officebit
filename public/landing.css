@@ -1,4 +1,4 @@
-/* The landing page (index.html): what officebit is, and the way into your town. The page is a card on the town's own grass, with people walking along the pavement at the top. */
+/* The landing page (index.html) and the changelog: what officebit is, what's new, and the way into your town. The page is a card on the town's own grass, with people walking along the pavement at the top. */
 *,
 *::before,
 *::after {
@@ -111,11 +111,17 @@ body {
 
 .top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--mdst-space-md);
   padding: var(--mdst-space-md) var(--pad);
   border-bottom: 1px solid var(--mdst-color-subtle);
+}
+
+.top nav {
+  display: flex;
+  gap: var(--mdst-space-md);
 }
 
 .wordmark {
@@ -202,6 +208,28 @@ main > section {
   padding-left: 1.25rem;
 
   & li {
+    margin-bottom: var(--mdst-space-sm);
+  }
+
+  & li:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* The changelog (changelog/index.html): a dated list of what's new, a line each. */
+.release {
+  & h2 {
+    font-size: clamp(1.15rem, 3.5vw, 1.4rem);
+  }
+}
+
+.changes {
+  padding: 0;
+  list-style: none;
+
+  & li {
+    display: flex;
+    gap: var(--mdst-space-sm);
     margin-bottom: var(--mdst-space-sm);
   }
 

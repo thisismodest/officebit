@@ -1,81 +1,222 @@
-// Food trucks (docs/FURNITURE.md#food-trucks): they drive in along the
-// nearest road from the east edge of town, in the westbound lane, park for
-// opening hours, and drive off west. (Everything else on the roads is in
-// traffic.ts.) Position is a pure function of the clock, so it needs no state
-// and replays identically.
-import { hourOf } from './clock.ts';
+// Food trucks (docs/FURNITURE.md#food-trucks): on weekdays each truck comes
+// into town a while before opening, by whichever road it happens to take that
+// day (the highway, or a road off the edge of the map), drives through town on
+// the roads like any car (traffic.ts moves it, at the same speed, keeping its
+// distance and giving way), pulls off the road onto its pitch, serves while
+// it's open, then pulls back out and leaves by a road of its own choosing.
+// It only serves once it's parked.
+import { CATALOG } from './catalog.ts';
+import { dayOf, hourOf } from './clock.ts';
+import { manhattan } from './geometry.ts';
+import { MOVERS, type Heading } from './movement.ts';
+import { hashOf } from './rng.ts';
+import type { RoadMap } from './roads.ts';
 import type { Item, Simulation } from './sim.ts';
-import { DRIVABLE } from './roads.ts';
+import type { Car } from './traffic.ts';
+import type { FurnitureDef, Tile } from './world.ts';
 
-/** Game minutes to drive between the edge of town and the pitch. */
-const DRIVE_MINUTES = 12;
-/** Each truck in the convoy arrives this many minutes after the one before. */
+/** How long before opening (game hours) the first truck sets off: time to cross town even at a slow pace. */
+const SET_OFF_EARLY = 1;
+/** Each truck in the convoy sets off, and leaves, this many game minutes after the one before. */
 const STAGGER_MINUTES = 3;
+/** How far off the map (tiles) a truck comes on and goes off, so it drives on rather than pops. */
+const OFFSTAGE = 3;
+
+/** A way into (or out of) town: a road's lane at the edge of the map, heading in (or out). */
+interface Way {
+  /** Just off the map, and the lane's tile at the edge. */
+  off: Tile;
+  edge: Tile;
+  heading: Heading;
+}
 
 export interface VehiclePose {
   x: number;
   y: number;
-  facing: 'left' | 'right' | 'up' | 'down';
+  /** Where it was a step ago, for drawing it smoothly in between. */
+  px: number;
+  py: number;
+  facing: Heading;
   moving: boolean;
 }
 
-type Waypoint = [x: number, y: number];
+interface Run {
+  car: Car;
+  stage: 'arriving' | 'parked' | 'leaving';
+}
+
+export class FoodTrucks {
+  private readonly sim: Simulation;
+  private readonly runs = new Map<number, Run>();
+
+  constructor(sim: Simulation) {
+    this.sim = sim;
+  }
+
+  /** Where a truck is now, if it's in town: its top-left tile (it drives by its middle, so it keeps to the lane). */
+  poseOf(item: Item): VehiclePose | null {
+    const run = this.runs.get(item.index);
+    if (!run) return null;
+    const { car, stage } = run;
+    const [ox, oy] = middle(item.def);
+    return { x: car.x - ox, y: car.y - oy, px: car.px - ox, py: car.py - oy, facing: stage === 'parked' ? 'up' : car.facing, moving: stage !== 'parked' };
+  }
+
+  /** Parked on its pitch, ready to serve. */
+  parked(item: Item): boolean {
+    return this.runs.get(item.index)?.stage === 'parked';
+  }
+
+  /** Every step: trucks set off on time, park when they get there, and head off at closing. */
+  step(): void {
+    const { sim } = this;
+    const traffic = sim.traffic;
+    const convoy = sim.activeItems().filter((i) => i.type.street && i.type.hours);
+    const hour = hourOf(sim.tick);
+    for (const [n, item] of convoy.entries()) {
+      const [open, close] = item.type.hours!;
+      const stagger = (n * STAGGER_MINUTES) / 60;
+      const due = !sim.dayOff() && hour >= open - SET_OFF_EARLY + stagger && hour < close + stagger;
+      const run = this.runs.get(item.index);
+      if (!run && due) this.setOff(item);
+      else if (run?.stage === 'arriving' && run.car.path.length === 0) {
+        run.stage = 'parked';
+        run.car.parked = true;
+      } else if (run?.stage === 'parked' && !due) this.pullOut(item, run);
+      else if (run?.stage === 'leaving' && !traffic.cars.includes(run.car)) this.runs.delete(item.index);
+    }
+    for (const index of this.runs.keys()) if (!convoy.some((i) => i.index === index)) this.runs.delete(index);
+  }
+
+  /** In by today's road, along the roads to the kerb by the pitch, then up onto it. */
+  private setOff(item: Item): void {
+    const { sim } = this;
+    const roads = sim.traffic.roads();
+    const way = this.pick(this.ways('in'), item, 1);
+    const kerb = roads && kerbOf(roads, item.def);
+    const route = roads && way && kerb && this.byRoad(way.edge, kerb, way.heading);
+    if (!route || !way || !kerb || !roads) return;
+    // Along the road to the kerb, then up onto the pitch.
+    const onto = pitchRoute(roads, item.def, kerb, 'onto');
+    const [ox, oy] = middle(item.def);
+    const car = sim.traffic.add(0, way.off, [way.edge, ...route, ...(onto ?? [[item.def.p[0] + ox, kerb[1]]]), [item.def.p[0] + ox, item.def.p[1] + oy]]);
+    car.facing = way.heading;
+    car.truck = item.index;
+    this.runs.set(item.index, { car, stage: 'arriving' });
+  }
+
+  /** Back down onto the road, and away out of town by a road of its own. */
+  private pullOut(item: Item, run: Run): void {
+    const { sim } = this;
+    const roads = sim.traffic.roads();
+    const way = this.pick(this.ways('out'), item, 2);
+    const kerb = roads && kerbOf(roads, item.def);
+    const route = roads && way && kerb && this.byRoad(kerb, way.edge);
+    run.car.parked = false;
+    run.car.through = true;
+    const off = roads && kerb && pitchRoute(roads, item.def, kerb, 'off');
+    run.car.path = route && way && kerb ? [stopOf(item.def), ...(off ?? [kerb]), ...route, way.off] : [];
+    run.stage = 'leaving';
+  }
+
+  /** A route by road that keeps the truck's whole body clear of things (or, if there's none, one like a car's). */
+  private byRoad(from: Tile, to: Tile, heading?: Heading): Tile[] | null {
+    const roads = this.sim.traffic.roads();
+    return roads?.route(from, to, heading, { reach: MOVERS.truck.reach }) ?? roads?.route(from, to, heading) ?? null;
+  }
+
+  /** Today's pick of the ways in or out, for this truck: the same every time for a given day, with no story dice rolled. */
+  private pick(ways: Way[], item: Item, salt: number): Way | undefined {
+    const n = hashOf(`${item.index}:${dayOf(this.sim.tick)}:${salt}`, this.sim.world.seed) >>> 0;
+    return ways[n % Math.max(1, ways.length)];
+  }
+
+  /**
+   * Every road off the edge of the map, one lane each: the one you'd drive in
+   * on (we drive on the left), or out on. A road two lanes wide at the east edge
+   * comes in westbound on its south lane, and so on round the compass.
+   */
+  private ways(direction: 'in' | 'out'): Way[] {
+    const roads = this.sim.traffic.roads();
+    const level = this.sim.levels.get(this.sim.traffic.level ?? '');
+    if (!roads || !level) return [];
+    const [w, h] = level.size;
+    const road = (x: number, y: number) => roads.drivable(x, y) && roads.floorAt(x, y) !== 'path';
+    const ways: Way[] = [];
+    // Each side: which way in is, how to walk along the edge, and which end of a run of lanes is the left-hand one going in.
+    const sides: { heading: Heading; out: Heading; tile: (i: number) => Tile; length: number; step: Tile; leftIn: 'first' | 'last' }[] = [
+      { heading: 'left', out: 'right', tile: (i) => [w - 1, i], length: h, step: [OFFSTAGE, 0], leftIn: 'last' },
+      { heading: 'right', out: 'left', tile: (i) => [0, i], length: h, step: [-OFFSTAGE, 0], leftIn: 'first' },
+      { heading: 'down', out: 'up', tile: (i) => [i, 0], length: w, step: [0, -OFFSTAGE], leftIn: 'last' },
+      { heading: 'up', out: 'down', tile: (i) => [i, h - 1], length: w, step: [0, OFFSTAGE], leftIn: 'first' },
+    ];
+    for (const side of sides) {
+      let run: Tile[] = [];
+      for (let i = 0; i <= side.length; i++) {
+        const tile = i < side.length ? side.tile(i) : undefined;
+        if (tile && road(...tile)) {
+          run.push(tile);
+          continue;
+        }
+        if (run.length) {
+          // In on the left-hand lane of the run, out on the other.
+          const inLane = side.leftIn === 'first' ? run[0]! : run.at(-1)!;
+          const outLane = side.leftIn === 'first' ? run.at(-1)! : run[0]!;
+          const edge = direction === 'in' ? inLane : outLane;
+          ways.push({ edge, off: [edge[0] + side.step[0], edge[1] + side.step[1]], heading: direction === 'in' ? side.heading : side.out });
+        }
+        run = [];
+      }
+    }
+    return ways;
+  }
+}
+
+/** How far a truck's middle is from its top-left tile. */
+function middle(def: FurnitureDef): Tile {
+  const [w, h] = CATALOG[def.t]!.size;
+  return [(w - 1) / 2, (h - 1) / 2];
+}
+
+/** The tile a truck drives up to on its pitch: under its middle, on the pitch's front row. */
+function stopOf(def: FurnitureDef): Tile {
+  const [w, h] = CATALOG[def.t]!.size;
+  return [def.p[0] + Math.floor(w / 2), def.p[1] + h - 1];
+}
+
+/** The road straight in front of a pitch (the nearest road anywhere, failing that): where a truck leaves the road. */
+export function kerbOf(roads: RoadMap, def: FurnitureDef): Tile | undefined {
+  const [x, y] = def.p;
+  const [w, h] = CATALOG[def.t]!.size;
+  const front: Tile = [x + Math.floor(w / 2), y + h];
+  const ahead = (t: Tile) => (t[0] >= x && t[0] < x + w && t[1] >= y + h ? 0 : 100);
+  return roads
+    .tilesOf('road')
+    .filter((t) => roads.drivable(...t))
+    .sort((a, b) => ahead(a) + manhattan(a, front) - (ahead(b) + manhattan(b, front)))[0];
+}
+
+/**
+ * Between the kerb and a pitch, `onto` it or `off` it: a route that keeps the
+ * whole truck clear of lampposts and the like, over only the ground straight in
+ * front of the pitch. Null if there's no clear way.
+ */
+export function pitchRoute(roads: RoadMap, def: FurnitureDef, kerb: Tile, way: 'onto' | 'off'): Tile[] | null {
+  const [x, y] = def.p;
+  const [w] = CATALOG[def.t]!.size;
+  const stop = stopOf(def);
+  const front = (tx: number, ty: number) => tx >= x && tx < x + w && ty >= y && ty <= kerb[1];
+  const fit = { reach: MOVERS.truck.reach, offRoad: front };
+  return way === 'onto' ? roads.route(kerb, stop, undefined, fit) : roads.route(stop, kerb, undefined, fit);
+}
+
+/** Can a truck pull onto this pitch from the road, all of it clear? (For the editor.) */
+export function pitchReachable(roads: RoadMap, def: FurnitureDef): boolean {
+  const kerb = kerbOf(roads, def);
+  return !!kerb && pitchRoute(roads, def, kerb, 'onto') !== null;
+}
 
 /** Where a street vehicle is right now, or null if it isn't in town. */
 export function vehicleAt(sim: Simulation, item: Item): VehiclePose | null {
-  const hours = item.type.hours;
-  if (!hours || !item.type.street || item.gone || sim.dayOff()) return null;
-
-  const convoy = sim.activeItems().filter((i) => i.type.street && i.level === item.level);
-  const stagger = (convoy.indexOf(item) * STAGGER_MINUTES) / 60;
-  const drive = DRIVE_MINUTES / 60;
-  const hour = hourOf(sim.tick);
-  const [open, close] = hours;
-  const arrive = open - drive - (convoy.length - 1) * (STAGGER_MINUTES / 60) + stagger;
-  const leave = close + stagger;
-  const [x, y] = item.def.p;
-
-  if (hour < arrive || hour >= leave + drive) return null;
-  if (hour >= arrive + drive && hour < leave) return { x, y, facing: 'up', moving: false };
-
-  const road = roadRow(sim, item);
-  const width = sim.grids.get(item.level)!.w;
-  const arriving = hour < leave;
-  const route: Waypoint[] = arriving
-    ? [[width + 2, road], [x, road], [x, y]]
-    : [[x, y], [x, road], [-item.type.size[0] - 2, road]];
-  const t = arriving ? (hour - arrive) / drive : (hour - leave) / drive;
-  return along(route, Math.min(1, Math.max(0, t)));
+  return sim.foodTrucks.poseOf(item);
 }
-
-/** The road below a vehicle's pitch: its far lane, where traffic heads west (we drive on the left). */
-function roadRow(sim: Simulation, item: Item): number {
-  const level = sim.levels.get(item.level)!;
-  const grid = sim.grids.get(item.level)!;
-  const [x, y] = item.def.p;
-  const isRoad = (row: number) => DRIVABLE.has(level.rooms[grid.roomAt(x, row)]?.floor ?? '');
-  let row = y;
-  while (row < grid.h && !isRoad(row)) row++;
-  if (row === grid.h) return y;
-  while (row + 1 < grid.h && isRoad(row + 1)) row++;
-  return row;
-}
-
-/** A point a fraction `t` of the way along a route of straight segments. */
-function along(route: Waypoint[], t: number): VehiclePose {
-  const lengths = route.slice(1).map(([x, y], i) => Math.abs(x - route[i]![0]) + Math.abs(y - route[i]![1]));
-  let remaining = t * lengths.reduce((a, b) => a + b, 0);
-  for (const [i, length] of lengths.entries()) {
-    const [ax, ay] = route[i]!;
-    const [bx, by] = route[i + 1]!;
-    if (remaining <= length || i === lengths.length - 1) {
-      const f = length === 0 ? 1 : Math.min(1, remaining / length);
-      const facing = bx > ax ? 'right' : bx < ax ? 'left' : by > ay ? 'down' : 'up';
-      return { x: ax + (bx - ax) * f, y: ay + (by - ay) * f, facing, moving: t < 1 };
-    }
-    remaining -= length;
-  }
-  const [x, y] = route.at(-1)!;
-  return { x, y, facing: 'up', moving: false };
-}
-

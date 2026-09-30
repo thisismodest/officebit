@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>What's new in officebit</title>
+    <meta
+      name="description"
+      content="What's new in officebit, the tiny 8-bit town that gets on with its day: new things people do, new places, and new ways to make the town yours."
+    />
+    <link rel="canonical" href="%SITE_URL%changelog/" />
+    <meta name="theme-color" content="#1f1d29" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="officebit" />
+    <meta property="og:title" content="What's new in officebit" />
+    <meta
+      property="og:description"
+      content="What's new in officebit, the tiny 8-bit town that gets on with its day: new things people do, new places, and new ways to make the town yours."
+    />
+    <meta property="og:url" content="%SITE_URL%changelog/" />
+    <meta property="og:image" content="%SITE_URL%og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="An 8-bit town in the morning: people walking along Main Street to the office, past the green." />
+    <meta property="og:locale" content="en_GB" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../vendor/mdst-ui/modest-ui.min.css" />
+    <link rel="stylesheet" href="../landing.css" />
+  </head>
+  <body class="mdst-ui">
+    <!-- What's new, in a line each, newest first. Add to it when something people will notice ships. -->
+    <div class="page">
+      <header class="top">
+        <a class="wordmark" href="../">officebit</a>
+        <nav aria-label="Elsewhere">
+          <a href="../town/">Open your town</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <h1>What's new</h1>
+          <p class="lede">officebit is growing all the time. Here's what's changed in town lately, newest first.</p>
+        </section>
+
+        <section class="release">
+          <h2><time datetime="2026-09-30">30 September 2026</time></h2>
+          <ul class="changes">
+            <li><span aria-hidden="true">🥏</span> Friends make plans: frisbee and picnics on the Green, and catching up at the diner.</li>
+            <li><span aria-hidden="true">💻</span> Co-founders get their laptops out together, in a diner booth or on a park bench.</li>
+            <li><span aria-hidden="true">📉</span> Startups can have good weeks and bad ones. They hire when they're doing well, and some close. Their people go back to their old jobs, or try again.</li>
+            <li><span aria-hidden="true">🚚</span> Food trucks drive into town from any road and pull up by the pavement.</li>
+            <li><span aria-hidden="true">🚶</span> People give way to each other and step aside to pass. No more walking through each other.</li>
+            <li><span aria-hidden="true">📱</span> Play full screen, or add officebit to your home screen as an app.</li>
+            <li><span aria-hidden="true">🌅</span> The sun rises and sets for the real date, where you are.</li>
+            <li><span aria-hidden="true">🎄</span> Christmas trees and fairy lights, New Year's fireworks, Bonfire Night, Halloween and the bank holidays.</li>
+            <li><span aria-hidden="true">✏️</span> Edit anyone from their profile: their look, name, personality and job. You can even give them a baby.</li>
+          </ul>
+        </section>
+
+        <section class="release">
+          <h2><time datetime="2026-09-29">29 September 2026</time></h2>
+          <ul class="changes">
+            <li><span aria-hidden="true">🏘️</span> officebit is here: a whole 8-bit town that gets on with its day.</li>
+            <li><span aria-hidden="true">🧱</span> Build rooms, doorways and new floors in the editor.</li>
+            <li><span aria-hidden="true">🕹️</span> Arcade machines. Gamers seek them out, and everyone else has a go now and then.</li>
+            <li><span aria-hidden="true">📲</span> Rearrange the furniture on your phone.</li>
+            <li><span aria-hidden="true">💾</span> Your changes to the town save as you go.</li>
+          </ul>
+        </section>
+
+        <section>
+          <p class="actions"><a class="mdst-button mdst-button--inverted mdst-button--lg cta" href="../town/">Open your town</a></p>
+        </section>
+      </main>
+
+      <footer>
+        <p class="mdst-p--sm">officebit · made with <a href="https://modest-ui.com">modest-ui</a> · MIT licence</p>
+      </footer>
+    </div>
+    <script>
+      // Been here before? Your town's waiting.
+      if (localStorage.getItem("officebit:live-since")) {
+        for (const button of document.querySelectorAll(".cta")) button.textContent = "Back to your town";
+      }
+    </script>
+  </body>
+</html>

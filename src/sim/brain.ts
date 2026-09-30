@@ -29,6 +29,9 @@ const ARCADE_SHARE = 0.5;
 const EVENT_PULL = 0.5;
 /** New Year's Eve: a night out. */
 const NIGHT_OUT = 0.35;
+/** A plan with friends (plans.ts): the pull of going, and how much of it's left if they're shattered or starving. */
+const PLAN_PULL = 1;
+const WORN_OUT = { below: 0.15, pull: 0.3 };
 /** New Year: how keen grown-ups are to see the fireworks, more for the sociable. */
 const FIREWORKS = 0.7;
 /** Trick-or-treating: how keen children are on the next door. */
@@ -155,6 +158,20 @@ export class PersonalityBrain implements Brain {
       }
       const place = { level: item.level, p: item.def.p };
       options.push({ intent: { kind: 'use', item: item.index, mode }, score: score - cost(place) + noise() });
+    }
+
+    // A plan with friends: off to it, and at it till it's over.
+    const plan = phase === 'home' ? sim.plans.due(p) : undefined;
+    if (plan) {
+      const worn = p.needs.energy < WORN_OUT.below || p.needs.hunger < WORN_OUT.below;
+      const pull = PLAN_PULL * (worn ? WORN_OUT.pull : 1) + noise();
+      const seat = plan.item !== undefined ? sim.items[plan.item] : undefined;
+      const free = !!seat && !seat.gone && sim.freeSpots(seat.index) > 0;
+      if (plan.activity === 'catch') options.push({ intent: { kind: 'play', plan: plan.id, spot: sim.plans.spotFor(plan, p) }, score: pull });
+      else if (plan.activity === 'cowork' && free && p.species === 'human') options.push({ intent: { kind: 'hustle', item: seat!.index }, score: pull });
+      else if (free) options.push({ intent: { kind: 'use', item: seat!.index }, score: pull });
+      // The picnic's not laid out yet (or the seats are full): there anyway, to wait for it.
+      else options.push({ intent: { kind: 'wander', to: { level: plan.level, p: plan.at } }, score: pull * 0.9 });
     }
 
     // New Year: out on the Green for the fireworks.

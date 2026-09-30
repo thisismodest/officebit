@@ -79,8 +79,15 @@ export function describe(p: Person, sim: Simulation): string {
       return moving ? 'Heading to a meeting' : 'In a meeting';
     case 'hustle': {
       const venture = sim.ventures.of(p);
-      if (moving) return 'Off to work on their side project';
+      const together = sim.plans.due(p);
+      if (moving) return together ? 'Off to work on their projects with friends' : 'Off to work on their side project';
+      if (together) return `Working on ${venture ? venture.name : 'their ideas'} with ${others(p, together.members, sim)} 💻`;
       return venture ? `Working on ${venture.name} 🚀` : 'Tinkering with a big idea 💡';
+    }
+    case 'play': {
+      const plan = sim.plans.get(intent.plan);
+      if (moving) return 'Off to the park for frisbee';
+      return plan ? `Throwing a frisbee about with ${others(p, plan.members, sim)} 🥏` : 'Throwing a frisbee about 🥏';
     }
     case 'sleep':
       return 'Off to bed';
@@ -105,4 +112,11 @@ export function whereIs(p: Person, sim: Simulation): string {
 
 export function presetLabel(preset: string): string {
   return PRESETS[preset as PresetName]?.label ?? preset;
+}
+
+/** The others in a plan, by name: "Lou", "Lou and Cal". */
+function others(p: Person, members: readonly string[], sim: Simulation): string {
+  const list = members.filter((id) => id !== p.id).map((id) => sim.person(id)?.name).filter((n): n is string => !!n);
+  if (list.length === 0) return 'friends';
+  return list.length === 1 ? list[0]! : `${list.slice(0, -1).join(', ')} and ${list.at(-1)}`;
 }

@@ -215,19 +215,35 @@ test('the diner: open all hours, staffed through the night, a treat rather than 
   for (const [id, n] of outings) assert.ok(n <= 14, `${id} went ${n} times in a fortnight`);
 });
 
-test('food trucks drive in before lunch, park, and drive off afterwards', () => {
+test('food trucks drive in on the roads before lunch, pull onto their pitch, serve only once parked, and drive off afterwards', () => {
   const sim = fresh();
   const [truck] = sim.activeItems().filter((i) => i.type.street);
+  const level = sim.levels.get(truck!.level)!;
+  const grid = sim.grids.get(truck!.level)!;
+  const floor = (x: number, y: number) => level.rooms[grid.roomAt(Math.round(x), Math.round(y))]?.floor;
   until(sim, 10);
   assert.equal(vehicleAt(sim, truck!), null, 'not in town mid-morning');
-  until(sim, 11.8);
-  const arriving = vehicleAt(sim, truck!);
-  assert.ok(arriving?.moving, 'on its way in just before noon');
+  until(sim, 11.1);
+  assert.ok(vehicleAt(sim, truck!)?.moving, 'on its way in before noon');
+  assert.ok(!sim.isOpen(truck!), 'and not serving yet');
+  // On the road (or the highway) all the way, until it pulls off onto the pitch.
+  const [px, py] = truck!.def.p;
+  let offRoad = 0;
+  while (vehicleAt(sim, truck!)?.moving) {
+    sim.step();
+    const pose = vehicleAt(sim, truck!);
+    // Pulling up onto the pitch: just over the pavement, straight off the road in front.
+    const near = pose && Math.abs(pose.x - px) <= 2 && pose.y >= py && pose.y <= py + 3;
+    if (pose && !near && !['road', 'highway', 'zebra', 'zebraSide', undefined].includes(floor(pose.x, pose.y))) offRoad++;
+  }
+  assert.equal(offRoad, 0, 'never off the road on the way');
   until(sim, 12.5);
-  assert.deepEqual(vehicleAt(sim, truck!), { x: truck!.def.p[0], y: truck!.def.p[1], facing: 'up', moving: false });
+  const parked = vehicleAt(sim, truck!)!;
+  assert.deepEqual([parked.x, parked.y, parked.facing, parked.moving], [px, py, 'up', false]);
+  assert.ok(sim.isOpen(truck!), 'serving');
   until(sim, 14.1);
   assert.ok(vehicleAt(sim, truck!)?.moving, 'driving off after lunch');
-  until(sim, 15);
+  until(sim, 15.5);
   assert.equal(vehicleAt(sim, truck!), null, 'gone by mid-afternoon');
 });
 
@@ -323,7 +339,8 @@ test('children go to school on weekdays, have lunch there, and are in bed early'
 
   run(sim, 4 * TICKS_PER_DAY); // Friday night, then Saturday morning
   until(sim, 11);
-  for (const p of kids(sim)) assert.equal(kindOf(sim, p.id), 'home', `${p.name} is off school at the weekend`);
+  // Off school: at home, or out with the family (a picnic in the park).
+  for (const p of kids(sim)) assert.notEqual(kindOf(sim, p.id), 'school', `${p.name} is off school at the weekend`);
 });
 
 test('relationships: fixed compatibility, households start close, interruptions sour things', () => {

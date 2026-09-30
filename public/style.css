@@ -311,9 +311,29 @@ body {
   left: var(--mdst-space-sm);
 }
 
-.hud-zoom {
+/* Bottom right of the map: full screen, with zoom under it. */
+.hud-corner {
+  position: absolute;
   right: var(--mdst-space-sm);
   bottom: var(--mdst-space-sm);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--mdst-space-xs);
+  transition: right 180ms ease-out;
+
+  & > .hud {
+    position: static;
+  }
+}
+
+/* As wide as the zoom box under it. */
+button#fullscreen {
+  width: auto;
+}
+
+.hud-zoom {
   align-items: center;
 
   & .zoom-level {
@@ -323,7 +343,7 @@ body {
 }
 
 /* With a profile open over the right of the map, zoom moves out of its way. */
-#stage:has(.profile[data-open]) .hud-zoom {
+#stage:has(.profile[data-open]) .hud-corner {
   right: calc(min(20rem, 90%) + var(--mdst-space-sm));
 }
 
@@ -1240,6 +1260,16 @@ button.icon-button {
 
   /* Pinch to zoom; no buttons for it. */
   .hud-zoom {
+    display: none;
+  }
+
+  /* Pinch to zoom here; full screen (where there is one) sits above the sheet. */
+  .hud-corner {
+    bottom: calc(3.5rem + var(--mdst-space-sm));
+  }
+
+  /* The profile slides up over it. */
+  #stage:has(.profile[data-open]) .hud-corner {
     display: none;
   }
 

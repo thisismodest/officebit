@@ -6,7 +6,10 @@
 // level (a door, a spot someone uses) becomes unreachable because of it.
 import { CATALOG } from '../sim/catalog.ts';
 import { covers, endsOn, footprint as footprintOf, overlap, tilesIn } from '../sim/geometry.ts';
+import { pitchReachable } from '../sim/food-trucks.ts';
 import { Grid } from '../sim/grid.ts';
+import { RoadMap } from '../sim/roads.ts';
+import { MOVERS, blocks } from '../sim/movement.ts';
 import type { FurnitureDef, LevelDef, PortalDef, Tile } from '../sim/world.ts';
 
 export type Problem = string | null;
@@ -53,7 +56,7 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
     const [x, y] = [at[0] + dx, at[1] + dy];
     const inside = dx >= 0 && dy >= 0 && dx < w && dy < h;
     if (inside) continue;
-    const taken = others.some((f) => covers(f, x, y) && (CATALOG[f.t]!.solid || CATALOG[f.t]!.spots.length > 0));
+    const taken = others.some((f) => covers(f, x, y) && (blocks(CATALOG[f.t]!, MOVERS.walker) || CATALOG[f.t]!.spots.length > 0));
     if (!grid.walkable(x, y) || keepClear.has(key([x, y])) || taken) return 'There needs to be room to use it.';
   }
 
@@ -63,6 +66,8 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
   const ownSpots = spotsOf(placed);
   const reached = reachable(new Grid(after), ends.slice(0, 1));
   if (ownSpots.length > 0 && !ownSpots.some((s) => reached.has(key(s)))) return 'Nobody could get to it there.';
+  // A food truck's pitch needs a clear way on from the road in front, for all of the truck.
+  if (type.street && !pitchReachable(new RoadMap(after, new Grid(after)), placed)) return 'A food truck needs a clear way up from the road in front, with nothing in the way.';
   return null;
 }
 
@@ -87,7 +92,7 @@ export function aOrAn(name: string): string {
 /** A floor covering (a rug, flowers): not solid, and nothing to use it from. */
 export function isCovering(t: string): boolean {
   const type = CATALOG[t];
-  return !!type && !type.solid && type.spots.length === 0;
+  return !!type && !blocks(type, MOVERS.walker) && type.spots.length === 0;
 }
 
 /** Tiles reachable on foot from `from`. */

@@ -37,7 +37,7 @@ const HOUSES = new Set(['terrace', 'house', 'detached']);
 
 /** What the picker offers indoors and out. Buildings, houses, lots and building sites are placed some other way. */
 const OUTSIDE_ONLY = ['tree', 'bush', 'flowers', 'bench', 'lamppost', 'pond'];
-const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza']);
+const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza']);
 const INDOOR_GROUPS: [string, string[]][] = [
   ['Office', Object.keys(OFFICE)],
   ['Home', Object.keys(HOME)],

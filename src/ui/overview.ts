@@ -79,7 +79,10 @@ export class Overview {
     });
     const town = sim.world.levels.find((l) => l.kind === 'outside');
 
-    const ventures = sim.ventures.list.map((v) => place('rocket', v.name, `${v.stage} · team of ${v.members.length}`));
+    const ventures = sim.ventures.list.map((v) => {
+      const fortunes = sim.ventures.fortunes(v);
+      return place('rocket', v.name, `${v.stage}${fortunes ? ` · ${fortunes}` : ''} · team of ${v.members.length}`);
+    });
     const building = sim.construction.jobs
       .filter((j) => !j.finished)
       .map((j) => place('building', j.label, j.siteItem ? `${Math.round((j.site.progress ?? 0) * 100)}% built` : 'crew on the way'));

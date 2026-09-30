@@ -75,15 +75,33 @@ date), and change the course of their lives.
 - *Open:* how far its powers reach, and how to keep a replayable record
   (log the LLM's decisions as if they were feed messages).
 
+### Movement, one engine for everything
+Done (see `docs/MOVEMENT.md`): one table of movers and their speeds, one stepper for
+people, pets, babies, cars and trucks; what blocks what, from the catalog, for walkers and
+vehicles alike; routes that know a vehicle's size (a truck keeps its body clear, and pulls
+onto its pitch by a real route; placement refuses a pitch with no clear way on); parked
+vehicles block the tiles they stand on; one collision layer (collision.ts) for everything: people
+give way, step aside to pass and never get stuck, cars keep their distance, crowds spread out.
+Next, when wanted: trains (a rail surface), planes.
+
+### Plans ✓
+Done (see `docs/PLANS.md`): friends and friendly colleagues play frisbee and
+have picnics on the Green (family along), catch up at the diner; co-founders and the ambitious
+work on laptops together at a booth or on a bench.
+
+### Ventures: good weeks and bad ✓
+Done (see `docs/VENTURES.md#good-weeks-and-bad`): launched ventures take money in or lose it each
+Friday; doing well, they hire into free desks; struggling, the less committed leave; out of money,
+they close, their people look for work (old jobs back, the shop, anywhere) and the office is let to
+the next venture. Next, when wanted: ventures that outgrow eight desks (a floor added by a crew).
+
 ### Also on the list
 - Co-founders and couples visiting each other's homes.
 - Feed transports (WebSocket, SSE, polled JSON) and bridges (Slack, agents).
-- People walking through each other (they don't block each other).
 - Residents' cars: people who live far from work drive in, parking on the street
   or at the charging station (the roads, routing and parking are there: see `docs/TRAFFIC.md`).
 - Town events (a fair on the Green, a market): the town gets busy all at once, with
   visitors driving in for it.
-- Parked cars don't block people walking past them yet.
 - Music that follows who you're watching (see `docs/AUDIO.md`; the ambient music is done).
 - More of the calendar (see `docs/TIME.md#holidays`; seasons, Christmas, New Year, Bonfire Night and
   the fixed-date days are done): birthdays (set in the profile), Easter and the moveable bank holidays,

@@ -21,6 +21,10 @@
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
     <link rel="manifest" href="../site.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="officebit" />
     <link rel="stylesheet" href="../vendor/mdst-ui/modest-ui.min.css" />
     <link rel="stylesheet" href="../style.css" />
     <script type="module" src="../src/main.js"></script>
@@ -301,6 +305,8 @@
             ></button
           ></span>
         </div>
+        <div class="hud-corner">
+        <button type="button" class="hud icon-button mdst-button--sm mdst-card mdst-card--compact" id="fullscreen" aria-pressed="false" hidden></button>
         <fieldset class="hud hud-zoom mdst-card mdst-card--compact" aria-label="Zoom">
           <button
             type="button"
@@ -320,6 +326,7 @@
             title="Zoom out (−)"
           ></button>
         </fieldset>
+        </div>
         <button type="button" class="hud follow-chip mdst-button--sm mdst-button--inverted" id="follow" hidden></button>
         <div id="steer" class="travel steer mdst-card mdst-card--compact" hidden>
           <span class="mdst-p--sm">Steering <strong></strong>: tap to walk, use things or talk to people</span

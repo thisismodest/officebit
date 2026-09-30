@@ -153,6 +153,7 @@ export class Profile {
     this.toggle('control', this.controlling, this.controlling ? 'Let go' : 'Take control');
     set('venture', ventureOf(p, sim));
     set('love', loveOf(p, sim));
+    set('plan', sim.plans.describe(p));
   }
 
   private build(p: Person, sim: Simulation): void {
@@ -192,6 +193,7 @@ export class Profile {
         <p class="mdst-p--sm">${esc(sim.levels.get(p.home ?? '')?.name ?? 'No fixed abode')}${household.length ? ', with' : ''}</p>
         ${household.length ? `<p class="people-links">${household.map((q) => `<button type="button" class="mdst-button--sm" data-person="${q.id}">${esc(q.name)}</button>`).join('')}</p>` : ''}
         <p class="mdst-p--sm" data-field="love"></p>
+        <p class="mdst-p--sm" data-field="plan"></p>
         <p class="mdst-p--sm" data-field="venture"></p>
       </section>
       <section><h3>Lately</h3><ol class="log mdst-p--sm" data-field="recent"></ol></section>
@@ -284,7 +286,8 @@ function ventureOf(p: Person, sim: Simulation): string {
   const venture = sim.ventures.of(p);
   if (!venture) return p.ideas > 0 ? '💡 Has a big idea they tinker with' : '';
   const role = venture.founder === p.id ? 'Founder of' : p.company === venture.id ? 'Works at' : 'Moonlighting on';
-  return `🚀 ${role} ${venture.name} (${venture.stage})`;
+  const fortunes = sim.ventures.fortunes(venture);
+  return `🚀 ${role} ${venture.name} (${venture.stage}${fortunes ? `, ${fortunes}` : ''})`;
 }
 
 function statsOf(p: Person): string {

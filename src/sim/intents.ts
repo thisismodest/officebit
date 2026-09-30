@@ -22,6 +22,8 @@ const USE: [number, number] = [30, 60];
 const TAKEAWAY = 0.55;
 /** Extra fun per tick from gaming, and social per tick from gaming with someone. */
 const GAMING = { fun: 0.004, social: 0.003 };
+/** Fun and social per tick from a game in the park (plans.ts). */
+const PLAY = { fun: 0.004, social: 0.002 };
 /** Fun per tick from a chat (with a pet, or pulling someone off their work, there's more). */
 const CHAT_FUN = 0.0015;
 /** How close (tiles) people must stay to keep a conversation going. */
@@ -134,6 +136,21 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
       else sim.social.talked(p, target, sim.dt);
     },
     fits: (sim, _p, intent, _phase, area) => area.includes(sim.person(intent.with)?.level ?? ''),
+  },
+
+  play: {
+    to: (_sim, _p, intent) => intent.spot,
+    // At their place in the ring till the plan's over, facing its middle.
+    start: (sim, p, intent) => {
+      const plan = sim.plans.get(intent.plan);
+      p.timer = Math.max(1, (plan?.end ?? sim.tick) - sim.tick);
+      if (plan) faceTowards(p, plan.at[0], plan.at[1]);
+    },
+    doing: (_sim, p, _intent, refill) => {
+      refill(p, 'fun', PLAY.fun);
+      refill(p, 'social', PLAY.social);
+    },
+    fits: (sim, _p, intent, _phase, area) => area.includes(intent.spot.level) && sim.tick < (sim.plans.get(intent.plan)?.end ?? 0),
   },
 
   wander: {

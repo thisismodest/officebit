@@ -4,7 +4,8 @@
 import { asleep, atDesk, seatedAtDesk, type Person } from '../sim/person.ts';
 import { interiorOf, occupants } from '../sim/places.ts';
 import type { Item, Simulation } from '../sim/sim.ts';
-import { AHEAD } from '../sim/roads.ts';
+import { asideOffset } from '../sim/collision.ts';
+import { AHEAD } from '../sim/movement.ts';
 import type { Car } from '../sim/traffic.ts';
 import { Camera } from './camera.ts';
 import { carOrigin, carSprite, paintCarLights } from './cars.ts';
@@ -16,6 +17,7 @@ import { buildProps, type Prop } from './props/index.ts';
 import { vehicleAt } from '../sim/food-trucks.ts';
 import { paintStaticLayer } from './tiles.ts';
 import { paintSeasonal } from './seasonal.ts';
+import { paintGames, paintLaptop } from './play.ts';
 
 /** Where feet sit within a person's tile. */
 const FEET = 14;
@@ -161,20 +163,26 @@ export class Renderer {
     const visible = this.visible();
     const drawables: { sortY: number; draw: () => void }[] = props.map((prop) => {
       // Food trucks are wherever their drive has got to (and only on the map, not the dark beyond it).
-      const pose = prop.item.type.street ? vehicleAt(sim, prop.item) : undefined;
+      const moving = prop.item.type.street ? vehicleAt(sim, prop.item) : undefined;
+      // Between steps, like the cars.
+      const pose = moving && { ...moving, x: moving.px + (moving.x - moving.px) * alpha, y: moving.py + (moving.y - moving.py) * alpha };
       if (pose === null) return { sortY: 0, draw: () => {} };
       const sortY = pose ? (pose.y + prop.item.type.size[1]) * TILE : prop.sortY;
       return { sortY, draw: pose ? () => this.onMap(() => this.paintProp(prop, night, pose)) : () => this.paintProp(prop, night, pose) };
     });
     for (const p of visible) {
       const pos = at(p);
-      drawables.push({ sortY: pos.y * TILE + TILE, draw: () => this.paintPerson(p, pos) });
+      // Stepped aside, passing someone (collision.ts): drawn a little to their left.
+      const [ax, ay] = asideOffset(p.facing, p.aside ?? 0);
+      const drawn = { x: pos.x + ax, y: pos.y + ay };
+      drawables.push({ sortY: pos.y * TILE + TILE, draw: () => this.paintPerson(p, drawn) });
     }
     // Cars, and their headlights, which light the road ahead at night.
     const headlights: Light[] = [];
     const cars = this.level === sim.traffic.level ? sim.traffic.cars.map((car) => ({ car, pos: { x: car.px + (car.x - car.px) * alpha, y: car.py + (car.y - car.py) * alpha } })) : [];
     for (const { car, pos } of cars) {
-      drawables.push({ sortY: pos.y * TILE + TILE, draw: () => this.onMap(() => this.paintCar(car, pos)) });
+      // Food trucks are drawn as themselves (with the furniture above), lights and all.
+      if (car.truck === undefined) drawables.push({ sortY: pos.y * TILE + TILE, draw: () => this.onMap(() => this.paintCar(car, pos)) });
       const [dx, dy] = AHEAD[car.facing];
       if (!car.parked) headlights.push({ x: (pos.x + 0.5 + dx * HEADLIGHT_REACH) * TILE, y: (pos.y + 0.5 + dy * HEADLIGHT_REACH) * TILE, r: HEADLIGHT_RADIUS });
     }
@@ -185,11 +193,14 @@ export class Renderer {
     // After dark, cars on the move show their lights, bright against the dark.
     if (night > DUSK) {
       for (const { car, pos } of cars) {
-        if (car.parked) continue;
+        if (car.parked || car.truck !== undefined) continue;
         const sprite = carSprite(car.look, car.facing);
         this.onMap(() => paintCarLights(this.ctx, sprite, carOrigin(sprite, pos.x, pos.y), car.facing));
       }
     }
+
+    // A frisbee thrown round a game in the park.
+    paintGames(ctx, sim, this.level, this.time, at);
 
     // Fairy lights, pumpkins and fireworks, as the date has them.
     if (this.level === sim.traffic.level) paintSeasonal(ctx, sim, props, night, this.time, sim.tick + alpha);
@@ -454,6 +465,9 @@ export class Renderer {
     }
     const sprite = characterSprite(this.lookOf(p), facing, pose, p.status.activity === 'focus');
     ctx.drawImage(sprite, x, feet - SPRITE_H + 1);
+    // Working on a project away from a desk (a booth, a bench): a laptop out (docs/PLANS.md).
+    const at = p.intent?.kind === 'hustle' && p.phase === 'doing' ? this.sim.items[p.intent.item] : undefined;
+    if (at && !at.type.study) paintLaptop(ctx, x, feet);
   }
 
   private paintBubble(p: Person, pos: { x: number; y: number }): void {

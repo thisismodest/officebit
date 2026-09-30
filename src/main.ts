@@ -28,6 +28,7 @@ import { ViewHistory } from './ui/history.ts';
 import { TimeJump } from './ui/time-jump.ts';
 import { TICK_MS, Timekeeper, liveTick, type Mode } from './ui/timekeeper.ts';
 import { narrow } from './ui/html.ts';
+import { attachFullscreen, registerApp } from './ui/fullscreen.ts';
 import { PersonEditor } from './ui/person-editor.ts';
 import { STARTER } from './worlds/starter.ts';
 
@@ -196,6 +197,8 @@ narrow.addEventListener('change', () => updateCameraUi());
 
 // Toolbar buttons are icons, labelled for screen readers and tooltips.
 for (const button of document.querySelectorAll<HTMLElement>('[data-icon]')) button.insertAdjacentHTML('afterbegin', icon(button.dataset.icon as Parameters<typeof icon>[0]));
+attachFullscreen($<HTMLButtonElement>('#fullscreen'));
+registerApp();
 /** Where you're looking, by name. Getting about is by the map, the Town button and the sidebar. */
 function showPlace(): void {
   placeName.textContent = sim.levels.get(renderer.level)?.name ?? '';

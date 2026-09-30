@@ -6,7 +6,7 @@
 // the same town always gets the same visitors.
 import { TICKS_PER_HOUR } from './clock.ts';
 import type { Intent, Person } from './person.ts';
-import { AHEAD, headingOf, type Heading } from './roads.ts';
+import { AHEAD, headingOf, type Heading } from './movement.ts';
 import { Rng } from './rng.ts';
 import type { Brain, Item, Simulation } from './sim.ts';
 import type { Car, Lane } from './traffic.ts';

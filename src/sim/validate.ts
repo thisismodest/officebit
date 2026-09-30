@@ -3,6 +3,7 @@
 // Returns human-readable problems; an empty list means the world is sound.
 import { CATALOG } from './catalog.ts';
 import { endsOn, sides } from './geometry.ts';
+import { MOVERS, blocks } from './movement.ts';
 import { Grid } from './grid.ts';
 import type { LevelDef, Place, Tile, WorldDef } from './world.ts';
 
@@ -79,7 +80,7 @@ function checkFurniture(level: LevelDef, grid: Grid, reached: Set<number>, probl
     for (const [x, y] of footprint) {
       const i = grid.i(x, y);
       if (grid.wall[i]) problems.push(`${where} is in a wall`);
-      if (!type.solid) continue;
+      if (!blocks(type, MOVERS.walker)) continue;
       const other = solid.get(i);
       if (other) problems.push(`${where} overlaps ${other}`);
       solid.set(i, item.t);

@@ -15,7 +15,7 @@ const pngSize = (path: string) => {
   return [png.readUInt32BE(16), png.readUInt32BE(20)];
 };
 
-for (const path of ['index.html', 'town/index.html']) {
+for (const path of ['index.html', 'town/index.html', 'changelog/index.html']) {
   test(`${path}: a title, a description, and everything a link preview needs`, () => {
     const html = page(path);
     const title = html.match(/<title>\s*([^<]+?)\s*<\/title>/)?.[1] ?? '';
@@ -52,10 +52,11 @@ test('the landing page describes itself for search engines, in JSON-LD', () => {
 });
 
 // (No robots.txt: search engines only read one at the root of the domain, so the sitemap is listed in the domain's own.)
-test('the sitemap lists both pages, and the manifest its icons', () => {
+test('the sitemap lists every page, and the manifest its icons', () => {
   const sitemap = page('sitemap.xml');
   assert.match(sitemap, /<loc>https:\/\/example\.github\.io\/officebit\/<\/loc>/);
   assert.match(sitemap, /<loc>https:\/\/example\.github\.io\/officebit\/town\/<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/example\.github\.io\/officebit\/changelog\/<\/loc>/);
   assert.ok(JSON.parse(page('site.webmanifest')).icons.length >= 3);
   assert.ok(SITE_PAGES.has('.webmanifest'));
 });

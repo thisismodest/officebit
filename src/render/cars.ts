@@ -1,7 +1,7 @@
 // Cars (docs/RENDERING.md#sprites): seen from above, a little from the front,
 // in a handful of paint jobs, sized to sit inside a one-tile lane. One sprite
 // per paint job and direction, cached; lights are drawn separately, at night.
-import type { Heading } from '../sim/roads.ts';
+import type { Heading } from '../sim/movement.ts';
 import { OUTLINE, shade } from './palette.ts';
 import { TILE, canvas, rect, type Ctx } from './pixels.ts';
 

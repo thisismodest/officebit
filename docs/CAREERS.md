@@ -1,7 +1,7 @@
 # Careers
 
 People can lose a job, quit one, or go looking for one (`src/sim/careers.ts`).
-Venture teams are exempt: they answer to themselves (see [VENTURES](VENTURES.md)).
+Venture teams are exempt: they answer to themselves, hiring when they're doing well and closing when the money runs out (see [VENTURES](VENTURES.md)).
 
 ## The Friday review (17:00)
 
@@ -17,7 +17,7 @@ New starters get a week's grace before their first review. Leaving frees their d
 
 Anyone out of work applies, with a 50% chance a day of landing something:
 
-1. **Their old job**, if they walked out (quit) and a desk is free.
+1. **Their old job**, if they walked out (quit, or left to go full-time on a venture that's since closed) and a desk is free.
 2. **Anywhere else with a free desk**: the office, the Corner Shop's checkouts,
    the diner's grill, the school's classroom desk, any company that isn't a
    venture. Just not where they were let go (or left for a change).

@@ -1,7 +1,7 @@
 # Traffic
 
 Cars on the town's roads: through-traffic on the highway, and visitors who
-turn off it. Food trucks keep their own timetable ([FURNITURE](FURNITURE.md#food-trucks)).
+turn off it. Food trucks drive among them, on their own timetable ([FURNITURE](FURNITURE.md#food-trucks)).
 
 ## Roads
 
@@ -16,9 +16,10 @@ crossings, `highway` and `forecourt`. Nobody walks on the `highway`.
   (0.2 tiles a step), giving way to anyone walking on it. Nothing drives
   through furniture (a lamppost, a charger, the canopy's footprint); bays are for
   cars.
-- **Moving.** Cars move each step, like people walking: 0.45 tiles a step
+- **Moving.** Cars move each step, like people walking, by the same stepper at
+  their speed for the surface ([MOVEMENT](MOVEMENT.md)): 0.45 tiles a step
   in town, 0.9 on the highway. A car waits if there's one just ahead going
-  the same way, or anyone on a zebra crossing in front of it. Cars are drawn
+  the same way (or one stopped in its lane), or anyone on a zebra crossing in front of it. Cars are drawn
   only on the map, so they drive on from its edge, and show their lights
   after dark.
 

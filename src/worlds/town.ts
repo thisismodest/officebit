@@ -191,13 +191,14 @@ export function buildTown(residents: Resident[]): LevelBuilder {
   for (const [i, [floor, rect]] of CROSSINGS.entries()) b.room(`crossing-${i}`, 'Zebra crossing', rect, floor);
 
   // Main Street: the Green, the office, the diner and the shop.
-  b.room('green', 'The Green', [40, 33, 28, 14], 'grass')
+  b.room('green', 'The Green', [40, 33, 28, 14], 'grass', { park: true })
     .room('green-path', 'Path', [40, 40, 28, 1], 'path')
     .room('green-cut', 'Path', [53, 33, 1, 16], 'path')
     .put('pond', 57, 34)
-    .named('foodTruck', 41, 43, 'Taco truck')
-    .named('foodTruck', 45, 43, 'Noodle van')
-    .named('foodTruck', 60, 43, 'Pizza van')
+    // The food trucks' pitches, at the pavement's edge: they pull up off the road, and serve onto the pavement.
+    .named('foodTruck', 41, 47, 'Taco truck')
+    .named('foodTruck', 48, 47, 'Noodle van')
+    .named('foodTruck', 60, 47, 'Pizza van')
     .row('bench', [49, 55], 38)
     .row('bench', [46, 56], 42)
     .row('flowers', [41, 44, 51, 55, 64], 39)

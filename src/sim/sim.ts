@@ -9,10 +9,12 @@ import { CATALOG, type FurnitureType } from './catalog.ts';
 import { TICKS_PER_HOUR, between, dayOf, hourOf, isWeekend } from './clock.ts';
 import { Grid } from './grid.ts';
 import { Navigator, PORTAL_TICKS } from './navigation.ts';
+import { Space, easeAside, inTheWay, type Body, type Manners } from './collision.ts';
 import { Emitter } from './emitter.ts';
+import { MOVERS, advance, headingOf, speedOn } from './movement.ts';
 import { rulesFor } from './intents.ts';
 import { NEEDS, PANTRY_FULL, drain, restore, type Need } from './needs.ts';
-import { asleep, atDesk, faceTowards, seatedAtDesk, type Intent, type Person } from './person.ts';
+import { asleep, atDesk, seatedAtDesk, type Intent, type Person } from './person.ts';
 import { resolveTraits, type Traits } from './personality.ts';
 import { Housing } from './housing.ts';
 import { Interactions } from './interactions.ts';
@@ -26,6 +28,8 @@ import { Traffic } from './traffic.ts';
 import { Visitors } from './visitors.ts';
 import { Arrivals } from './arrivals.ts';
 import { Festivities } from './festivities.ts';
+import { FoodTrucks } from './food-trucks.ts';
+import { Plans } from './plans.ts';
 import { Careers } from './careers.ts';
 import { DEFAULT_CALENDAR, dateOf, daylightAt, type Calendar, type CalendarDate } from './calendar.ts';
 import { bankHoliday, holidayOn, type Holiday } from './holidays.ts';
@@ -33,12 +37,10 @@ import { Construction } from './construction.ts';
 import { Ventures } from './ventures.ts';
 import type { CompanyDef, FurnitureDef, LevelDef, NpcDef, PersonDef, Place, PortalDef, Tile, WorldDef } from './world.ts';
 
-/** Tiles per tick. */
-const SPEED = 0.2;
-/** A crawling baby's pace, as a share of walking. */
-const CRAWL = 0.3;
 /** How often (ticks) people reconsider what they're doing. */
 const RETHINK_EVERY = 20;
+/** What people are doing when they're settled at their own spot (a desk, a seat, a bed): in nobody's way. */
+const AT_A_SPOT = new Set(['work', 'use', 'hustle', 'sleep', 'meeting']);
 const PET_TRAITS: Traits = { social: 0.9, diligence: 0, chaos: 0.7, charisma: 0.9, ambition: 0 };
 /** How close (tiles) someone they dislike must come before they walk off. */
 const AVOID_RADIUS = 2;
@@ -107,6 +109,12 @@ export class Simulation {
   readonly visitors: Visitors;
   readonly arrivals: Arrivals;
   readonly festivities: Festivities;
+  readonly foodTrucks: FoodTrucks;
+  readonly plans: Plans;
+  /** Where every body is, on foot and on wheels (collision.ts), for who's in whose way. */
+  readonly space = new Space();
+  /** Each person as a body in the space: live views, so always where the person is. */
+  private readonly bodies = new WeakMap<Person, Body>();
   nav: Navigator;
   /** The game clock, in ticks (6 game seconds each; see clock.ts). Fractional in live mode. */
   tick = 0;
@@ -162,6 +170,8 @@ export class Simulation {
     this.visitors = new Visitors(this);
     this.arrivals = new Arrivals(this);
     this.festivities = new Festivities(this);
+    this.foodTrucks = new FoodTrucks(this);
+    this.plans = new Plans(this);
     this.mindVenues(false);
     // Households start out close.
     const humans = this.people.filter((p) => p.species === 'human' && p.home);
@@ -209,7 +219,8 @@ export class Simulation {
 
   /** Is it open right now: within its hours, and (in a venue with staff) with someone minding it? */
   isOpen(item: Item): boolean {
-    return this.withinHours(item) && this.venueOpen(item.level);
+    // A food truck serves once it's parked on its pitch.
+    return this.withinHours(item) && this.venueOpen(item.level) && (!item.type.street || this.foodTrucks.parked(item));
   }
 
   /** Within its opening hours? (The shop keeps daily hours; food trucks weekday lunches.) */
@@ -281,7 +292,7 @@ export class Simulation {
     if (!grid) return null;
     for (let tries = 0; tries < 60; tries++) {
       const p: Tile = [this.rng.int(0, grid.w - 1), this.rng.int(0, grid.h - 1)];
-      if (!grid.walkable(p[0], p[1]) || this.isClaimed({ level, p })) continue;
+      if (!grid.free(p[0], p[1]) || this.isClaimed({ level, p })) continue;
       if (room >= 0 && grid.roomAt(p[0], p[1]) !== room) continue;
       return { level, p };
     }
@@ -325,7 +336,10 @@ export class Simulation {
     const work = p.works ? [p.works] : (this.companies.get(p.company ?? '')?.levels ?? []);
     const home = p.home ? this.floorsOf(p.home) : [];
     // Bonfire Night and Halloween: out in town too.
-    const base = phase === 'work' ? work : this.festivities.outAndAbout(p, phase) ? [...home, this.traffic.level ?? this.world.spawn.level] : home;
+    // Bonfire Night and Halloween: out in town too; and wherever a plan takes them, while it's on.
+    const out = this.festivities.outAndAbout(p, phase) ? [this.traffic.level ?? this.world.spawn.level] : [];
+    const planned = phase === 'home' ? this.plans.levelFor(p) : undefined;
+    const base = phase === 'work' ? work : [...home, ...out, ...(planned ? [planned] : [])];
     if (!roleOf(p).goesOut || phase === 'sleep' || base.length === 0) return base;
     return [...base, ...this.publicPlaces()];
   }
@@ -448,14 +462,18 @@ export class Simulation {
       this.careers.hourly();
       this.love.hourly();
       this.festivities.hourly();
+      this.plans.hourly();
     }
     this.festivities.step();
     this.mindVenues(true);
     this.construction.step();
     this.interactions.step();
+    this.foodTrucks.step();
+    this.space.fill('foot', this.people.map((p) => ({ level: p.level, body: this.bodyOf(p) })));
     this.traffic.step();
     this.visitors.step();
     this.arrivals.step();
+    this.plans.step();
     const gone: Person[] = [];
     for (const [i, p] of this.people.entries()) {
       p.px = p.x;
@@ -640,6 +658,15 @@ export class Simulation {
     this.companies.set(company.id, company);
   }
 
+  /** A company closes (a venture that ran out of money). Its offices stay standing; nobody works for it any more. */
+  removeCompany(id: string): void {
+    const index = this.world.companies.findIndex((c) => c.id === id);
+    if (index >= 0) this.world.companies.splice(index, 1);
+    this.companies.delete(id);
+    for (const p of this.people) if (p.company === id) this.unemploy(p);
+    this.changed([]);
+  }
+
   /** Someone new joins the world (a new hire), taking a home that's to let if there is one. They arrive from the spawn point. */
   hire(def: PersonDef): Person {
     const home = def.home ? undefined : this.housing.vacant()[0];
@@ -776,6 +803,61 @@ export class Simulation {
   }
 
   // ── Internals ─────────────────────────────────────────────────────────────
+
+  /**
+   * How much of their step someone on foot takes, from who's just in front:
+   * slowing and waiting behind someone (then, their patience run out,
+   * squeezing past), and stepping aside to pass someone coming the other way.
+   */
+  private mind(p: Person, next: Tile | undefined, manners: Manners): number {
+    if (!next) return 1;
+    const facing = headingOf(next[0] - p.x, next[1] - p.y, p.facing);
+    const others = this.space.near(p.level, 'foot', p.x, p.y, manners.slow * 2);
+    const { step, passing } = inTheWay(this.bodyOf(p), facing, others, manners);
+    p.held = step === 0 ? (p.held ?? 0) + 1 : 0;
+    p.aside = easeAside(p.aside ?? 0, passing);
+    return p.held > manners.patience ? 1 : step;
+  }
+
+  /** Someone as a body in the space. */
+  bodyOf(p: Person): Body {
+    let body = this.bodies.get(p);
+    if (!body) {
+      const sim = this;
+      body = {
+        id: p.id,
+        get x() {
+          return p.x;
+        },
+        get y() {
+          return p.y;
+        },
+        get facing() {
+          return p.facing;
+        },
+        get moving() {
+          return p.phase === 'moving';
+        },
+        get here() {
+          return sim.byId.get(p.id) === p && sim.present(p);
+        },
+        get level() {
+          return p.level;
+        },
+        get settled() {
+          return p.phase === 'doing' && AT_A_SPOT.has(p.intent?.kind ?? '');
+        },
+      };
+      this.bodies.set(p, body);
+    }
+    return body;
+  }
+
+  /** The floor someone's standing on. */
+  private floorUnder(p: Person): string | undefined {
+    const grid = this.grids.get(p.level);
+    return grid ? this.levels.get(p.level)?.rooms[grid.roomAt(Math.round(p.x), Math.round(p.y))]?.floor : undefined;
+  }
 
   /** Is `p` the last one living at home whose home it is (anyone on the team, or staff), with only family and pets besides? */
   lastAtHome(p: Person): boolean {
@@ -959,7 +1041,8 @@ export class Simulation {
     );
   }
 
-  private isClaimed(place: Place, except?: Person): boolean {
+  /** Is somewhere spoken for: someone heading there, or already standing there doing something? */
+  isClaimed(place: Place, except?: Person): boolean {
     const [x, y] = place.p;
     return this.people.some(
       (p) =>
@@ -1060,25 +1143,10 @@ export class Simulation {
       this.arrive(p);
       return;
     }
-    let budget = SPEED * (p.crawling ? CRAWL : 1);
-    while (budget > 0 && leg.tiles.length > 0) {
-      const [tx, ty] = leg.tiles[0]!;
-      const dx = tx - p.x;
-      const dy = ty - p.y;
-      if (dx !== 0 || dy !== 0) faceTowards(p, tx, ty);
-      const dist = Math.abs(dx) + Math.abs(dy);
-      if (dist <= budget) {
-        p.x = tx;
-        p.y = ty;
-        leg.tiles.shift();
-        budget -= dist;
-      } else {
-        p.x += Math.sign(dx) * budget;
-        p.y += Math.sign(dy) * budget;
-        budget = 0;
-      }
-    }
-    if (leg.tiles.length > 0) return;
+    // A step along the way, at their pace for the floor underfoot (movement.ts), minding whoever's just in front (collision.ts).
+    const mover = p.crawling ? MOVERS.crawler : MOVERS.walker;
+    const step = this.mind(p, leg.tiles[0], mover.manners);
+    if (!advance(p, leg.tiles, speedOn(mover, this.floorUnder(p)) * step)) return;
 
     p.route.shift();
     const next = p.route[0];
@@ -1149,6 +1217,11 @@ export class Simulation {
     }
 
     const phase = this.phaseOf(p);
+    // Time to go and meet friends: whatever else they're at can wait (unless it's already for the plan).
+    if (phase === 'home' && this.plans.calls(p, intent)) {
+      this.stop(p);
+      return true;
+    }
     const fits = phase === 'sleep' ? intent.kind === 'sleep' : intent.kind !== 'sleep' && rulesFor(intent).fits(this, p, intent, phase, this.areaOf(p, phase));
     if (!fits) {
       if (!p.npc && phase === 'home' && this.levels.get(p.level)?.kind === 'building') this.log(`${p.name} headed home`, [p.id]);

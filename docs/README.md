@@ -15,7 +15,8 @@ shareable JSON world and runs in the browser.
 | [NEEDS](NEEDS.md) | Energy, hunger, social, fun |
 | [RELATIONSHIPS](RELATIONSHIPS.md) | Compatibility, affinity, friends and falling out |
 | [LOVE](LOVE.md) | Dating, moving in together, homes to let |
-| [TIME](TIME.md) | The clock, daily routines, weekends, day and night |
+| [PLANS](PLANS.md) | Friends' days out: frisbee, picnics, catching up, working on projects together |
+| [TIME](TIME.md) | The clock, daily routines, weekends, the calendar and the sun, holidays, Live and Sandbox |
 | [VENTURES](VENTURES.md) | Side projects, pitching, and startups that get their own office |
 | [CAREERS](CAREERS.md) | Quitting, getting let go, job hunting, hiring |
 | [FEEDS](FEEDS.md) | Driving people with outside data |
@@ -23,5 +24,6 @@ shareable JSON world and runs in the browser.
 | [AUDIO](AUDIO.md) | Music (day and night), sound effects, volume |
 | [UI](UI.md) | The menu bar, the sidebar (World, People, News), profiles, building cards, phones |
 | [INTERACTIONS](INTERACTIONS.md) | Pizza, fire drills, taking control |
+| [MOVEMENT](MOVEMENT.md) | How anything moves: the movers, their speeds and manners, what blocks them, one stepper, and collision |
 | [TRAFFIC](TRAFFIC.md) | Cars: roads, through-traffic on the highway, visitors, parking and charging |
 | [BUILDER](BUILDER.md) | The map editor (furniture, buildings, roads and paths), safe zones, saving and sharing worlds |

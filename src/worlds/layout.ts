@@ -14,7 +14,7 @@ export class LevelBuilder {
     this.level = { id, name, kind, size: [w, h], rooms: [], doors: [], furniture: [] };
   }
 
-  room(id: string, name: string, rect: Rect, floor: string, options: Pick<RoomDef, 'walled' | 'dept'> = {}): this {
+  room(id: string, name: string, rect: Rect, floor: string, options: Pick<RoomDef, 'walled' | 'dept' | 'park'> = {}): this {
     this.level.rooms.push({ id, name, rect, floor, ...options });
     return this;
   }

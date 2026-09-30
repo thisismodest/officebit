@@ -144,7 +144,8 @@ export class Festivities {
     for (let tries = 0; tries < 20; tries++) {
       const x = tree[0] + sim.rng.int(-WATCH_RADIUS, WATCH_RADIUS);
       const y = tree[1] + sim.rng.int(-2, WATCH_RADIUS);
-      if (grid.walkable(x, y)) return { level: outside, p: [x, y] };
+      // A spot of their own: not where someone's already standing, or heading.
+      if (grid.free(x, y) && !sim.isClaimed({ level: outside, p: [x, y] })) return { level: outside, p: [x, y] };
     }
     return null;
   }
