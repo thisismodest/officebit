@@ -45,7 +45,9 @@ export const MOVERS = {
   hurrying: { on: "foot", speed: WALK * HURRY, manners: WALKING },
   car: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, manners: DRIVING },
   // A food truck: a car's pace, three tiles wide.
-  truck: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING }
+  truck: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
+  // A bus: a car's pace, three tiles long.
+  bus: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING }
 } satisfies Record<string, Mover>;
 
 /**

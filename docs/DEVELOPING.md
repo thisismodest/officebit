@@ -50,7 +50,7 @@ Rowan   z>WWWWWuWWWuuuuuuzzzzzzz   W25% H0% u28% c1% >14%  int 2/1
 
 `npm run bench -- [people] [days]` fills the starter town out to that many
 people (sharing its homes and workplaces) and times a few days headless. Keep
-an eye on it at 200 (about 6.5 s a game day on a laptop, from 8.2 before the indexes). The sim keeps a few
+an eye on it at 200 (about 7 s a game day on a laptop; 8.2 before the indexes, and the buses added a little). The sim keeps a few
 indexes so the cost grows with people, not people squared:
 - `sim.peopleOn(level)`: who's on a level. Always change someone's level
   with `sim.setLevel`, which keeps it up to date.

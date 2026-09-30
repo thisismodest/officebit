@@ -34,6 +34,7 @@ import { Careers } from './careers.ts';
 import { DEFAULT_CALENDAR, dateOf, daylightAt, type Calendar, type CalendarDate } from './calendar.ts';
 import { bankHoliday, holidayOn, type Holiday } from './holidays.ts';
 import { Construction } from './construction.ts';
+import { Buses } from './buses.ts';
 import { Works } from './works.ts';
 import { Ventures } from './ventures.ts';
 import type { CompanyDef, FurnitureDef, LevelDef, NpcDef, PersonDef, Place, PortalDef, Tile, WorldDef } from './world.ts';
@@ -118,6 +119,7 @@ export class Simulation {
   readonly foodTrucks: FoodTrucks;
   readonly plans: Plans;
   readonly works: Works;
+  readonly buses: Buses;
   /** Where every body is, on foot and on wheels (collision.ts), for who's in whose way. */
   readonly space = new Space();
   /** Each person as a body in the space: live views, so always where the person is. */
@@ -181,6 +183,7 @@ export class Simulation {
     this.foodTrucks = new FoodTrucks(this);
     this.plans = new Plans(this);
     this.works = new Works(this);
+    this.buses = new Buses(this);
     this.mindVenues(false);
     // Households start out close.
     const humans = this.people.filter((p) => p.species === 'human' && p.home);
@@ -205,7 +208,7 @@ export class Simulation {
 
   /** On screen right now: not offstage or mid-stairs. */
   present(p: Person): boolean {
-    return !p.hidden && p.transit === 0;
+    return !p.hidden && p.transit === 0 && !p.riding;
   }
 
   spotTile(item: Item, spot: number): Tile {
@@ -492,6 +495,7 @@ export class Simulation {
     this.space.fill('foot', this.people.map((p) => ({ level: p.level, body: this.bodyOf(p) })));
     this.traffic.step();
     this.visitors.step();
+    this.buses.step();
     this.arrivals.step();
     this.plans.step();
     const gone: Person[] = [];
@@ -505,6 +509,8 @@ export class Simulation {
       if (p.distracted > 0) p.distracted = Math.max(0, p.distracted - dt);
       if (p.date && this.tick >= p.date.until) delete p.date;
 
+      // On the bus: along for the ride till their stop (buses.ts).
+      if (p.riding) continue;
       // Leaving town: once they're off the edge of it, they're gone.
       if (p.leaving && p.hidden) {
         gone.push(p);
@@ -1100,6 +1106,27 @@ export class Simulation {
     );
   }
 
+  /** On the bus: out of sight (their seat at the stop let go of) till their stop. */
+  board(p: Person, bus: string): void {
+    this.stop(p);
+    p.riding = bus;
+    this.log(`🚌 ${p.name} got on the bus`, [p.id]);
+  }
+
+  /** Off the bus at a stop, and on with what they were off to do (on foot from here). */
+  alight(p: Person, at: Place, after: Intent): void {
+    p.riding = undefined;
+    this.setLevel(p, at.level);
+    [p.x, p.y] = [p.px, p.py] = at.p;
+    this.begin(p, after, true);
+  }
+
+  /** Waited long enough (the bus: buses.ts): on with it, on foot. */
+  walkOn(p: Person, after: Intent): void {
+    this.stop(p);
+    this.begin(p, after, true);
+  }
+
   /** Drop whatever they're doing; they'll pick something new next tick. */
   private stop(p: Person): void {
     if (p.spot) this.occupied[p.spot.item]![p.spot.spot] = null;
@@ -1112,11 +1139,18 @@ export class Simulation {
     p.gains = {};
   }
 
-  private begin(p: Person, intent: Intent): void {
+  private begin(p: Person, intent: Intent, walk = false): void {
     p.intent = intent;
     const here = this.placeOf(p);
     const dest = rulesFor(intent).to(this, p, intent);
     const route = dest && this.nav.route(here, dest);
+    // A long walk through town: the bus, perhaps (let go of anything claimed on the way there first).
+    const ride = !walk && route ? this.buses.consider(p, intent, route) : null;
+    if (ride) {
+      this.stop(p);
+      this.begin(p, ride, true);
+      return;
+    }
     if (!dest || !route) {
       // Nowhere to go: stand still briefly, then think again.
       this.stop(p);
@@ -1247,6 +1281,8 @@ export class Simulation {
     const refill = (who: Person, need: Need, perTick: number) => restore(who.needs, need, perTick * this.dt);
     for (const [need, gain] of Object.entries(p.gains) as [Need, number][]) refill(p, need, gain);
     rulesFor(intent).doing?.(this, p, intent, refill);
+    // Moved on to something else (given up on the bus, say): that's started fresh.
+    if (p.intent !== intent) return;
     p.timer -= this.dt;
     if (p.timer <= 0 && intent.kind !== 'leave') this.stop(p);
   }

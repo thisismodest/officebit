@@ -23,6 +23,12 @@ const OFF_ROAD = 4;
 export interface Fit {
   reach?: number;
   offRoad?: (x: number, y: number) => boolean;
+  /** What turning right round in the road costs this vehicle (a bus would much rather go round the block). A turn onto road that runs out within a few tiles (hopping into the other lane, halfway to turning round) costs it half as much. */
+  turnRound?: number;
+  /** Arrive facing this way (a bus pulling up at a stop, along the kerb). */
+  arrive?: Heading;
+  /** Keep to the roads: never up onto a path or pavement (a bus). */
+  roadsOnly?: boolean;
 }
 const HEADINGS = Object.keys(AHEAD) as Heading[];
 
@@ -95,12 +101,14 @@ export class RoadMap {
    */
   route(from: Tile, to: Tile, heading?: Heading, fit: Fit = {}): Tile[] | null {
     const reach = fit.reach ?? 0;
+    const turnRound = fit.turnRound ?? TURN_ROUND;
     const clear = (x: number, y: number) => {
       for (let j = y - reach; j <= y + reach; j++) for (let i = x - reach; i <= x + reach; i++) if (this.inside(i, j) && this.standing[j * this.w + i]) return false;
       return true;
     };
+    const road = (x: number, y: number) => this.drivable(x, y) && !(fit.roadsOnly && this.floorAt(x, y) === 'path');
     const offRoad = (x: number, y: number) => !this.drivable(x, y) && this.inside(x, y) && !!fit.offRoad?.(x, y);
-    const enter = (x: number, y: number) => (this.drivable(x, y) || offRoad(x, y)) && (reach === 0 || clear(x, y));
+    const enter = (x: number, y: number) => (road(x, y) || offRoad(x, y)) && (reach === 0 || clear(x, y));
     if (!enter(...from) || !enter(...to)) return null;
     const states = this.w * this.h * 4;
     const cost = new Float64Array(states).fill(Infinity);
@@ -118,7 +126,7 @@ export class RoadMap {
     while (open.size > 0) {
       const state = open.pop();
       const at = state >> 2;
-      if (at === goal) {
+      if (at === goal && (fit.arrive === undefined || HEADINGS[state & 3] === fit.arrive)) {
         end = state;
         break;
       }
@@ -129,7 +137,8 @@ export class RoadMap {
         const [dx, dy] = AHEAD[h];
         const [nx, ny] = [x + dx, y + dy];
         if (!enter(nx, ny)) continue;
-        const turn = nd === d ? 0 : (nd + 2) % 4 === d ? TURN_ROUND : TURN;
+        const hop = fit.turnRound !== undefined && nd !== d && [2, 3].some((k) => !road(x + dx * k, y + dy * k));
+        const turn = nd === d ? 0 : (nd + 2) % 4 === d ? turnRound : hop ? turnRound / 2 : TURN;
         const next = tile(nx, ny) * 4 + nd;
         const surface = offRoad(nx, ny) ? OFF_ROAD : FLOOR_COST[this.floorAt(nx, ny)!]!;
         const g = cost[state]! + surface + turn + (this.wrongLane(nx, ny, dx, dy) ? WRONG_LANE : 0);

@@ -303,7 +303,8 @@ export const CATALOG: Record<string, FurnitureType> = {
   lamppost: decor('Lamppost', [1, 1]),
   // Spotlights round town (docs/FURNITURE.md#spotlights): a billboard up on posts, and a bus shelter with a bench and a poster.
   billboard: { ...decor('Billboard', [5, 1]), spotlight: true },
-  busStop: { ...decor('Bus stop', [3, 1], false), spots: [[0, 0], [1, 0]], seat: true, spotlight: true, offers: { energy: 0.05 }, duration: [40, 90] },
+  // Its bench is for people waiting for the bus (buses.ts), so it offers nothing else.
+  busStop: { ...decor('Bus stop', [3, 1], false), spots: [[0, 0], [1, 0]], seat: true, spotlight: true },
   evCharger: { ...decor('Charger', [1, 1]), hardStanding: true },
   chargingCanopy: { ...decor('Canopy', [9, 1], false), hardStanding: true },
   parkingBay: { ...decor('Parking bay', [1, 1], false), parking: 'park', hardStanding: true },

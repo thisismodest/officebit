@@ -7,7 +7,7 @@ import type { CalendarDate } from '../sim/calendar.ts';
 import { CATALOG } from '../sim/catalog.ts';
 import { footprint, overlap } from '../sim/geometry.ts';
 import type { FurnitureDef, Rect, WorldDef } from '../sim/world.ts';
-import { SPOTLIGHT_SPOTS } from './town.ts';
+import { BILLBOARDS, BUS_STOPS } from './town.ts';
 
 /** This release: package.json's version (a test keeps them the same). */
 export const VERSION = '0.4.0';
@@ -23,7 +23,7 @@ interface Upgrade {
 }
 
 /** Oldest first. Anything new in the starter town goes here too. */
-export const UPGRADES: Upgrade[] = [{ version: '0.4.0', add: SPOTLIGHT_SPOTS.map((furniture) => ({ level: 'town', furniture })) }];
+export const UPGRADES: Upgrade[] = [{ version: '0.4.0', add: [...BILLBOARDS, ...BUS_STOPS].map((furniture) => ({ level: 'town', furniture })) }];
 
 /**
  * Bring a town made before this release up to date, in place: each newer

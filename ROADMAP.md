@@ -99,7 +99,16 @@ the next venture. Next, when wanted: ventures that outgrow eight desks (a floor 
 Done (see `docs/FURNITURE.md#spotlights`): billboards along the highway and a bus-stop poster, taking
 turns hourly with projects pixelated from their og:image (fetched with the site, so offline too; the
 house spotlight when one can't be); click one for its card and link. Named "spotlights" so ad blockers
-leave the town alone. Next, when wanted: buses to the stop (*open:* who rides, the route, the timetable).
+leave the town alone.
+
+### Buses ✓
+Done (see `docs/TRAFFIC.md#buses`): six stops round one route (worked out from the stops), every
+quarter of an hour at rush hour, hourly by day and a night bus every two hours; anyone with a long
+walk may ride, some always walk, and nobody waits for ever. Next, when wanted: more routes.
+
+### Town upgrades ✓
+Done (see `docs/UPGRADES.md`): versions, and what a release adds to the starter town reaching
+towns made before it, put up by crews.
 
 ### Also on the list
 - Co-founders and couples visiting each other's homes.

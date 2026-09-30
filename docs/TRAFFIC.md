@@ -1,7 +1,7 @@
 # Traffic
 
 Cars on the town's roads: through-traffic on the highway, visitors who
-turn off it, and people out for a drive round town. Food trucks drive among them, on their own timetable ([FURNITURE](FURNITURE.md#food-trucks)).
+turn off it, people out for a drive round town, and the buses. Food trucks drive among them, on their own timetable ([FURNITURE](FURNITURE.md#food-trucks)).
 
 ## Roads
 
@@ -58,10 +58,39 @@ way. It doesn't stop. At most two are out at once. They're traffic like any
 other: they keep their distance and give way at crossings. They draw on
 visitors' own random stream, so they don't change the story.
 
+## Buses
+
+`src/sim/buses.ts`. One route round town, calling at every bus stop
+(`busStop`: a shelter with a bench and a poster) in turn.
+
+- **The route** is worked out from the stops themselves: the order that makes the
+  shortest drive by road, in by whichever road off the map suits the first stop
+  and out by another after the last. Each stop's bus pulls up in the lane beside
+  it, facing along the kerb (we drive on the left, so the shelter's on its left).
+  Move a stop or add one in the editor and the route follows.
+- **Driving:** a car's pace, three tiles long, never up on the pavement, and it
+  goes round the block (or the crescent) rather than turn round in the road.
+- **Timetable:** every 15 minutes at rush hour (07:00–10:00, 16:00–19:00),
+  hourly from 06:00 to 23:00, and a night bus at 23:00, 01:00, 03:00 and 05:00.
+  It waits a minute at each stop.
+- **Riders:** anyone who lives in town (grown-ups and children), going
+  somewhere with a long walk through town (40 tiles or more). They go by bus if:
+  - the stops nearest either end cut the walk by at least 40%
+  - the bus goes that way round
+  - one's on its way or due within 15 minutes
+  A fifth of people always walk, and anyone might fancy the walk (15%).
+- **The journey:** they walk to the stop and wait on the bench or by it. They
+  get on ("🚌 Wes got on the bus") and ride out of sight: following them follows
+  the bus. They get off at the stop nearest where they're going and walk the
+  rest. Waiting 30 minutes with no bus (or having just missed one at night),
+  they give up and walk.
+
 ## In the starter town
 
 The highway runs across the top of the map, with a slip road down to High
-Street. The charging station (`chargingStation` in `worlds/town.ts`) is a
+Street. The bus comes in along Main Street from the east, calling at Main
+Street, The Avenue, Birch Close, round Cedar Crescent, Main Street West and
+High Street, and leaves along High Street to the east. The charging station (`chargingStation` in `worlds/town.ts`) is a
 forecourt on Main Street, just past the shop,
 under a canopy signed with a car and a lightning bolt (lit at night), with
 two plain bays and two with chargers, right by the road. Cars pull in nose

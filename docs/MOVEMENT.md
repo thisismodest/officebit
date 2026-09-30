@@ -6,9 +6,9 @@ food trucks driving. `src/sim/movement.ts`.
 - **Movers.** `MOVERS` is a table of the kinds of mover: on foot or on wheels,
   their speeds in tiles per step (a walker 0.2, a crawling baby 0.06, someone
   hurrying to catch someone up 0.3, a car or a
-  food truck 0.45 in town, 0.9 on the highway and off the map, 0.2 creeping over
-  a path or pavement), and how far their body reaches from its middle (a truck,
-  three tiles wide, reaches one). `speedOn(mover, floor)` is a mover's speed on a
+  food truck or bus 0.45 in town, 0.9 on the highway and off the map, 0.2 creeping over
+  a path or pavement), and how far their body reaches from its middle (a truck
+  or a bus, three tiles long, reaches one). `speedOn(mover, floor)` is a mover's speed on a
   surface. Speeds are per step, not per game minute, so everything moves at the
   same pace on screen in every mode.
 - **What's in the way.** `blocks(type, mover)`: on foot, anything solid (a desk,

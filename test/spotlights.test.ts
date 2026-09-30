@@ -41,8 +41,8 @@ test('a spotlight that can’t be fetched is left out, for the house spotlight t
   }
 });
 
-test('the town has billboards by the highway and a bus stop with a poster', () => {
+test('the town has billboards by the highway, and a poster at every bus stop', () => {
   const town = STARTER.levels.find((l) => l.kind === 'outside')!;
   assert.equal(town.furniture.filter((f) => f.t === 'billboard').length, 2);
-  assert.equal(town.furniture.filter((f) => f.t === 'busStop').length, 1);
+  assert.equal(town.furniture.filter((f) => f.t === 'busStop').length, 6);
 });

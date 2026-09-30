@@ -38,11 +38,18 @@ export const SCHOOL_DOOR: Tile = [87, 104];
 /** Where newcomers and crews walk in: the east end of Main Street. */
 export const SPAWN: Tile = [TOWN - 1, 49];
 
-/** Spotlights (docs/FURNITURE.md#spotlights): billboards along the highway, and a bus stop on Main Street. Older towns get them from crews (worlds/upgrades.ts). */
-export const SPOTLIGHT_SPOTS: FurnitureDef[] = [
+/** Billboards along the highway (docs/FURNITURE.md#spotlights), and the bus route's stops (docs/TRAFFIC.md#buses), each shelter with its poster. Older towns get them from crews (worlds/upgrades.ts). */
+export const BILLBOARDS: FurnitureDef[] = [
   { t: 'billboard', p: [40, 12] },
   { t: 'billboard', p: [102, 12] },
-  { t: 'busStop', p: [65, 26] },
+];
+export const BUS_STOPS: FurnitureDef[] = [
+  { t: 'busStop', p: [65, 26], label: 'High Street' },
+  { t: 'busStop', p: [48, 53], label: 'Main Street West' },
+  { t: 'busStop', p: [88, 53], label: 'Main Street' },
+  { t: 'busStop', p: [79, 73], label: 'The Avenue' },
+  { t: 'busStop', p: [79, 94], label: 'Birch Close' },
+  { t: 'busStop', p: [55, 96], label: 'Cedar Crescent' },
 ];
 
 /** The highway across the top of the map: two lanes each way, eastbound on the north side (we drive on the left). */
@@ -218,7 +225,10 @@ export function buildTown(residents: Resident[]): LevelBuilder {
     .room('shop-path', 'Path', [SHOP_DOOR[0], SHOP_DOOR[1], 1, 1], 'path')
     .row('lamppost', [22, 34, 46, 70, 86, 98, 112, 124, 136], 48)
     .row('lamppost', [44, 60, 74, 88, 102, 116, 130], 26);
-  for (const f of SPOTLIGHT_SPOTS) b.put(f.t, ...f.p);
+  for (const f of [...BILLBOARDS, ...BUS_STOPS]) {
+    if (f.label) b.named(f.t, ...f.p, f.label);
+    else b.put(f.t, ...f.p);
+  }
   for (const [x, y] of LOTS) b.put('lot', x, y);
   chargingStation(b, CHARGING);
 

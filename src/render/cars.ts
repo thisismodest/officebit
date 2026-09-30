@@ -33,6 +33,62 @@ export function carSprite(look: number, heading: Heading): HTMLCanvasElement {
   return sprite;
 }
 
+/** The bus (sim/buses.ts): a green and cream single-decker, nearly three tiles long, and as wide as a car end on. */
+const BUS = { body: '#2f8f5b', band: '#efe3c2', length: 44, side: 16, end: 13 };
+
+/** The bus, facing `heading`. */
+export function busSprite(heading: Heading): HTMLCanvasElement {
+  const key = `bus-${heading}`;
+  let sprite = sprites.get(key);
+  if (!sprite) {
+    const across = heading === 'left' || heading === 'right';
+    const { canvas: c, ctx } = canvas(across ? BUS.length : BUS.end, across ? BUS.side : BUS.length);
+    if (across) busSide(ctx, heading === 'left');
+    else busEnd(ctx, heading === 'up');
+    sprites.set(key, c);
+    sprite = c;
+  }
+  return sprite;
+}
+
+/** Side on: a long box, a row of windows over a cream band, the door up front, wheels fore and aft. */
+function busSide(ctx: Ctx, left: boolean): void {
+  const w = BUS.length;
+  const h = BUS.side;
+  const x = (px: number, width: number) => (left ? px : w - px - width);
+  rect(ctx, 1, h - 2, w - 2, 2, 'rgba(20,14,30,0.25)');
+  rect(ctx, 0, 0, w, h - 2, OUTLINE);
+  rect(ctx, 1, 1, w - 2, h - 4, BUS.body);
+  rect(ctx, 1, 1, w - 2, 1, shade(BUS.body, 0.25));
+  rect(ctx, 1, 8, w - 2, 2, BUS.band);
+  for (let px = 7; px < w - 4; px += 6) rect(ctx, x(px, 4), 3, 4, 4, GLASS);
+  // The windscreen and the door, at the front.
+  rect(ctx, x(1, 4), 2, 4, 6, GLASS);
+  rect(ctx, x(1, 3), 9, 3, 3, shade(BUS.body, -0.3));
+  rect(ctx, x(1, 2), 11, 2, 1, '#e8dfae');
+  rect(ctx, x(w - 3, 2), 11, 2, 1, '#b8433a');
+  for (const px of [6, w - 11]) rect(ctx, px, h - 3, 6, 2, TYRE);
+}
+
+/** Nose or tail on: a tall narrow front, the windscreen and destination board, lamps below. */
+function busEnd(ctx: Ctx, away: boolean): void {
+  const w = BUS.end;
+  const l = BUS.length;
+  rect(ctx, 1, l - 2, w - 2, 2, 'rgba(20,14,30,0.25)');
+  rect(ctx, 0, 0, w, l - 2, OUTLINE);
+  rect(ctx, 1, 1, w - 2, l - 4, BUS.body);
+  rect(ctx, 1, 1, 1, l - 4, shade(BUS.body, 0.25));
+  rect(ctx, 2, 4, w - 4, l - 12, shade(BUS.body, 0.1));
+  // The roof's cream stripe, and glass at whichever end we're looking at.
+  rect(ctx, w / 2 - 1, 5, 2, l - 14, BUS.band);
+  const [front, back] = away ? [1, l - 6] : [l - 6, 1];
+  rect(ctx, 2, away ? 2 : l - 10, w - 4, 4, GLASS);
+  for (const px of [1, w - 3]) {
+    rect(ctx, px, front, 2, 2, '#e8dfae');
+    rect(ctx, px, back, 2, 2, '#b8433a');
+  }
+}
+
 /** Where to draw a car's sprite so it's centred on its tile, in world pixels. */
 export function carOrigin(sprite: HTMLCanvasElement, x: number, y: number): [number, number] {
   return [Math.round(x * TILE + (TILE - sprite.width) / 2), Math.round(y * TILE + (TILE - sprite.height) / 2)];

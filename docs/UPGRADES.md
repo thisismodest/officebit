@@ -33,7 +33,7 @@ A new town from the starter already has everything, so no crews.
 When a release adds furniture to the starter town:
 
 1. Put it in the town as usual. Keep where it goes in one list, shared with the
-   upgrade (like `SPOTLIGHT_SPOTS` in `worlds/town.ts`).
+   upgrade (like `BILLBOARDS` and `BUS_STOPS` in `worlds/town.ts`).
 2. Add the release to `UPGRADES`: its version, and each piece's level and
    furniture.
 3. Pick spots that were clear in the last release's town (a test checks it for

@@ -8,7 +8,7 @@ import { asideOffset } from '../sim/collision.ts';
 import { AHEAD } from '../sim/movement.ts';
 import type { Car } from '../sim/traffic.ts';
 import { Camera } from './camera.ts';
-import { carOrigin, carSprite, paintCarLights } from './cars.ts';
+import { busSprite, carOrigin, carSprite, paintCarLights } from './cars.ts';
 import { characterSprite, type Facing, type Look, type Pose, SPRITE_H } from './characters.ts';
 import { BACKGROUND, NIGHT, OUTLINE, PANTS, hashString } from './palette.ts';
 import { PET_H, petSprite, type PetPose } from './pets.ts';
@@ -143,7 +143,8 @@ export class Renderer {
     const at = (p: Person) => ({ x: p.px + (p.x - p.px) * alpha, y: p.py + (p.y - p.py) * alpha });
 
     const target = camera.following ? sim.person(camera.following) : undefined;
-    if (target && sim.present(target)) {
+    // Someone on the bus is out of sight, but where the bus is: the camera rides along.
+    if (target && (sim.present(target) || target.riding)) {
       const pos = at(target);
       const cx = pos.x * TILE + TILE / 2;
       const cy = pos.y * TILE + TILE / 2 - 4;
@@ -198,7 +199,7 @@ export class Renderer {
     if (night > DUSK) {
       for (const { car, pos } of cars) {
         if (car.parked || car.truck !== undefined) continue;
-        const sprite = carSprite(car.look, car.facing);
+        const sprite = car.bus ? busSprite(car.facing) : carSprite(car.look, car.facing);
         this.onMap(() => paintCarLights(this.ctx, sprite, carOrigin(sprite, pos.x, pos.y), car.facing));
       }
     }
@@ -453,7 +454,7 @@ export class Renderer {
 
   /** A car where it's got to; one on charge shows a blinking bolt. */
   private paintCar(car: Car, pos: { x: number; y: number }): void {
-    const sprite = carSprite(car.look, car.facing);
+    const sprite = car.bus ? busSprite(car.facing) : carSprite(car.look, car.facing);
     const [x, y] = carOrigin(sprite, pos.x, pos.y);
     this.ctx.drawImage(sprite, x, y);
     if (car.chargedAt && this.sim.tick < car.chargedAt && Math.floor(this.time / 600) % 2 === 0) {

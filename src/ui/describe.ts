@@ -4,6 +4,7 @@ import { asleep, catchingUp, type Person } from '../sim/person.ts';
 import type { Simulation } from '../sim/sim.ts';
 
 export function describe(p: Person, sim: Simulation): string {
+  if (p.riding) return 'On the bus 🚌';
   if (p.hidden) return 'Out of the office';
   if (p.status.label) return p.status.label;
   if (p.transit > 0) return sim.levels.get(p.level)?.kind === 'building' ? 'On the stairs' : 'Through the door';
@@ -88,6 +89,8 @@ export function describe(p: Person, sim: Simulation): string {
       if (together) return `Working on ${venture ? venture.name : 'their ideas'} with ${others(p, together.members, sim)} 💻`;
       return venture ? `Working on ${venture.name} 🚀` : 'Tinkering with a big idea 💡';
     }
+    case 'bus':
+      return moving ? 'Off to the bus stop' : 'Waiting for the bus';
     case 'play': {
       const plan = sim.plans.get(intent.plan);
       if (moving) return 'Off to the park for frisbee';

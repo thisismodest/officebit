@@ -37,6 +37,8 @@ export interface Car extends Driver {
   through?: boolean;
   /** A food truck (its item's index): drawn as the truck, not a car. */
   truck?: number;
+  /** A bus (buses.ts). */
+  bus?: boolean;
   /** Gone from the roads (off the map, done). */
   removed?: boolean;
 }
@@ -165,7 +167,7 @@ export class Traffic {
         [car.px, car.py] = [car.x, car.y];
         continue;
       }
-      const done = advance(car, car.path, speedOn(car.truck === undefined ? MOVERS.car : MOVERS.truck, roads.surfaceAt(car.x, car.y)));
+      const done = advance(car, car.path, speedOn(car.bus ? MOVERS.bus : car.truck === undefined ? MOVERS.car : MOVERS.truck, roads.surfaceAt(car.x, car.y)));
       if (done && car.through) this.remove(car);
     }
   }

@@ -22,7 +22,9 @@ export type Intent =
   | { kind: 'queue'; level: string; wait: number }
   | { kind: 'leave' }
   /** A game in the park with friends (catch, frisbee): at their place in the ring, for a plan (plans.ts). */
-  | { kind: 'play'; plan: number; spot: Place };
+  | { kind: 'play'; plan: number; spot: Place }
+  /** By bus (buses.ts): to the stop `from` (an item), wait, ride to `to`, then carry on with `then`. */
+  | { kind: 'bus'; from: number; to: number; after: Intent };
 
 export interface Person {
   readonly id: string;
@@ -53,6 +55,8 @@ export interface Person {
   lastGaveUp: number;
   home?: string;
   /** Staff keep a venue running round the clock; crews build things. */
+  /** On a bus (its car's id), out of sight till their stop (buses.ts). */
+  riding?: string;
   readonly role?: NpcRole;
   /** Staff: the venue they work at. */
   readonly works?: string;

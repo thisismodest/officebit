@@ -1,0 +1,67 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { TICKS_PER_DAY, TICKS_PER_HOUR, hourOf } from '../src/sim/clock.ts';
+import { departureAfter } from '../src/sim/buses.ts';
+import { Simulation } from '../src/sim/sim.ts';
+import { validate } from '../src/sim/validate.ts';
+import { STARTER } from '../src/worlds/starter.ts';
+
+/** Every departure in the day after `from`, as hours. */
+const timetable = (from: number) => {
+  const times: number[] = [];
+  for (let t = departureAfter(from); t < from + TICKS_PER_DAY; t = departureAfter(t)) times.push(Math.round(hourOf(t) * 60) / 60);
+  return times;
+};
+
+test('the timetable: every quarter of an hour at rush hour, hourly by day, and a night bus every two hours', () => {
+  const times = timetable(0);
+  const between = (a: number, b: number) => times.filter((h) => h >= a && h < b);
+  assert.equal(between(7, 10).length, 12, 'rush hour, morning');
+  assert.equal(between(16, 19).length, 12, 'rush hour, evening');
+  assert.deepEqual(between(10, 16), [10, 11, 12, 13, 14, 15]);
+  assert.deepEqual(times.filter((h) => h >= 23 || h < 6).sort((a, b) => a - b), [1, 3, 5, 23]);
+});
+
+test('buses call at every stop in turn, round the town without turning round in the road, and people ride them', () => {
+  const sim = new Simulation(structuredClone(STARTER));
+  const plan = sim.buses.plan()!;
+  assert.equal(plan.stops.length, 6, 'six stops');
+  const news: string[] = [];
+  sim.onEvent((e) => news.push(e.text));
+  const calls = new Map<string, string[]>();
+  let turnedRound = false;
+  const facing = new Map<string, string>();
+  const OPPOSITE: Record<string, string> = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  for (let t = 0; t < TICKS_PER_DAY; t++) {
+    sim.step();
+    for (const s of sim.buses.services) {
+      if (s.dwell === 1) calls.set(s.car.id, [...(calls.get(s.car.id) ?? []), plan.stops[s.next]!.def.label!]);
+      if (facing.get(s.car.id) === OPPOSITE[s.car.facing]) turnedRound = true;
+      facing.set(s.car.id, s.car.facing);
+    }
+  }
+  const full = [...calls.values()].filter((c) => c.length === 6);
+  assert.ok(full.length >= 20, `${full.length} buses went all the way round`);
+  assert.ok(full.every((c) => c.join() === plan.stops.map((s) => s.def.label).join()), 'every stop, in order');
+  assert.ok(!turnedRound, 'never straight back the way it came');
+  const rides = news.filter((text) => /got on the bus/.test(text)).length;
+  assert.ok(rides >= 3, `${rides} rides in a day`);
+  assert.ok(sim.people.every((p) => !p.riding || sim.buses.services.some((s) => s.car.id === p.riding)), 'nobody left on a bus that has gone');
+  assert.deepEqual(validate(sim.world), []);
+});
+
+test('waiting too long, they walk instead', () => {
+  const sim = new Simulation(structuredClone(STARTER));
+  const plan = sim.buses.plan()!;
+  // Late at night (no bus for a while), someone at the first stop, going to the last.
+  while (hourOf(sim.tick) < 23.5) sim.step();
+  const p = sim.people.find((q) => !q.npc)!;
+  const then = { kind: 'wander' as const, to: { level: 'town', p: sim.buses.waitAt(plan.stops.at(-1)!) } };
+  Object.assign(p, { level: 'town', x: sim.buses.waitAt(plan.stops[0]!)[0], y: sim.buses.waitAt(plan.stops[0]!)[1] });
+  sim.setLevel(p, 'town');
+  // Straight to the stop to wait (as `begin` does when the bus looks worth it).
+  (sim as unknown as { begin(p: unknown, i: unknown, walk: boolean): void }).begin(p, { kind: 'bus', from: plan.stops[0]!.index, to: plan.stops.at(-1)!.index, after: then }, true);
+  for (let t = 0; t < sim.buses.patience + TICKS_PER_HOUR / 6 && p.intent?.kind === 'bus'; t++) sim.step();
+  assert.notEqual(p.intent?.kind, 'bus', 'gave up on it');
+  assert.ok(!p.riding, 'and walked');
+});
