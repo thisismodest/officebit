@@ -39,7 +39,8 @@ export const HOME: Record<string, Painter> = {
     paint(ctx, w, h, o) {
       rect(ctx, w / 2 - 3, o + h - 6, 6, 5, OUTLINE);
       rect(ctx, w / 2 - 2, o + h - 5, 4, 4, '#c8453a');
-      for (let row = 0; row < 22; row++) {
+      // Branches from the top right down to the pot.
+      for (let row = 0; row < h - 6 + 14; row++) {
         const half = Math.min(7, 1 + Math.floor((row % 8) * 0.8 + row / 5));
         rect(ctx, w / 2 - half - 1, o - 14 + row, half * 2 + 2, 1, OUTLINE);
         rect(ctx, w / 2 - half, o - 14 + row, half * 2, 1, row % 4 === 3 ? '#2f6b3a' : '#3d8a45');
