@@ -11,6 +11,7 @@ import type { Item, Simulation } from '../sim/sim.ts';
 import { vehicleAt } from '../sim/food-trucks.ts';
 import type { Renderer } from '../render/renderer.ts';
 import { TILE } from '../render/pixels.ts';
+import { fireworksAt } from '../render/seasonal.ts';
 
 /** What using a piece of furniture sounds like, and how long after starting (s): paying takes a moment. */
 const ON_USE: Record<string, [SoundName, [number, number]]> = {
@@ -65,6 +66,8 @@ export class Soundscape {
   private murmurIn = randomIn(MURMUR_EVERY);
   /** When each person at a desk types their next burst, and when each talker speaks again (s from now). */
   private readonly typing = new Map<string, number>();
+  /** Fireworks already heard going off. */
+  private readonly bangs = new Set<number>();
   private readonly talking = new Map<string, number>();
 
   constructor(host: SoundscapeHost) {
@@ -108,7 +111,22 @@ export class Soundscape {
         this.play('tannoy');
       }
     }
-    if (level.kind === 'outside') this.trucks(level.id);
+    if (level.kind === 'outside') {
+      this.trucks(level.id);
+      this.fireworks();
+    }
+  }
+
+  /** Each firework bursting over the Green, panned to where it is. */
+  private fireworks(): void {
+    const { sim } = this.host;
+    const bursts = fireworksAt(sim(), sim().tick).filter((b) => b.age >= 0.3);
+    for (const burst of bursts) {
+      if (this.bangs.has(burst.id)) continue;
+      this.bangs.add(burst.id);
+      this.play('firework', this.panAt(burst.x / TILE), 0, true);
+    }
+    if (this.bangs.size > 50) for (const id of [...this.bangs].slice(0, 25)) this.bangs.delete(id);
   }
 
   /** People at their desks type in bursts, a few keys at a time, then stop to think. */

@@ -3,7 +3,7 @@
 // many steps each frame; rendering interpolates between them).
 import { exposeLocalFeed } from './feeds/local.ts';
 import { Renderer } from './render/renderer.ts';
-import { TICKS_PER_DAY, daylight, formatClock, formatTime, hourOf, weekdayOf } from './sim/clock.ts';
+import { TICKS_PER_DAY, formatClock, formatTime, weekdayOf } from './sim/clock.ts';
 import { TILE } from './render/pixels.ts';
 import { exitAt, interiorOf, type Exit } from './sim/places.ts';
 import { Simulation, type Item } from './sim/sim.ts';
@@ -493,7 +493,19 @@ function jump(to: number): void {
   time.travel(sim, to);
   updateTimeUi();
 }
-new TimeJump($('#clock'), { sim: () => sim, time, jump });
+new TimeJump($('#clock'), {
+  sim: () => sim,
+  time,
+  jump,
+  startOn: (day) => {
+    // Another day is a sandbox: Live has to be today.
+    localStorage.setItem(MODE_KEY, 'sandbox');
+    time.mode = 'sandbox';
+    time.sandboxDate = day;
+    restart();
+    updateTimeUi();
+  },
+});
 api.travel = (when: number | string | Date) => jump(typeof when === 'number' ? sim.tick + when * TICKS_PER_DAY : sim.tick + (new Date(when).getTime() - Date.now()) / TICK_MS);
 travelBar.querySelector('[data-action="stop"]')!.addEventListener('click', () => time.stopTravelling());
 travelBar.addEventListener('pointerdown', (event) => event.stopPropagation());
@@ -550,7 +562,7 @@ function frame(now: number): void {
     overview.update(sim);
     editor.update();
     // After dark the music turns to its calm night style.
-    audio.night = daylight(hourOf(sim.tick)) < 0.3;
+    audio.night = sim.daylight() < 0.3;
     // Live and Sandbox alike: the day of the story, counted from the day it began (phones have room for just the time).
     clock.textContent = narrow.matches ? `${weekdayOf(sim.tick)} ${formatTime(sim.tick)}` : formatClock(sim.tick, sim.firstDay);
     if (time.mode !== modeSelect.value) updateTimeUi();

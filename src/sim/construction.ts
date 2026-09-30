@@ -18,10 +18,12 @@ export interface Job {
   label: string;
   level: string;
   /** Whatever stands there now (an empty lot, an old building): cleared when the crew arrives. */
-  clears: Item;
-  /** The fenced site while work is under way, then the finished building. */
+  clears?: Item;
+  /** The fenced site while work is under way, then the finished building (or nothing, taking something down). */
   site: FurnitureDef;
-  building: FurnitureDef;
+  building?: FurnitureDef;
+  /** What the News says as work starts and when it's done. */
+  news: [start: string, done: string];
   /** Where the crew heads to: the tile in front of the site. */
   door: Tile;
   /** Crew-hours of work needed, and done so far. */
@@ -35,12 +37,15 @@ export interface Job {
 
 export interface JobSpec {
   label: string;
-  clears: Item;
+  /** The map it's on (when there's nothing to clear first). */
+  level?: string;
+  clears?: Item;
   siteType: string;
   at: Tile;
-  building: FurnitureDef;
+  building?: FurnitureDef;
   door: Tile;
   hours: number;
+  news?: [start: string, done: string];
   onDone: () => void;
 }
 
@@ -70,8 +75,9 @@ export class Construction {
     this.jobs.push({
       id: `job-${this.jobs.length + 1}`,
       label: spec.label,
-      level: spec.clears.level,
+      level: spec.clears?.level ?? spec.level!,
       clears: spec.clears,
+      news: spec.news ?? [`🚧 A construction crew started work on ${spec.label}`, `🏗️ The builders finished ${spec.label} and packed up`],
       site: { t: spec.siteType, p: spec.at, label: `${spec.label} (under construction)`, progress: 0 },
       building: spec.building,
       door: spec.door,
@@ -118,17 +124,17 @@ export class Construction {
 
   private breakGround(job: Job): void {
     const { sim } = this;
-    sim.removeItem(job.clears);
+    if (job.clears) sim.removeItem(job.clears);
     job.siteItem = sim.addItem(job.level, job.site);
-    sim.log(`🚧 A construction crew started work on ${job.label}`, job.crew);
+    sim.log(job.news[0], job.crew);
   }
 
   private finish(job: Job): void {
     const { sim } = this;
     job.finished = true;
     if (job.siteItem) sim.removeItem(job.siteItem);
-    sim.addItem(job.level, job.building);
-    sim.log(`🏗️ The builders finished ${job.label} and packed up`, job.crew);
+    if (job.building) sim.addItem(job.level, job.building);
+    sim.log(job.news[1], job.crew);
     job.onDone();
   }
 }

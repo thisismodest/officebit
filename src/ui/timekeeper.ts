@@ -6,6 +6,7 @@
 // there in sandbox. The sim never sees the wall clock; this does.
 import { START_HOUR, TICKS_PER_DAY, TICKS_PER_SECOND, dayOf } from '../sim/clock.ts';
 import type { Simulation } from '../sim/sim.ts';
+import { calendarDate, whereabouts } from './whereabouts.ts';
 
 export type Mode = 'live' | 'sandbox';
 
@@ -59,6 +60,8 @@ export class Timekeeper {
   origin: LiveOrigin | null = null;
   /** When live mode started (any time that day, in ms): the town has been running since 06:00 then. Null starts it today. */
   since: number | null = null;
+  /** The day Sandbox starts on (any time that day): null starts it today. Pick one to see the town then, at Halloween or Christmas. */
+  sandboxDate: Date | null = null;
   travelling: Travel | null = null;
   /** Live mode is behind the clock and catching up: there's nothing worth drawing until it's done. */
   catchingUp = false;
@@ -74,17 +77,24 @@ export class Timekeeper {
     return this.speed === 0;
   }
 
-  /** Set up a new sim for the current mode: in live mode, pinned to the day it started, and catching up to now. */
+  /**
+   * Set up a new sim for the current mode, from 06:00 on its first day, with
+   * that day's date and your whereabouts for its calendar: in live mode the
+   * day it started, catching up to now; in sandbox today, or the day you picked.
+   */
   start(sim: Simulation): void {
     this.carry = 0;
     this.travelling = null;
+    const day = this.mode === 'live' ? new Date(this.since ?? this.now()) : (this.sandboxDate ?? new Date(this.now()));
+    const origin = liveOrigin(day);
+    sim.tick = origin.tick;
+    sim.firstDay = dayOf(sim.tick);
+    sim.calendar = { start: calendarDate(new Date(origin.at)), ...whereabouts(day) };
     if (this.mode !== 'live') {
       this.origin = null;
       return;
     }
-    this.origin = liveOrigin(new Date(this.since ?? this.now()));
-    sim.tick = this.origin.tick;
-    sim.firstDay = dayOf(sim.tick);
+    this.origin = origin;
     // Up to a day behind: straight to now, before anything is drawn (a fraction of a second).
     // Further: a slice now, and the rest a frame at a time (out of sight), so the page stays responsive.
     const target = liveTick(this.origin, this.now());

@@ -41,13 +41,6 @@ export function between(hour: number, from: number, to: number): boolean {
   return from <= to ? hour >= from && hour < to : hour >= from || hour < to;
 }
 
-/** 0 at night, 1 in full daylight, easing through dawn (5–7) and dusk (18–20). */
-export function daylight(hour: number): number {
-  if (hour < 5 || hour >= 20) return 0;
-  if (hour < 7) return (hour - 5) / 2;
-  if (hour < 18) return 1;
-  return 1 - (hour - 18) / 2;
-}
 
 /** "09:30" */
 export function formatTime(tick: number): string {

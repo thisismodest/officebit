@@ -85,6 +85,9 @@ date), and change the course of their lives.
   visitors driving in for it.
 - Parked cars don't block people walking past them yet.
 - Music that follows who you're watching (see `docs/AUDIO.md`; the ambient music is done).
+- More of the calendar (see `docs/TIME.md#holidays`; seasons, Christmas, New Year, Bonfire Night and
+  the fixed-date days are done): birthdays (set in the profile), Easter and the moveable bank holidays,
+  weather (rain keeps people in, snow days), the town's look changing with the seasons (blossom, autumn trees).
 
 ## Done
 

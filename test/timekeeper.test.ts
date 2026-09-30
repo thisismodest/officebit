@@ -51,12 +51,27 @@ test('sandbox runs at the chosen speed, and not at all when paused', () => {
   const time = new Timekeeper('sandbox');
   const sim = fresh();
   time.start(sim);
+  const from = sim.tick;
   time.speed = 4;
   time.advance(sim, 1000);
-  assert.equal(sim.tick, 40);
+  assert.equal(sim.tick, from + 40);
   time.speed = 0;
   time.advance(sim, 1000);
-  assert.equal(sim.tick, 40);
+  assert.equal(sim.tick, from + 40);
+});
+
+test('sandbox starts at 06:00 today, or on a day you pick, with that date in its calendar', () => {
+  const time = new Timekeeper('sandbox', () => THURSDAY);
+  const today = fresh();
+  time.start(today);
+  assert.equal(formatClock(today.tick, today.firstDay), 'Thu 06:00 · Day 1');
+  assert.deepEqual(today.dateOf(), { year: 2026, month: 10, day: 1 });
+  time.sandboxDate = new Date(2026, 9, 31, 12);
+  const halloween = fresh();
+  time.start(halloween);
+  assert.equal(weekdayOf(halloween.tick), 'Sat');
+  assert.deepEqual(halloween.dateOf(), { year: 2026, month: 10, day: 31 });
+  assert.deepEqual(halloween.dateOf(halloween.tick + TICKS_PER_DAY), { year: 2026, month: 11, day: 1 }, 'and the days go on from there');
 });
 
 test('time travel fast-forwards to the target and leaves live mode', () => {
@@ -116,4 +131,17 @@ test('live mode carries on from the day it started, catching up a slice at a tim
   assert.ok(sim.tick >= days * TICKS_PER_DAY, `${days} days of story so far`);
   // Days are counted from the day it started: three days on, it's Day 4, whatever weekday it began.
   assert.match(formatClock(sim.tick, sim.firstDay), /· Day 4$/);
+});
+
+test('the sun keeps the seasons: short days in winter, long in summer, and the clocks going forward', async () => {
+  const { daylightAt, sunTimes } = await import('../src/sim/calendar.ts');
+  const london = { latitude: 51.5, longitude: -0.13, utc: 0, dst: 'eu' as const };
+  const winter = sunTimes({ ...london, start: [2026, 12, 21] }, { year: 2026, month: 12, day: 21 });
+  const summer = sunTimes({ ...london, start: [2026, 6, 21] }, { year: 2026, month: 6, day: 21 });
+  assert.ok(Math.abs(winter.rise - 8.05) < 0.1 && Math.abs(winter.set - 15.9) < 0.1, `December: ${winter.rise}–${winter.set}`);
+  assert.ok(Math.abs(summer.rise - 4.72) < 0.1 && Math.abs(summer.set - 21.35) < 0.1, `June, in BST: ${summer.rise}–${summer.set}`);
+  // At 17:00 it's dark in December and broad daylight in June.
+  const at = (month: number, hour: number) => daylightAt({ ...london, start: [2026, month, 1] }, 0, (hour - 6) * TICKS_PER_HOUR);
+  assert.equal(at(12, 17), 0);
+  assert.equal(at(6, 17), 1);
 });

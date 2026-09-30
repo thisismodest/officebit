@@ -1,7 +1,6 @@
 // Draws one level of the sim through a camera (docs/RENDERING.md). The canvas
 // is device resolution; the world is scaled by an integer zoom with smoothing
 // off, so pixel art stays crisp while text and emoji render sharp.
-import { daylight, hourOf } from '../sim/clock.ts';
 import { asleep, atDesk, seatedAtDesk, type Person } from '../sim/person.ts';
 import { interiorOf, occupants } from '../sim/places.ts';
 import type { Item, Simulation } from '../sim/sim.ts';
@@ -16,11 +15,12 @@ import { TILE, canvas, dot, rect, type Ctx } from './pixels.ts';
 import { buildProps, type Prop } from './props/index.ts';
 import { vehicleAt } from '../sim/food-trucks.ts';
 import { paintStaticLayer } from './tiles.ts';
+import { paintSeasonal } from './seasonal.ts';
 
 /** Where feet sit within a person's tile. */
 const FEET = 14;
 /** Street lights that come on at dusk whoever's about. */
-const ALWAYS_LIT = new Set(['lamppost', 'chargingCanopy']);
+const ALWAYS_LIT = new Set(['lamppost', 'chargingCanopy', 'christmasTree', 'homeTree']);
 /** Headlights: how far ahead of a car (tiles) they light the road, and how wide (pixels). */
 const HEADLIGHT_REACH = 1.5;
 const HEADLIGHT_RADIUS = 26;
@@ -156,7 +156,7 @@ export class Renderer {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(this.layerOf(this.level), 0, 0);
 
-    const night = 1 - daylight(hourOf(sim.tick));
+    const night = 1 - sim.daylight();
     const props = this.propsOf(this.level);
     const visible = this.visible();
     const drawables: { sortY: number; draw: () => void }[] = props.map((prop) => {
@@ -190,6 +190,9 @@ export class Renderer {
         this.onMap(() => paintCarLights(this.ctx, sprite, carOrigin(sprite, pos.x, pos.y), car.facing));
       }
     }
+
+    // Fairy lights, pumpkins and fireworks, as the date has them.
+    if (this.level === sim.traffic.level) paintSeasonal(ctx, sim, props, night, this.time, sim.tick + alpha);
 
     // Speech bubbles and labels float above everything.
     for (const p of visible) this.paintBubble(p, at(p));
@@ -299,6 +302,8 @@ export class Renderer {
   private lightsOn(item: Item): boolean {
     const { sim } = this;
     if (ALWAYS_LIT.has(item.def.t)) return true;
+    // The bonfire burns in its hours.
+    if (item.def.t === 'bonfire') return sim.withinHours(item);
     const inside = interiorOf(sim, item);
     return !!inside && occupants(sim, inside.levels).some((p) => p.species === 'human' && !asleep(p));
   }
@@ -341,7 +346,9 @@ export class Renderer {
       }
       if (prop.lit && night > DUSK && this.lightsOn(prop.item)) {
         const bulb = prop.item.def.t === 'lamppost';
-        lights.push({ x: prop.x + prop.img.width / 2, y: prop.y + (bulb ? 6 : prop.img.height * 0.7), r: bulb ? 44 : prop.img.width * 0.6 });
+        // The Green's tree glows all the way up, star and all.
+        const tree = prop.item.def.t === 'christmasTree';
+        lights.push({ x: prop.x + prop.img.width / 2, y: prop.y + (bulb ? 6 : prop.img.height * (tree ? 0.45 : 0.7)), r: bulb ? 44 : tree ? 44 : prop.img.width * 0.6 });
       }
     }
 

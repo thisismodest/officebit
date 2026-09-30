@@ -159,7 +159,84 @@ export const OUTDOOR: Record<string, Painter> = {
     },
   },
 
+  siteTiny: site(),
   siteSmall: site(),
+
+  // The Christmas tree on the Green: three tiers down to the trunk, a star, baubles by day and fairy lights after dark.
+  christmasTree: {
+    up: 28,
+    paint(ctx, w, h, o) {
+      const trunk = o + h - 10;
+      rect(ctx, w / 2 - 8, o + h - 5, 16, 3, 'rgba(20,14,30,0.2)');
+      rect(ctx, w / 2 - 3, trunk, 6, 7, OUTLINE);
+      rect(ctx, w / 2 - 2, trunk, 4, 6, '#7a5436');
+      for (const tier of TREE_TIERS) {
+        for (let row = 0; row < TIER_ROWS; row++) {
+          const half = tierHalf(tier, row);
+          rect(ctx, w / 2 - half - 1, trunk - tier.bottom + row, half * 2 + 2, 1, OUTLINE);
+          rect(ctx, w / 2 - half, trunk - tier.bottom + row, half * 2, 1, row % 5 === 0 ? '#2f6b3a' : '#3d8a45');
+        }
+      }
+      star(ctx, w / 2, trunk - TREE_TIERS[0]!.bottom - 5, '#e7c14a');
+      TREE_TIERS.forEach((tier, t) => {
+        for (const [row, side, c] of [
+          [6, -1, '#c8453a'],
+          [10, 1, '#3f74b5'],
+          [13, -1, '#e7aa2e'],
+        ] as const) {
+          dot(ctx, w / 2 + side * Math.max(1, tierHalf(tier, row) - 2 - t), trunk - tier.bottom + row, c);
+        }
+      });
+    },
+    lit(ctx, w, h, o) {
+      const trunk = o + h - 10;
+      star(ctx, w / 2, trunk - TREE_TIERS[0]!.bottom - 5, '#fff3b0');
+      const colours = ['#ffd98a', '#ff8c8c', '#8cc8ff', '#b6ff9c'];
+      let i = 0;
+      // Along each tier's edge, both sides, and a string across its hem.
+      for (const tier of TREE_TIERS) {
+        for (let row = 3; row < TIER_ROWS; row += 3) {
+          const half = tierHalf(tier, row);
+          for (const side of [-1, 1]) dot(ctx, w / 2 + side * (half - 1) - (side > 0 ? 1 : 0), trunk - tier.bottom + row, colours[i++ % colours.length]!);
+        }
+        const hem = tierHalf(tier, TIER_ROWS - 1);
+        for (let x = -hem + 2; x < hem - 1; x += 3) dot(ctx, w / 2 + x, trunk - tier.bottom + TIER_ROWS - 2, colours[i++ % colours.length]!);
+      }
+    },
+  },
+
+  // The bonfire: a stack of logs and pallets, burning after dark.
+  bonfire: {
+    up: 14,
+    paint(ctx, w, h, o) {
+      rect(ctx, 3, o + h - 6, w - 6, 4, 'rgba(20,14,30,0.25)');
+      for (let i = 0; i < 7; i++) {
+        const x = 6 + i * 3;
+        rect(ctx, x, o - 6 + Math.abs(3 - i) * 2, 3, h - Math.abs(3 - i) * 2 + 2, OUTLINE);
+        rect(ctx, x + 1, o - 5 + Math.abs(3 - i) * 2, 1, h - Math.abs(3 - i) * 2, i % 2 ? '#8a5a3b' : '#a0714c');
+      }
+      rect(ctx, 4, o + h - 8, w - 8, 3, OUTLINE);
+      rect(ctx, 5, o + h - 7, w - 10, 1, '#b98452');
+    },
+    lit(ctx, _w, _h, o) {
+      for (const [x, y, fw, fh, c] of [
+        [8, 0, 16, 16, '#e4793a'],
+        [10, -6, 12, 14, '#f4a93a'],
+        [12, -12, 8, 12, '#ffd98a'],
+        [14, -16, 4, 6, '#fff3b0'],
+      ] as const) {
+        pill(ctx, x, o + y, fw, fh, c);
+      }
+      for (const [x, y] of [
+        [6, -14],
+        [25, -10],
+        [11, -20],
+        [21, -22],
+      ] as const) {
+        dot(ctx, x, o + y, '#ffd98a');
+      }
+    },
+  },
   siteLarge: site(),
   startupSmall: startup(false),
   startupLarge: startup(true),
@@ -395,6 +472,25 @@ function startup(large: boolean): Painter {
 
 
 /** A building site: fence and materials, then foundations, a frame, walls behind scaffolding. */
+/** The Green's Christmas tree: three tiers, each overlapping the one below, the lowest down to the trunk. `bottom` is how far above the trunk a tier starts. */
+const TIER_ROWS = 16;
+const TREE_TIERS = [
+  { bottom: 40, widest: 6 },
+  { bottom: 28, widest: 10 },
+  { bottom: 16, widest: 14 },
+];
+
+/** How far a tier reaches either side of the middle, `row` rows down it. */
+function tierHalf(tier: { widest: number }, row: number): number {
+  return Math.max(1, Math.round(((row + 2) / TIER_ROWS) * tier.widest));
+}
+
+/** A little star: a cross with a bright middle. */
+function star(ctx: Ctx, cx: number, y: number, colour: string): void {
+  rect(ctx, cx - 1, y, 2, 5, colour);
+  rect(ctx, cx - 3, y + 2, 6, 1, colour);
+}
+
 function site(): Painter {
   return {
     up: 26,

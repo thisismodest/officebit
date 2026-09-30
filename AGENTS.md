@@ -67,6 +67,8 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   personality.ts  traits (social, diligence, chaos, charisma, ambition) + presets
   schedule.ts     routines from traits; phases sleep/home/work; weekends; shifts
   clock.ts        1 tick = 6 game s; 600 ticks/h; day 1 = Monday 06:00
+  calendar.ts     the date of any tick, sunrise and sunset where the town is; holidays.ts: fixed-date days and
+                  bank holidays; festivities.ts: what the town does on them (crews put up the tree, the bonfire)
   grid.ts         one level's tiles + A*;  navigation.ts: routes across levels via portals
   geometry.ts     shared tile/rect/footprint maths, door rows, portal ends (sim, worlds and the editor all use it)
   catalog.ts      furniture types and affordances (offers, spots, desk, hangout, hours, parking…)
@@ -87,10 +89,10 @@ src/worlds/   starter.ts (people, 2-floor office, venues, homes), town.ts (the 1
               rooms.ts (walled rooms and doorways)
 src/render/   renderer.ts (one level through a camera; y-sorted props+people; night lighting),
               camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, cars.ts,
-              palette.ts, pixels.ts, props/* (one painter per catalog type)
+              palette.ts, pixels.ts, seasonal.ts (fairy lights, pumpkins, fireworks), props/* (one painter per catalog type)
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
               editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (save, share links, files),
-              timekeeper.ts (live/sandbox), time-jump.ts (jumping ahead), controls.ts (pan/zoom/click),
+              timekeeper.ts (live/sandbox), time-jump.ts (jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
               place-card.ts, describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects), noise.ts;
               ui/soundscape.ts decides which effects play, ui/audio-menu.ts the switches and volumes
@@ -163,6 +165,8 @@ Working and verified in the browser:
 - **Places:** the two-floor office, the 24/7 Night Owl Diner and the Corner Shop,
   staffed in shifts (they close when nobody's minding them; customers queue),
   food trucks on weekday lunchtimes, arcades.
+- **Time:** a real calendar: daylight follows the sun for the date where you are; UK bank holidays;
+  Christmas (a crew-built tree, lights, presents, the office party), New Year, Bonfire Night, Halloween and more.
 - **UI:** World/People/News sidebar (hideable) with profiles and per-person
   histories, clickable buildings and doors, follow, eased zoom, a phone layout,
   time modes (Live runs since its start date; Sandbox; jumping ahead), the map
@@ -170,7 +174,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), a landing page, save and share
   links, interactions, feeds, opt-in music and sounds with volumes.
 
-124 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+134 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

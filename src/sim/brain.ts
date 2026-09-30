@@ -1,7 +1,7 @@
 // Brains (docs/PERSONALITIES.md). Each scores every option open to a person
 // right now and picks the best. Where they can choose from depends on the
 // time of day: the office during work hours, their home otherwise.
-import { TICKS_PER_DAY, TICKS_PER_HOUR, between, hourOf, isWeekend } from './clock.ts';
+import { TICKS_PER_DAY, TICKS_PER_HOUR, between, hourOf } from './clock.ts';
 import { NEEDS, PANTRY_FULL, urgency, type Need } from './needs.ts';
 import { asleep, type Intent, type Person, type UseMode } from './person.ts';
 import { outsideDoor } from './places.ts';
@@ -25,6 +25,14 @@ const GAMER_THRESHOLD = 0.35;
 /** How much gamers are drawn to a game machine, on top of the fun it offers: more if they're chaotic, and more the less fun they're having. Everyone else feels a share of it, when they're bored. */
 const ARCADE_PULL = 0.25;
 const ARCADE_SHARE = 0.5;
+/** A town event (the bonfire): how keen people are to go, more for the sociable. */
+const EVENT_PULL = 0.5;
+/** New Year's Eve: a night out. */
+const NIGHT_OUT = 0.35;
+/** New Year: how keen grown-ups are to see the fireworks, more for the sociable. */
+const FIREWORKS = 0.7;
+/** Trick-or-treating: how keen children are on the next door. */
+const TRICK_OR_TREAT = 0.9;
 /** Meals left at home before the food shop comes on the list. */
 const SHOP_WHEN = 4;
 /** Waiting outside for the shop to open: the longest anyone will (ticks), how much less appealing it is than going in, and how long they won't bother again after giving up. */
@@ -91,7 +99,7 @@ export class PersonalityBrain implements Brain {
     const options: Option[] = [];
 
     const lunchtime = p.role === 'child' && between(hourOf(sim.tick), ...SCHOOL_LUNCH);
-    if (phase === 'work' && p.desk >= 0 && status.activity !== 'break' && !lunchtime) {
+    if (phase === 'work' && p.desk >= 0 && status.activity !== 'break' && !lunchtime && !sim.festivities.partying(p)) {
       options.push({ intent: { kind: 'work' }, score: (0.25 + 0.45 * t.diligence) * (0.4 + 0.6 * p.needs.energy) + noise() });
     }
 
@@ -124,6 +132,8 @@ export class PersonalityBrain implements Brain {
       const lonely = 0.2 + (1 - p.needs.social);
       if (type.hangout) score += (crowd * 0.08 + sim.pullAt(item.level, x, y, 2.5, p) * 0.35) * t.social * lonely;
       if (type.treat) score += TREAT_BONUS + t.chaos * 0.1;
+      if (type.event) score += EVENT_PULL * (0.3 + t.social);
+      if (outing(item.level) && sim.festivities.nightOut()) score += NIGHT_OUT;
       if (type.game) score += ARCADE_PULL * (gamer ? 1 : ARCADE_SHARE) * (0.5 + t.chaos) * (1.3 - p.needs.fun);
       // Swings and hopscotch: a go on them, if they're feeling playful and it's just there.
       if (type.play && p.role !== 'child' && item.level === p.level && Math.hypot(x - p.x, y - p.y) < PLAY_NEAR) {
@@ -145,6 +155,18 @@ export class PersonalityBrain implements Brain {
       }
       const place = { level: item.level, p: item.def.p };
       options.push({ intent: { kind: 'use', item: item.index, mode }, score: score - cost(place) + noise() });
+    }
+
+    // New Year: out on the Green for the fireworks.
+    if (phase === 'home' && p.role !== 'child' && sim.festivities.newYearOut()) {
+      const spot = sim.festivities.watchFrom();
+      if (spot) options.push({ intent: { kind: 'wander', to: spot }, score: FIREWORKS * (0.5 + t.social) + noise() });
+    }
+
+    // Halloween: children go door to door.
+    if (p.role === 'child' && phase === 'home' && sim.festivities.trickOrTreating()) {
+      const door = sim.festivities.doorToKnock(p);
+      if (door) options.push({ intent: { kind: 'wander', to: door }, score: TRICK_OR_TREAT + noise() });
     }
 
     // Running low at home: time for the food shop.
@@ -170,7 +192,7 @@ export class PersonalityBrain implements Brain {
     // Evenings and weekends: the side project.
     if (phase === 'home' && sim.ventures.wantsToHustle(p)) {
       const desk = sim.activeItems().find((item) => item.type.study && sim.floorsOf(p.home!).includes(item.level) && sim.freeSpots(item.index) > 0);
-      const keen = (0.25 + 0.6 * t.ambition) * (0.3 + 0.7 * p.needs.energy) * (isWeekend(sim.tick) ? 1.2 : 1);
+      const keen = (0.25 + 0.6 * t.ambition) * (0.3 + 0.7 * p.needs.energy) * (sim.dayOff() ? 1.2 : 1);
       if (desk) options.push({ intent: { kind: 'hustle', item: desk.index }, score: keen + noise() });
     }
 

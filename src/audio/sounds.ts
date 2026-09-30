@@ -8,7 +8,7 @@ import { whiteNoise } from './noise.ts';
 /** Overall level of the effects at full volume. */
 const LEVEL = 0.55;
 
-export type SoundName = 'horn' | 'till' | 'tannoy' | 'bell' | 'key' | 'phone' | 'coffee' | 'cooler' | 'arcade' | 'alarm' | 'alarmMuffled';
+export type SoundName = 'horn' | 'till' | 'tannoy' | 'bell' | 'key' | 'phone' | 'coffee' | 'cooler' | 'arcade' | 'alarm' | 'alarmMuffled' | 'firework';
 
 /** Vowel formants (Hz), for the murmur of talking. */
 const VOWELS: [number, number][] = [
@@ -53,6 +53,7 @@ export class Sounds {
       coffee: () => this.coffee(bus, at),
       cooler: () => this.cooler(bus, at),
       arcade: () => this.arcade(bus, at),
+      firework: () => this.firework(bus, at),
       alarm: () => this.alarm(bus, at, false),
       alarmMuffled: () => this.alarm(bus, at, true),
     })[name]();
@@ -174,6 +175,20 @@ export class Sounds {
       const env = this.envelope(bus, start, 0.005, 0.09, 0.09);
       const osc = this.tone('sine', hz, start, 0.1, env);
       osc.frequency.exponentialRampToValueAtTime(hz * 1.8, start + 0.08);
+    }
+  }
+
+  /** A firework going off, some way off: a soft thump, then a crackle dying away. */
+  private firework(bus: AudioNode, at: number): void {
+    const thump = this.envelope(this.filter('lowpass', 400, bus), at, 0.005, 0.35, 0.5);
+    const osc = this.tone('sine', 90, at, 0.5, thump);
+    osc.frequency.exponentialRampToValueAtTime(40, at + 0.4);
+    const boom = this.envelope(this.filter('lowpass', 900, bus), at, 0.005, 0.25, 0.7);
+    this.noiseSource(at, 0.8).connect(boom);
+    for (let i = 0; i < 9; i++) {
+      const start = at + 0.25 + i * 0.07 + Math.random() * 0.05;
+      const crackle = this.envelope(this.filter('highpass', 2500, bus), start, 0.002, 0.08 * (1 - i / 10), 0.04);
+      this.noiseSource(start, 0.06).connect(crackle);
     }
   }
 

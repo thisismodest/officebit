@@ -23,7 +23,13 @@ in code; the only image file is the favicon (`public/favicon.svg`).
    Screens in use (monitors, TVs, arcade machines) glow as they're drawn.
 3. Night: fill a darkness layer, cut out light around lamps, lampposts, the
    charging canopy, lit windows, screens and headlights, and draw it over the
-   top; then moving cars' head and tail lights on top of the dark.
+   top; then moving cars' head and tail lights on top of the dark. How dark
+   follows the real sun for the date ([TIME](TIME.md#the-calendar)).
+   The Christmas tree and the bonfire (while it's burning) are lights too.
+   **Seasons** (`seasonal.ts`, town map only): fairy lights along the houses' eaves
+   after dark in December, pumpkins on doorsteps in the week of Halloween, and
+   fireworks over the Green on Bonfire Night and at New Year (worked out from the
+   clock alone, so the soundscape hears the same bursts it shows).
 4. Speech bubbles, the selected person's name and the editor's outline (white
    where it'll go, red where it won't, amber on what it'll clear), on top of everything.
 

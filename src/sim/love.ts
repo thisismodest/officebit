@@ -20,6 +20,8 @@ const SPARK = 0.4;
 export const IN_LOVE = 0.3;
 /** Chance per conversation, between two people with a spark, that one asks. */
 const ASK_CHANCE = 0.15;
+/** On Valentine's Day, how much likelier asking someone out and a date night are. */
+const VALENTINE = 3;
 /** Date nights start at 18:00, on about this share of evenings, and last this long. */
 const DATE_HOUR = 18;
 const DATE_CHANCE = 0.5;
@@ -79,9 +81,14 @@ export class Love {
   met(a: Person, b: Person): void {
     const { sim } = this;
     if (!this.enabled || !this.available(a) || !this.available(b) || !this.spark(a, b)) return;
-    if (sim.affinity(a, b) < ASK_AFFINITY || sim.rng.next() >= ASK_CHANCE) return;
+    if (sim.affinity(a, b) < ASK_AFFINITY || sim.rng.next() >= ASK_CHANCE * this.valentine()) return;
     this.couples.push({ a: a.id, b: b.id, since: sim.tick, together: false });
     sim.log(`💘 ${a.name} asked ${b.name} out, and they said yes`, [a.id, b.id]);
+  }
+
+  /** Valentine's Day makes romance likelier. */
+  private valentine(): number {
+    return this.sim.holiday()?.id === 'valentines' ? VALENTINE : 1;
   }
 
   hourly(): void {
@@ -98,7 +105,7 @@ export class Love {
         this.split(couple, a, b);
         continue;
       }
-      if (!couple.together && hour === DATE_HOUR && sim.rng.next() < DATE_CHANCE) {
+      if (!couple.together && hour === DATE_HOUR && sim.rng.next() < Math.min(1, DATE_CHANCE * this.valentine())) {
         a.date = { with: b.id, until: sim.tick + DATE_TICKS };
         b.date = { with: a.id, until: sim.tick + DATE_TICKS };
       }

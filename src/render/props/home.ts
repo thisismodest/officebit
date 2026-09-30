@@ -33,6 +33,35 @@ function bed(pillows: number): Painter {
 }
 
 export const HOME: Record<string, Painter> = {
+  // A Christmas tree at home or at the office: tinsel and baubles, fairy lights after dark.
+  homeTree: {
+    up: 14,
+    paint(ctx, w, h, o) {
+      rect(ctx, w / 2 - 3, o + h - 6, 6, 5, OUTLINE);
+      rect(ctx, w / 2 - 2, o + h - 5, 4, 4, '#c8453a');
+      for (let row = 0; row < 22; row++) {
+        const half = Math.min(7, 1 + Math.floor((row % 8) * 0.8 + row / 5));
+        rect(ctx, w / 2 - half - 1, o - 14 + row, half * 2 + 2, 1, OUTLINE);
+        rect(ctx, w / 2 - half, o - 14 + row, half * 2, 1, row % 4 === 3 ? '#2f6b3a' : '#3d8a45');
+      }
+      rect(ctx, w / 2 - 1, o - 16, 2, 3, '#f4c542');
+      for (const [x, y, c] of [
+        [-3, -8, '#c8453a'],
+        [2, -4, '#3f74b5'],
+        [-4, 0, '#e7aa2e'],
+        [4, 2, '#c8453a'],
+        [-1, 4, '#7f4aa6'],
+      ] as const) {
+        dot(ctx, w / 2 + x, o + y, c);
+      }
+    },
+    lit(ctx, w, _h, o) {
+      rect(ctx, w / 2 - 1, o - 16, 2, 3, '#fff3b0');
+      const colours = ['#ffd98a', '#ff8c8c', '#8cc8ff', '#b6ff9c'];
+      for (let i = 0; i < 10; i++) dot(ctx, w / 2 + (i % 2 ? 1 : -1) * (1 + (i % 5)), o - 11 + i * 2, colours[i % colours.length]!);
+    },
+  },
+
   bed: bed(2),
   singleBed: bed(1),
 

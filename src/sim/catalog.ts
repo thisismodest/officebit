@@ -48,6 +48,8 @@ export interface FurnitureType {
   staff?: boolean;
   /** A construction site: the crew works from its spots. */
   worksite?: boolean;
+  /** A town event (the bonfire): worth walking over for, and the town's open to everyone while it's on. */
+  event?: boolean;
   /** A workstation you work standing up (the diner's grill), not sat at. */
   standing?: boolean;
   /** A game machine (arcades): gamers seek it out whether or not they're bored. */
@@ -261,7 +263,13 @@ export const CATALOG: Record<string, FurnitureType> = {
   detached: decor('House', [5, 3]),
   pond: decor('Pond', [6, 4]),
   lot: { ...decor('Empty lot', [9, 6], false), lot: true },
+  siteTiny: { ...decor('Works', [2, 2]), spots: around(2, 2), worksite: true, duration: [150, 300] },
   siteSmall: { ...decor('Building site', [5, 4]), spots: around(5, 4), worksite: true, duration: [150, 300] },
+  // Put up for the holidays by a crew (sim/festivities.ts).
+  christmasTree: decor('Christmas tree', [2, 2]),
+  // One at home and one at the office, put up by someone there.
+  homeTree: decor('Christmas tree', [1, 1], false),
+  bonfire: { ...decor('Bonfire', [2, 2]), spots: around(2, 2), offers: { fun: 0.35, social: 0.25 }, hangout: true, event: true, duration: [80, 160], hours: [17.5, 23] },
   siteLarge: { ...decor('Building site', [9, 6]), spots: around(9, 6), worksite: true, duration: [150, 300] },
   foodTruck: {
     name: 'Food truck',

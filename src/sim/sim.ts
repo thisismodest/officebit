@@ -6,7 +6,7 @@
 import { mergeStatus, type FeedMessage } from '../feeds/protocol.ts';
 import { PersonalityBrain } from './brain.ts';
 import { CATALOG, type FurnitureType } from './catalog.ts';
-import { TICKS_PER_HOUR, between, hourOf, isWeekend } from './clock.ts';
+import { TICKS_PER_HOUR, between, dayOf, hourOf, isWeekend } from './clock.ts';
 import { Grid } from './grid.ts';
 import { Navigator, PORTAL_TICKS } from './navigation.ts';
 import { Emitter } from './emitter.ts';
@@ -25,7 +25,10 @@ import { Social } from './social.ts';
 import { Traffic } from './traffic.ts';
 import { Visitors } from './visitors.ts';
 import { Arrivals } from './arrivals.ts';
+import { Festivities } from './festivities.ts';
 import { Careers } from './careers.ts';
+import { DEFAULT_CALENDAR, dateOf, daylightAt, type Calendar, type CalendarDate } from './calendar.ts';
+import { bankHoliday, holidayOn, type Holiday } from './holidays.ts';
 import { Construction } from './construction.ts';
 import { Ventures } from './ventures.ts';
 import type { CompanyDef, FurnitureDef, LevelDef, NpcDef, PersonDef, Place, PortalDef, Tile, WorldDef } from './world.ts';
@@ -103,6 +106,7 @@ export class Simulation {
   readonly traffic: Traffic;
   readonly visitors: Visitors;
   readonly arrivals: Arrivals;
+  readonly festivities: Festivities;
   nav: Navigator;
   /** The game clock, in ticks (6 game seconds each; see clock.ts). Fractional in live mode. */
   tick = 0;
@@ -112,6 +116,10 @@ export class Simulation {
   dt = 1;
   /** The day (as `dayOf` counts them) the story began on, so its days are numbered from 1: a live town started on a Saturday is on Day 1 that Saturday. */
   firstDay = 0;
+  /** The date of that first day, and where the town is (calendar.ts). The timekeeper sets it from your clock. */
+  calendar: Calendar = DEFAULT_CALENDAR;
+  /** Whether the last day asked about was a day off (asked constantly: phases, opening hours). */
+  private offDay = { day: Number.NaN, off: false };
 
   private readonly byId = new Map<string, Person>();
   private readonly brains = new Map<string, Brain>();
@@ -153,6 +161,7 @@ export class Simulation {
     for (const def of world.npcs) this.spawnNpc(def);
     this.visitors = new Visitors(this);
     this.arrivals = new Arrivals(this);
+    this.festivities = new Festivities(this);
     this.mindVenues(false);
     // Households start out close.
     const humans = this.people.filter((p) => p.species === 'human' && p.home);
@@ -206,7 +215,7 @@ export class Simulation {
   /** Within its opening hours? (The shop keeps daily hours; food trucks weekday lunches.) */
   withinHours(item: Item): boolean {
     const { hours, weekdaysOnly } = item.type;
-    return !hours || (!(weekdaysOnly && isWeekend(this.tick)) && between(hourOf(this.tick), hours[0], hours[1]));
+    return !hours || (!(weekdaysOnly && this.dayOff()) && between(hourOf(this.tick), hours[0], hours[1]));
   }
 
   /** Is it a venue's opening hours? (Those without hours are always open.) */
@@ -228,7 +237,7 @@ export class Simulation {
   /** Is one of a venue's staff on shift but not in yet, or due in later today (so it's worth waiting for it to open)? */
   staffDueSoon(level: string): boolean {
     const hour = hourOf(this.tick);
-    const workingDay = (p: Person) => !!p.shift || !roleOf(p).weekends || !isWeekend(this.tick);
+    const workingDay = (p: Person) => !!p.shift || !roleOf(p).weekends || !this.dayOff();
     return this.staffOf(level).some((p) => workingDay(p) && (this.phaseOf(p) === 'work' || hour < p.routine.commute));
   }
 
@@ -291,9 +300,11 @@ export class Simulation {
   /** Where someone is in their day: their routine, as their kind of person keeps it (roles.ts). Feed status overrides it. */
   phaseOf(p: Person): DayPhase {
     const role = roleOf(p);
-    // Offices, crews and schools keep office weeks; anyone on shifts works them every day.
-    const weekend = ((role.weekends && !p.shift) || this.levels.get(p.works ?? '')?.kind === 'school') && isWeekend(this.tick);
-    const natural = phaseAt(p.routine, hourOf(this.tick), weekend);
+    // Offices, crews and schools keep office weeks (and bank holidays); anyone on shifts works them every day.
+    const weekend = ((role.weekends && !p.shift) || this.levels.get(p.works ?? '')?.kind === 'school') && this.dayOff();
+    const phase = phaseAt(p.routine, hourOf(this.tick), weekend);
+    // New Year's Eve and Midsummer: grown-ups stay up.
+    const natural = phase === 'sleep' && this.festivities.upLate(p) ? 'home' : phase;
     switch (role.day) {
       case 'errand':
         return 'work';
@@ -312,7 +323,9 @@ export class Simulation {
   /** Levels someone may pick things from during a phase: work or home first, then (for those who go out) any public venue. */
   areaOf(p: Person, phase: DayPhase): string[] {
     const work = p.works ? [p.works] : (this.companies.get(p.company ?? '')?.levels ?? []);
-    const base = phase === 'work' ? work : p.home ? this.floorsOf(p.home) : [];
+    const home = p.home ? this.floorsOf(p.home) : [];
+    // Bonfire Night and Halloween: out in town too.
+    const base = phase === 'work' ? work : this.festivities.outAndAbout(p, phase) ? [...home, this.traffic.level ?? this.world.spawn.level] : home;
     if (!roleOf(p).goesOut || phase === 'sleep' || base.length === 0) return base;
     return [...base, ...this.publicPlaces()];
   }
@@ -338,7 +351,7 @@ export class Simulation {
     // Tomorrow if today's wake-up has passed; weekends get a lie-in.
     const ahead = (h: number) => (h - now + 24) % 24;
     const weekday = this.tick + Math.round(ahead(p.routine.wake) * TICKS_PER_HOUR);
-    const hours = ahead(wakeHour(p.routine, isWeekend(weekday)));
+    const hours = ahead(wakeHour(p.routine, this.dayOff(weekday)));
     return this.tick + Math.max(1, Math.round(hours * TICKS_PER_HOUR));
   }
 
@@ -434,7 +447,9 @@ export class Simulation {
       this.ventures.hourly();
       this.careers.hourly();
       this.love.hourly();
+      this.festivities.hourly();
     }
+    this.festivities.step();
     this.mindVenues(true);
     this.construction.step();
     this.interactions.step();
@@ -661,6 +676,28 @@ export class Simulation {
     const npc = this.world.npcs.findIndex((d) => d.id === id);
     if (npc >= 0) this.world.npcs.splice(npc, 1);
     this.changed([]);
+  }
+
+  /** A day off for offices and schools: the weekend, or a bank holiday. */
+  dayOff(tick = this.tick): boolean {
+    const day = dayOf(tick);
+    if (day !== this.offDay.day) this.offDay = { day, off: isWeekend(tick) || bankHoliday(this.dateOf(tick)) };
+    return this.offDay.off;
+  }
+
+  /** The holiday it is today, if any (holidays.ts). */
+  holiday(tick = this.tick): Holiday | undefined {
+    return holidayOn(this.dateOf(tick));
+  }
+
+  /** 0 at night, 1 in full daylight: the sun as it is on the day, where the town is. */
+  daylight(tick = this.tick): number {
+    return daylightAt(this.calendar, this.firstDay, tick);
+  }
+
+  /** The date a tick falls on. */
+  dateOf(tick = this.tick): CalendarDate {
+    return dateOf(this.calendar, this.firstDay, tick);
   }
 
   /** Someone's definition in the world: a person on the team, or anyone else. */

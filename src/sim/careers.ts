@@ -8,7 +8,7 @@
 //                 hire a newcomer from out of town
 //
 // Venture teams are exempt: they answer to themselves.
-import { TICKS_PER_DAY, dayOf, hourOf, isWeekend } from './clock.ts';
+import { TICKS_PER_DAY, dayOf, hourOf } from './clock.ts';
 import type { Person } from './person.ts';
 import type { Simulation } from './sim.ts';
 import { newcomer } from './ventures.ts';
@@ -42,7 +42,7 @@ export class Careers {
   /** Called once an hour. */
   hourly(): void {
     const { sim } = this;
-    if (isWeekend(sim.tick)) return;
+    if (sim.dayOff()) return;
     const hour = Math.round(hourOf(sim.tick));
     if (hour === 9) this.jobHunt();
     if (hour === 17 && dayOf(sim.tick) % 7 === 4) this.review();

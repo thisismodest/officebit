@@ -7,7 +7,7 @@
 // into a venture; founders pitch colleagues to join. Enough work and the
 // founder quits, taking an empty lot in town for an office, which later grows.
 import { buildOffice, type Tier } from '../worlds/offices.ts';
-import { TICKS_PER_DAY, TICKS_PER_HOUR, hourOf, isWeekend } from './clock.ts';
+import { TICKS_PER_DAY, TICKS_PER_HOUR, hourOf } from './clock.ts';
 import type { Person } from './person.ts';
 import type { Item, Simulation } from './sim.ts';
 import type { PersonDef, Tile } from './world.ts';
@@ -122,7 +122,7 @@ export class Ventures {
       if (venture.stage === 'side') {
         if (sim.tick - venture.lastWork > FIZZLE_TICKS) this.shutDown(venture);
         // Resignations happen on a weekday evening.
-        else if (venture.progress >= LAUNCH_HOURS && !isWeekend(sim.tick) && hour >= 17 && hour < 23) this.launch(venture);
+        else if (venture.progress >= LAUNCH_HOURS && !sim.dayOff() && hour >= 17 && hour < 23) this.launch(venture);
       } else if (venture.stage === 'launched' && venture.progress >= GROW_HOURS) {
         this.grow(venture);
       }

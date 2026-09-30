@@ -995,6 +995,13 @@ button.icon-button {
   & .status:empty {
     display: none;
   }
+
+  /* Another day, under jumping ahead. */
+  & h3:not(:first-child) {
+    margin-top: var(--mdst-space-md);
+    padding-top: var(--mdst-space-sm);
+    border-top: var(--mdst-border-width) solid var(--mdst-color-subtle);
+  }
 }
 
 /* Save and share: a small menu opening to the right of the rail. */

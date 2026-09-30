@@ -1,6 +1,7 @@
 // Jumping ahead (docs/TIME.md#modes): tap the clock to visit a later
 // time. The town fast-forwards to it (the same story it would have lived
 // anyway: the sim is deterministic) and carries on from there in sandbox.
+// Or start a fresh town on another day altogether, to see it at Halloween.
 import { TICKS_PER_DAY, TICKS_PER_HOUR, dayOf, tickAt } from '../sim/clock.ts';
 import type { Simulation } from '../sim/sim.ts';
 import { popover, type Toggle } from './popover.ts';
@@ -11,6 +12,8 @@ export interface TimeJumpHost {
   time: Timekeeper;
   /** Start the jump to a later tick. */
   jump(to: number): void;
+  /** A fresh town in sandbox, from 06:00 on this day. */
+  startOn(day: Date): void;
 }
 
 export class TimeJump {
@@ -37,7 +40,13 @@ export class TimeJump {
         <button type="submit" class="mdst-button--sm mdst-button--inverted">Go</button>
       </form>
       <p class="mdst-p--sm mdst-p--muted">It fast-forwards to then and carries on from there, in Sandbox.</p>
-      <p class="status mdst-p--sm bad" role="status"></p>`;
+      <p class="status mdst-p--sm bad" role="status"></p>
+      <h3>Another day</h3>
+      <form class="another-day">
+        <label class="mdst-p--sm">Start the town on <input type="date" name="date"></label>
+        <button type="submit" class="mdst-button--sm">Start there</button>
+      </form>
+      <p class="mdst-p--sm mdst-p--muted">A fresh town, in Sandbox, from 06:00 that day: to see what it's like at Halloween, say.</p>`;
     button.after(this.root);
     this.toggle = popover(button, this.root, () => this.reset());
     this.root.addEventListener('click', (event) => {
@@ -47,6 +56,14 @@ export class TimeJump {
     this.root.querySelector('form')!.addEventListener('submit', (event) => {
       event.preventDefault();
       this.go(this.chosenTick());
+    });
+    this.root.querySelector('.another-day')!.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const [year, month, day] = this.input('date').value.split('-').map(Number);
+      if (!year || !month || !day) return;
+      // Midday, so it's that day however the clocks fall.
+      this.host.startOn(new Date(year, month - 1, day, 12));
+      this.toggle(false);
     });
   }
 
@@ -66,6 +83,9 @@ export class TimeJump {
     const today = dayOf(tick) - sim().firstDay + 1;
     day.min = String(today);
     day.value = String(today + 1);
+    // Another day: the town's own date to start with.
+    const date = this.host.sim().dateOf();
+    this.input('date').value = `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
     this.say('');
   }
 

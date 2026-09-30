@@ -3,7 +3,7 @@
 // opening hours, and drive off west. (Everything else on the roads is in
 // traffic.ts.) Position is a pure function of the clock, so it needs no state
 // and replays identically.
-import { hourOf, isWeekend } from './clock.ts';
+import { hourOf } from './clock.ts';
 import type { Item, Simulation } from './sim.ts';
 import { DRIVABLE } from './roads.ts';
 
@@ -24,7 +24,7 @@ type Waypoint = [x: number, y: number];
 /** Where a street vehicle is right now, or null if it isn't in town. */
 export function vehicleAt(sim: Simulation, item: Item): VehiclePose | null {
   const hours = item.type.hours;
-  if (!hours || !item.type.street || item.gone || isWeekend(sim.tick)) return null;
+  if (!hours || !item.type.street || item.gone || sim.dayOff()) return null;
 
   const convoy = sim.activeItems().filter((i) => i.type.street && i.level === item.level);
   const stagger = (convoy.indexOf(item) * STAGGER_MINUTES) / 60;

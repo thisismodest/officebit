@@ -92,7 +92,7 @@ export class Overview {
 
     const html = `
       <section><h3>Today</h3>
-        <p class="today mdst-p--sm">${stat(isWeekend(sim.tick) ? 'weekend' : 'workday', isWeekend(sim.tick) ? 'The weekend' : 'A working day')}${stat('awake', `${humans.length - sleeping} up and about`)}${stat('asleep', `${sleeping} asleep`)}</p>
+        <p class="today mdst-p--sm">${stat(sim.dayOff() ? 'weekend' : 'workday', sim.holiday()?.name ?? (isWeekend(sim.tick) ? 'The weekend' : 'A working day'))}${stat('awake', `${humans.length - sleeping} up and about`)}${stat('asleep', `${sleeping} asleep`)}</p>
         ${town ? place('town', town.name, `${count([town])} out and about`, town.id) : ''}</section>
       <section><h3>Workplaces</h3>${workplaces.join('')}</section>
       ${schools.length ? `<section><h3>Schools</h3>${schools.join('')}</section>` : ''}
