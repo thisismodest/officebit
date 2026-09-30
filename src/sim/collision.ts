@@ -29,6 +29,8 @@ export interface Body {
   readonly settled?: boolean;
   /** The tiles it stands on, if more than the one under its middle (a parked truck: its pitch). */
   readonly rect?: Rect;
+  /** How far it reaches from its middle (tiles), front and back: a bus or a food truck on the road, one. */
+  readonly reach?: number;
 }
 
 /** How a mover behaves around others. */
@@ -120,8 +122,10 @@ export function inTheWay(me: Body, facing: Heading, others: readonly Body[], man
   let passing = false;
   for (const q of others) {
     if (q.id === me.id || q.settled) continue;
-    const { ahead, aside } = relative(me, facing, q);
-    if (aside >= manners.width || ahead <= 0) continue;
+    const { ahead: middles, aside } = relative(me, facing, q);
+    // The gap between them: from my front to their back (a long vehicle reaches past its middle).
+    const ahead = middles - (me.reach ?? 0) - (q.reach ?? 0);
+    if (aside >= manners.width || middles <= 0) continue;
     if (q.moving && q.facing !== facing) {
       if (q.facing === OPPOSITE[facing]) {
         if (manners.oncoming === 'pass' && ahead < manners.slow * 2) passing = true;
@@ -130,7 +134,8 @@ export function inTheWay(me: Body, facing: Heading, others: readonly Body[], man
       if (manners.crossing === 'ignore') continue;
       // Each in the other's way: the earlier id goes first.
       const back = relative(q, q.facing, me);
-      if (back.ahead > 0 && back.ahead < manners.slow && back.aside < manners.width && me.id < q.id) continue;
+      const behind = back.ahead - (me.reach ?? 0) - (q.reach ?? 0);
+      if (back.ahead > 0 && behind < manners.slow && back.aside < manners.width && me.id < q.id) continue;
     }
     if (ahead < manners.stop) step = 0;
     else if (ahead < manners.slow) step = Math.min(step, 0.5);

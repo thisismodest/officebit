@@ -503,8 +503,13 @@ main {
 
   & .actions {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--mdst-space-sm);
+
+    & > * {
+      flex: 1;
+      text-align: center;
+      white-space: nowrap;
+    }
 
     & a {
       text-decoration: none;

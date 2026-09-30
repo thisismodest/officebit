@@ -266,7 +266,7 @@ export const OUTDOOR: Record<string, Painter> = {
   foodTruck: {
     up: 12,
     paint(ctx, w, h, o, _seed, def) {
-      const style = TRUCKS.find(([word]) => def.label?.includes(word))?.[1] ?? TRUCKS[0]![1];
+      const style = truckColours(def.label);
       // Body, serving hatch with awning facing the park, wheels.
       rect(ctx, 0, o - 10, w, h + 6, OUTLINE);
       rect(ctx, 1, o - 9, w - 2, h + 4, style.body);
@@ -491,6 +491,11 @@ function bay(line: string): Painter {
       rect(ctx, 0, o - 2, w, 1, line);
     },
   };
+}
+
+/** A food truck's colours, by what it sells (its label). */
+export function truckColours(label: string | undefined): { body: string; stripe: string } {
+  return TRUCKS.find(([word]) => label?.includes(word))?.[1] ?? TRUCKS[0]![1];
 }
 
 const TRUCKS: [string, { body: string; stripe: string }][] = [

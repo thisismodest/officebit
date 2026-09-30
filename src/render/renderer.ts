@@ -8,7 +8,8 @@ import { asideOffset } from '../sim/collision.ts';
 import { AHEAD } from '../sim/movement.ts';
 import type { Car } from '../sim/traffic.ts';
 import { Camera } from './camera.ts';
-import { busSprite, carOrigin, carSprite, paintCarLights } from './cars.ts';
+import { busSprite, carOrigin, carSprite, longOrigin, paintCarLights, vanSprite } from './cars.ts';
+import { truckColours } from './props/outdoor.ts';
 import { characterSprite, type Facing, type Look, type Pose, SPRITE_H } from './characters.ts';
 import { BACKGROUND, NIGHT, OUTLINE, PANTS, hashString } from './palette.ts';
 import { PET_H, petSprite, type PetPose } from './pets.ts';
@@ -172,6 +173,12 @@ export class Renderer {
       // Between steps, like the cars.
       const pose = moving && { ...moving, x: moving.px + (moving.x - moving.px) * alpha, y: moving.py + (moving.y - moving.py) * alpha };
       if (pose === null) return { sortY: 0, draw: () => {} };
+      // On the move it's a van in its lane, hatch shut; it opens up into the stall once it's parked.
+      if (pose?.moving) {
+        const [mx, my] = [pose.x + pose.middle[0], pose.y + pose.middle[1]];
+        const sprite = vanSprite(truckColours(prop.item.def.label), pose.facing);
+        return { sortY: my * TILE + TILE, draw: () => this.onMap(() => this.ctx.drawImage(sprite, ...longOrigin(sprite, mx, my, pose.facing))) };
+      }
       const sortY = pose ? (pose.y + prop.item.type.size[1]) * TILE : prop.sortY;
       return { sortY, draw: pose ? () => this.onMap(() => this.paintProp(prop, night, pose)) : () => this.paintProp(prop, night, pose) };
     });
@@ -198,9 +205,12 @@ export class Renderer {
     // After dark, cars on the move show their lights, bright against the dark.
     if (night > DUSK) {
       for (const { car, pos } of cars) {
-        if (car.parked || car.truck !== undefined) continue;
-        const sprite = car.bus ? busSprite(car.facing) : carSprite(car.look, car.facing);
-        this.onMap(() => paintCarLights(this.ctx, sprite, carOrigin(sprite, pos.x, pos.y), car.facing));
+        if (car.parked) continue;
+        const truck = car.truck === undefined ? undefined : sim.items[car.truck];
+        if (truck && sim.foodTrucks.parked(truck)) continue;
+        const sprite = truck ? vanSprite(truckColours(truck.def.label), car.facing) : car.bus ? busSprite(car.facing) : carSprite(car.look, car.facing);
+        const origin = truck || car.bus ? longOrigin(sprite, pos.x, pos.y, car.facing) : carOrigin(sprite, pos.x, pos.y);
+        this.onMap(() => paintCarLights(this.ctx, sprite, origin, car.facing));
       }
     }
 
@@ -455,7 +465,7 @@ export class Renderer {
   /** A car where it's got to; one on charge shows a blinking bolt. */
   private paintCar(car: Car, pos: { x: number; y: number }): void {
     const sprite = car.bus ? busSprite(car.facing) : carSprite(car.look, car.facing);
-    const [x, y] = carOrigin(sprite, pos.x, pos.y);
+    const [x, y] = car.bus ? longOrigin(sprite, pos.x, pos.y, car.facing) : carOrigin(sprite, pos.x, pos.y);
     this.ctx.drawImage(sprite, x, y);
     if (car.chargedAt && this.sim.tick < car.chargedAt && Math.floor(this.time / 600) % 2 === 0) {
       for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [0, 2]] as const) dot(this.ctx, x + sprite.width / 2 - 1 + dx, y - 4 + dy, '#9be38a');

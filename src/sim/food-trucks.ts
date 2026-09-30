@@ -28,6 +28,8 @@ export interface VehiclePose {
   py: number;
   facing: Heading;
   moving: boolean;
+  /** Where its middle is (the tile it drives by, in its lane), relative to its top-left. */
+  middle: [x: number, y: number];
 }
 
 interface Run {
@@ -49,7 +51,7 @@ export class FoodTrucks {
     if (!run) return null;
     const { car, stage } = run;
     const [ox, oy] = middle(item.def);
-    return { x: car.x - ox, y: car.y - oy, px: car.px - ox, py: car.py - oy, facing: stage === 'parked' ? 'up' : car.facing, moving: stage !== 'parked' };
+    return { x: car.x - ox, y: car.y - oy, px: car.px - ox, py: car.py - oy, facing: stage === 'parked' ? 'up' : car.facing, moving: stage !== 'parked', middle: [ox, oy] };
   }
 
   /** Parked on its pitch, ready to serve. */

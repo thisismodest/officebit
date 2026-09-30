@@ -7,7 +7,7 @@ import { between, hourOf } from './clock.ts';
 import type { Grid } from './grid.ts';
 import { inTheWay, type Body } from './collision.ts';
 import { footprint } from './geometry.ts';
-import { AHEAD, MOVERS, OPPOSITE, advance, speedOn, type Heading } from './movement.ts';
+import { AHEAD, MOVERS, OPPOSITE, advance, speedOn, type Heading, type Mover } from './movement.ts';
 import { RoadMap, type Driver } from './roads.ts';
 import { Rng } from './rng.ts';
 import type { Simulation } from './sim.ts';
@@ -167,7 +167,7 @@ export class Traffic {
         [car.px, car.py] = [car.x, car.y];
         continue;
       }
-      const done = advance(car, car.path, speedOn(car.bus ? MOVERS.bus : car.truck === undefined ? MOVERS.car : MOVERS.truck, roads.surfaceAt(car.x, car.y)));
+      const done = advance(car, car.path, speedOn(moverOf(car), roads.surfaceAt(car.x, car.y)));
       if (done && car.through) this.remove(car);
     }
   }
@@ -179,6 +179,7 @@ export class Traffic {
       const { sim } = this;
       body = {
         id: car.id,
+        reach: moverOf(car).reach ?? 0,
         get x() {
           return car.x;
         },
@@ -226,7 +227,8 @@ export class Traffic {
     const [dx, dy] = AHEAD[facing];
     if (this.crossingAhead(car, dx, dy)) return true;
     const manners = MOVERS.car.manners;
-    const others = this.sim.space.near(this.level!, 'wheels', car.x, car.y, manners.slow + 1);
+    // Far enough to see past a long vehicle's middle to its back.
+    const others = this.sim.space.near(this.level!, 'wheels', car.x, car.y, manners.slow + 3);
     return inTheWay(this.bodyOf(car), facing, others, manners).step === 0;
   }
 
@@ -266,4 +268,9 @@ export class Traffic {
     }
     return this.map;
   }
+}
+
+/** What kind of mover a vehicle is: a car, a food truck or the bus (movement.ts). */
+function moverOf(car: Car): Mover {
+  return car.bus ? MOVERS.bus : car.truck === undefined ? MOVERS.car : MOVERS.truck;
 }

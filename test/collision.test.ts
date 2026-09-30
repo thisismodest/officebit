@@ -49,6 +49,9 @@ test('driving manners: keep the gap to the car in front, wait behind one stopped
   const me = body('m', 0, 0, 'left');
   assert.equal(inTheWay(me, 'left', [body('q', -1.2, 0, 'left')], driving).step, 0, 'too close');
   assert.equal(inTheWay(me, 'left', [body('q', -2, 0, 'left')], driving).step, 1, 'far enough');
+  // A bus or a van reaches a tile past its middle: the gap is to its back.
+  assert.equal(inTheWay(me, 'left', [body('bus', -2, 0, 'left', true, { reach: 1 })], driving).step, 0, 'right up behind a bus');
+  assert.equal(inTheWay(body('van', 0, 0, 'left', true, { reach: 1 }), 'left', [body('q', -2, 0, 'left')], driving).step, 0, 'a van keeps its front clear too');
   assert.equal(inTheWay(me, 'left', [body('q', -1, 0, 'right', false)], driving).step, 0, 'stopped in the lane, whichever way it faces');
   assert.equal(inTheWay(me, 'left', [body('q', -1, 0, 'right')], driving).step, 1, 'oncoming, in its own lane');
   assert.equal(inTheWay(me, 'left', [body('q', -1, 0, 'up')], driving).step, 1, 'crossing at a junction');

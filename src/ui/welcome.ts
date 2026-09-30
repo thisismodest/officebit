@@ -11,15 +11,15 @@ export class Welcome {
     this.root = document.createElement('div');
     this.root.className = 'welcome mdst-card';
     this.root.setAttribute('role', 'dialog');
-    this.root.setAttribute('aria-label', 'Welcome to officebit');
+    this.root.setAttribute('aria-label', 'Welcome to officebit.town');
     this.root.hidden = true;
     this.root.innerHTML = `
       <div class="mdst-card-body">
-        <h2>Welcome to officebit</h2>
-        <p>A tiny 8-bit town that gets on with its day. Everyone here has a life of their own, and it carries on while you're away.</p>
+        <h2>Welcome to officebit.town</h2>
+        <p>An 8-bit office town that gets on with its day. Everyone here has a life of their own, which carries on whilst you're away.</p>
         <p class="actions">
-          <button type="button" class="mdst-button--inverted" data-close>Look around</button>
-          <a class="mdst-button" href="./about/">About officebit</a>
+          <button type="button" class="mdst-button--sm mdst-button--inverted" data-close>Look around</button>
+          <a class="mdst-button mdst-button--sm" href="./about/">What is this?</a>
         </p>
         <p class="mdst-p--sm"><a href="./changelog/">What's new</a></p>
       </div>`;
