@@ -1,9 +1,14 @@
 // Dev server: serves public/, and type-strips src/*.ts on request, so there is
-// no watch step — edit, refresh.
+// no watch step — edit, refresh. The spotlights are fetched once into .cache/spotlights/.
+import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
+import { fetchSpotlights } from './spotlights.ts';
 import { MIME, SITE_PAGES, publishedSite, toBrowserJs, VENDOR, withSite } from './transform.ts';
+
+const SPOTLIGHTS_DIR = join('.cache', 'spotlights');
+if (!existsSync(join(SPOTLIGHTS_DIR, 'index.json'))) void fetchSpotlights(SPOTLIGHTS_DIR);
 
 const PORT = Number(process.env.PORT ?? 6060);
 /** Served here, but the code's where it'll be published. */
@@ -19,6 +24,8 @@ async function resolve(url: string): Promise<{ body: string | Buffer; type: stri
     const source = await readFile(join('.', path.replace(/\.js$/, '.ts')), 'utf8');
     return { body: toBrowserJs(source), type: MIME['.js']! };
   }
+
+  if (path.startsWith('/spotlights/')) return { body: await readFile(join(SPOTLIGHTS_DIR, path.slice('/spotlights/'.length))), type: MIME[extname(path)] ?? 'application/octet-stream' };
 
   for (const [prefix, dir] of Object.entries(VENDOR)) {
     if (path.startsWith(prefix)) {

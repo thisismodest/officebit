@@ -2,6 +2,7 @@
 // type-stripped ES modules plus the public/ folder and vendored CSS.
 import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, extname, join } from 'node:path';
+import { fetchSpotlights } from './spotlights.ts';
 import { SITE_PAGES, publishedSite, toBrowserJs, VENDOR, withSite } from './transform.ts';
 
 const OUT = 'dist';
@@ -34,7 +35,10 @@ for (const [url, dir] of Object.entries(VENDOR)) {
   await cp(dir, join(OUT, url), { recursive: true });
 }
 
+// The spotlights, fetched now so the town shows them offline (any that can't be are left to the house spotlight).
+const spotlights = await fetchSpotlights(join(OUT, 'spotlights'));
+
 // Stop GitHub Pages running the output through Jekyll.
 await writeFile(join(OUT, '.nojekyll'), '');
 
-console.log(`Built ${modules} modules into ${OUT}/, for ${where.url}`);
+console.log(`Built ${modules} modules and ${Object.keys(spotlights).length} spotlights into ${OUT}/, for ${where.url}`);

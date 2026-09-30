@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "An 8-bit office you build, share and let run. People are driven by personalities or any data feed.",
   "license": "MIT",
-  "homepage": "https://thisismodest.com/officebit/",
+  "homepage": "https://officebit.town/",
   "type": "module",
   "private": true,
   "engines": {
@@ -15,7 +15,8 @@
     "test": "node --test",
     "typecheck": "tsc",
     "probe": "node scripts/probe.ts",
-    "bench": "node scripts/bench.ts"
+    "bench": "node scripts/bench.ts",
+    "spotlights": "node scripts/spotlights.ts"
   },
   "dependencies": {
     "mdst-ui": "^1.1.0"

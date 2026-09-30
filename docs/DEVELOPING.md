@@ -68,16 +68,21 @@ unreachable beds); the starter world must always validate clean.
 
 Pushing to `main` publishes the site to GitHub Pages
 (`.github/workflows/pages.yml`): it typechecks, runs the tests, builds
-`dist/` and deploys it. Paths are all relative, so it works under
-`/officebit/`. In the repo's settings, Pages' source must be **GitHub
-Actions**. The workflow can also be run by hand from the Actions tab.
+`dist/` and deploys it. Paths are all relative, so it works at a domain's
+root or under a path. In the repo's settings, Pages' source must be **GitHub
+Actions**, and the custom domain is `officebit.town` (DNS at Porkbun: the four
+GitHub `A` and `AAAA` records, `www` a `CNAME` to `thisismodest.github.io`, and the
+Pages verification `TXT`), with HTTPS enforced. The workflow can also be run by hand from the Actions tab.
 
-**Where it lives:** `homepage` in `package.json` (`https://thisismodest.com/officebit/`).
+**Where it lives:** `homepage` in `package.json` (`https://officebit.town/`).
 Pages (`.html`, `.xml`, `.webmanifest`) say `%SITE_URL%` and `%REPO_URL%`
 wherever they need an absolute address (canonical links, `og:image`, the
 sitemap, the JSON-LD), filled in as they're built (`SITE_URL` overrides the
 homepage for a test build) or served (localhost). Move the site, change the
 homepage.
+
+**Spotlights:** the build fetches the spotlights' pages and pictures into `dist/spotlights/`
+([FURNITURE](FURNITURE.md#spotlights)); one that can't be fetched gets the house spotlight.
 
 **What's new:** `public/changelog/index.html` lists what's changed, a dated
 line each in plain words ("Friends make plans: frisbee and picnics on the
@@ -86,9 +91,8 @@ Green"), newest first. Add a line when something people will notice ships.
 **Search and sharing:** every page has a description, a canonical link,
 Open Graph and Twitter card tags, and `og-image.png` (1200×630, a screenshot
 of the town); the landing page has JSON-LD (`WebSite`, `WebApplication`,
-`SoftwareSourceCode`); `sitemap.xml` lists them all. There's no `robots.txt`
-here, as search engines only read one at the root of the domain: list the
-sitemap in `thisismodest.com`'s own. `test/seo.test.ts` checks all this.
+`SoftwareSourceCode`); `sitemap.xml` lists them all, and `robots.txt` points to
+it. `test/seo.test.ts` checks all this.
 
 ## The app
 

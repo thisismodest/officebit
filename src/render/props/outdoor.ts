@@ -355,6 +355,62 @@ export const OUTDOOR: Record<string, Painter> = {
     },
   },
 
+  // A billboard on two posts, its spotlight in the panel (render/spotlights.ts), with lamps on top that light it at night.
+  billboard: {
+    up: 50,
+    paint(ctx, w, h, o) {
+      rect(ctx, 14, o + h - 3, 52, 3, 'rgba(20,14,30,0.2)');
+      for (const x of [18, w - 21]) {
+        rect(ctx, x, o - 12, 3, h + 10, OUTLINE);
+        rect(ctx, x + 1, o - 12, 1, h + 9, METAL.light);
+      }
+      rect(ctx, 2, o - 48, w - 4, 38, OUTLINE);
+      rect(ctx, 3, o - 47, w - 6, 36, '#e6eaee');
+      rect(ctx, 4, o - 46, w - 8, 34, '#2b2838');
+      // The walkway along the bottom, and the lamps' arms over the top.
+      rect(ctx, 1, o - 11, w - 2, 2, METAL.line);
+      for (const x of [16, w - 22]) {
+        rect(ctx, x + 2, o - 50, 1, 3, OUTLINE);
+        rect(ctx, x, o - 51, 6, 2, OUTLINE);
+      }
+    },
+    lit(ctx, w, _h, o) {
+      for (const x of [16, w - 22]) rect(ctx, x + 1, o - 50, 4, 1, WINDOW_LIT);
+    },
+    poster: (w, _h, o) => [4, o - 46, w - 8, 34],
+  },
+
+  // A bus shelter: a roof on posts, glass behind a bench, the stop's roundel, and a poster case at the end.
+  busStop: {
+    up: 34,
+    paint(ctx, w, h, o) {
+      rect(ctx, 0, o + h - 3, w, 3, 'rgba(20,14,30,0.18)');
+      // Glass along the back.
+      rect(ctx, 2, o - 21, w - 16, 17, 'rgba(170,210,230,0.45)');
+      rect(ctx, 2, o - 13, w - 16, 1, 'rgba(255,255,255,0.35)');
+      // Posts and roof.
+      for (const x of [1, w - 15]) rect(ctx, x, o - 22, 2, h + 20, OUTLINE);
+      rect(ctx, 0, o - 26, w, 4, OUTLINE);
+      rect(ctx, 1, o - 25, w - 2, 2, '#5a6b7a');
+      // The bench.
+      rect(ctx, 4, o + 1, w - 20, 3, WOOD.line);
+      rect(ctx, 5, o + 1, w - 22, 1, WOOD.top);
+      rect(ctx, 6, o + 4, 2, 5, METAL.line);
+      rect(ctx, w - 20, o + 4, 2, 5, METAL.line);
+      // The poster case at the end.
+      rect(ctx, w - 14, o - 22, 14, 28, OUTLINE);
+      rect(ctx, w - 13, o - 21, 12, 26, '#2b2838');
+      // The stop's roundel on a pole.
+      rect(ctx, 3, o - 33, 1, 8, OUTLINE);
+      pill(ctx, 0, o - 34, 8, 7, '#d8413a', OUTLINE);
+      rect(ctx, 1, o - 31, 6, 1, '#ffffff');
+    },
+    lit(ctx, w, _h, o) {
+      rect(ctx, 3, o - 22, w - 18, 1, WINDOW_LIT);
+    },
+    poster: (w, _h, o) => [w - 13, o - 21, 12, 26],
+  },
+
   lamppost: {
     up: 30,
     paint(ctx, w, h, o) {

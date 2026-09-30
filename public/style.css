@@ -503,6 +503,33 @@ main {
     gap: var(--mdst-space-xs);
   }
 
+  /* A spotlight: its picture big and blocky, what it says, and the link. */
+  &[data-kind="spotlight"] {
+    max-width: 17rem;
+
+    & .actions {
+      align-items: center;
+    }
+
+    & .spotlight-art {
+      display: block;
+      width: 100%;
+      height: auto;
+      image-rendering: pixelated;
+      border: var(--mdst-border-width) solid var(--mdst-color-border);
+    }
+
+    & .actions p {
+      flex-basis: 100%;
+      margin: 0;
+    }
+
+    & .actions a {
+      margin-left: auto;
+      text-decoration: none;
+    }
+  }
+
   /* A little tail pointing at where you clicked. */
   &::after {
     content: "";

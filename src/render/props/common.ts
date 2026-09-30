@@ -21,6 +21,8 @@ export interface Painter {
   paint(ctx: Ctx, w: number, h: number, o: number, seed: number, def: FurnitureDef): void;
   /** A screen that lights up while in use, in canvas pixels. */
   screen?: (w: number, h: number, o: number) => Rect;
+  /** Where the spotlight goes on a billboard or poster (render/spotlights.ts), in canvas pixels: drawn live, as the spotlights take turns. */
+  poster?: (w: number, h: number, o: number) => Rect;
   /** Paints lit windows on top of the day image, for nights with someone home. */
   lit?: (ctx: Ctx, w: number, h: number, o: number, seed: number, def: FurnitureDef) => void;
 }

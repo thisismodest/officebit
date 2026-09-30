@@ -51,7 +51,6 @@ test('the landing page describes itself for search engines, in JSON-LD', () => {
   assert.equal(data['@graph'][2].codeRepository, SITE.repo);
 });
 
-// (No robots.txt: search engines only read one at the root of the domain, so the sitemap is listed in the domain's own.)
 test('the sitemap lists every page, and the manifest its icons', () => {
   const sitemap = page('sitemap.xml');
   assert.match(sitemap, /<loc>https:\/\/example\.github\.io\/officebit\/<\/loc>/);
@@ -59,4 +58,10 @@ test('the sitemap lists every page, and the manifest its icons', () => {
   assert.match(sitemap, /<loc>https:\/\/example\.github\.io\/officebit\/changelog\/<\/loc>/);
   assert.ok(JSON.parse(page('site.webmanifest')).icons.length >= 3);
   assert.ok(SITE_PAGES.has('.webmanifest'));
+});
+
+test('robots.txt lets search engines in and points them to the sitemap', () => {
+  const robots = page('robots.txt');
+  assert.match(robots, /^User-agent: \*$/m);
+  assert.match(robots, new RegExp(`^Sitemap: ${SITE.url}sitemap.xml$`, 'm'));
 });

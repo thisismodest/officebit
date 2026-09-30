@@ -50,6 +50,8 @@ export interface FurnitureType {
   worksite?: boolean;
   /** Seats a group can get together at (a diner booth): a place for a meet-up (docs/PLANS.md). */
   gather?: boolean;
+  /** Shows a spotlight (a billboard, a bus-stop poster): click it for the spotlight's card (render/spotlights.ts). */
+  spotlight?: boolean;
   /** Somewhere to open a laptop and work (a booth, a park bench): a place to work on a project together. */
   worktop?: boolean;
   /** Whether it's in the way of people on foot and of vehicles, where that isn't the usual (movement.ts `blocks`). */
@@ -299,6 +301,9 @@ export const CATALOG: Record<string, FurnitureType> = {
   // Laid out on the grass for a picnic, and packed up after (docs/PLANS.md).
   picnicBlanket: { name: 'Picnic blanket', size: [2, 2], solid: false, spots: around(2, 2), seat: true, offers: { hunger: 0.35, social: 0.3, fun: 0.25 }, duration: [80, 140], hangout: true },
   lamppost: decor('Lamppost', [1, 1]),
+  // Spotlights round town (docs/FURNITURE.md#spotlights): a billboard up on posts, and a bus shelter with a bench and a poster.
+  billboard: { ...decor('Billboard', [5, 1]), spotlight: true },
+  busStop: { ...decor('Bus stop', [3, 1], false), spots: [[0, 0], [1, 0]], seat: true, spotlight: true, offers: { energy: 0.05 }, duration: [40, 90] },
   evCharger: { ...decor('Charger', [1, 1]), hardStanding: true },
   chargingCanopy: { ...decor('Canopy', [9, 1], false), hardStanding: true },
   parkingBay: { ...decor('Parking bay', [1, 1], false), parking: 'park', hardStanding: true },

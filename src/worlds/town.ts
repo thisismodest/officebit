@@ -210,7 +210,11 @@ export function buildTown(residents: Resident[]): LevelBuilder {
     .named('supermarket', ...SHOP, 'Corner Shop')
     .room('shop-path', 'Path', [SHOP_DOOR[0], SHOP_DOOR[1], 1, 1], 'path')
     .row('lamppost', [22, 34, 46, 70, 86, 98, 112, 124, 136], 48)
-    .row('lamppost', [44, 60, 74, 88, 102, 116, 130], 26);
+    .row('lamppost', [44, 60, 74, 88, 102, 116, 130], 26)
+    // Spotlights (docs/FURNITURE.md#spotlights): billboards along the highway, and a bus stop on Main Street.
+    .put('billboard', 40, 12)
+    .put('billboard', 102, 12)
+    .put('busStop', 65, 26);
   for (const [x, y] of LOTS) b.put('lot', x, y);
   chargingStation(b, CHARGING);
 

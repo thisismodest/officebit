@@ -46,12 +46,17 @@ test('ventures: doing well, they hire; out of money, they close, their people lo
   assert.ok(sim.levels.get(site.level)!.furniture.some((f) => f.label === 'To let'), 'to let');
   assert.deepEqual(validate(sim.world), []);
 
-  // After a break, the founder tries again; the empty office goes to the next venture to launch, whoever's it is.
+  // The founder takes a break from ideas of their own (joining someone else's is fine).
   founder.ideas = 10;
   run(sim, 7 * TICKS_PER_DAY);
-  assert.equal(founder.venture, undefined, 'looking for work first');
-  assert.ok(runUntil(sim, 14, () => !!founder.venture), 'the founder tried again');
-  sim.ventures.of(founder)!.progress = 60;
+  assert.ok(sim.ventures.of(founder)?.founder !== founder.id, 'no new idea of their own yet');
+  // The next venture to launch takes on the empty office: whoever's.
+  // Someone else catches the bug: ambitious all of a sudden, with an idea ready to go.
+  const maker = sim.people.find((p) => !p.npc && p.home && !p.venture && p !== founder && p.company && !sim.ventures.isVenture(p.company))!;
+  maker.traits.ambition = 0.9;
+  maker.ideas = 10;
+  assert.ok(runUntil(sim, 7, () => sim.ventures.of(maker)?.founder === maker.id), `${maker.name} started something`);
+  sim.ventures.of(maker)!.progress = 60;
   const tenant = () => sim.ventures.list.find((v) => sim.companies.get(v.id)?.levels.includes(office));
   assert.ok(runUntil(sim, 7, () => !!tenant()), 'someone moved into the empty office');
   const next = tenant()!;

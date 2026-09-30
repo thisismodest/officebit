@@ -18,11 +18,12 @@ import { vehicleAt } from '../sim/food-trucks.ts';
 import { paintStaticLayer } from './tiles.ts';
 import { paintSeasonal } from './seasonal.ts';
 import { paintGames, paintLaptop } from './play.ts';
+import { Spotlights, type Spotlight } from './spotlights.ts';
 
 /** Where feet sit within a person's tile. */
 const FEET = 14;
 /** Street lights that come on at dusk whoever's about. */
-const ALWAYS_LIT = new Set(['lamppost', 'chargingCanopy', 'christmasTree', 'homeTree']);
+const ALWAYS_LIT = new Set(['lamppost', 'chargingCanopy', 'christmasTree', 'homeTree', 'billboard', 'busStop']);
 /** Headlights: how far ahead of a car (tiles) they light the road, and how wide (pixels). */
 const HEADLIGHT_REACH = 1.5;
 const HEADLIGHT_RADIUS = 26;
@@ -70,6 +71,9 @@ export class Renderer {
   private dpr = 1;
   private time = 0;
   private unsubscribe = () => {};
+
+  /** The spotlights on the billboards and posters (render/spotlights.ts). */
+  readonly spotlights = new Spotlights(new URL('../', location.href));
 
   constructor(host: HTMLElement, sim: Simulation, level: string) {
     this.canvas = document.createElement('canvas');
@@ -297,6 +301,11 @@ export class Renderer {
     }
     const stage = prop.stages?.[Math.min(prop.stages.length - 1, Math.floor((prop.item.def.progress ?? 0) * prop.stages.length))];
     ctx.drawImage(stage ?? (prop.lit && night > DUSK && this.lightsOn(prop.item) ? prop.lit : prop.img), prop.x, prop.y);
+    if (prop.poster) {
+      const [x, y, w, h] = prop.poster;
+      const art = this.spotlights.pixels(this.spotlightOn(prop.item), w, h);
+      if (art) ctx.drawImage(art, x, y);
+    }
     if (prop.screen && this.screenOn(prop.item)) {
       const [x, y, w, h] = prop.screen;
       // TVs flicker; monitors just brighten.
@@ -307,6 +316,12 @@ export class Renderer {
       ctx.fillRect(x, y, w, h);
       ctx.globalAlpha = 1;
     }
+  }
+
+  /** The spotlight a billboard or poster shows right now: the panels take turns, each a step behind the one before (in the order they were put up). */
+  spotlightOn(item: Item): Spotlight {
+    const panels = this.sim.activeItems().filter((i) => i.type.spotlight);
+    return this.spotlights.at(Math.max(0, panels.indexOf(item)), this.sim.tick);
   }
 
   /** Street lights (lampposts, the charging canopy) at night; buildings when someone inside is awake. */
@@ -354,6 +369,10 @@ export class Renderer {
       if (prop.screen && this.screenOn(prop.item)) {
         const [x, y, w, h] = prop.screen;
         lights.push({ x: x + w / 2, y: y + h / 2, r: prop.item.def.t === 'tv' ? 40 : 18 });
+      }
+      if (prop.poster && night > DUSK) {
+        const [x, y, w, h] = prop.poster;
+        lights.push({ x: x + w / 2, y: y + h / 2, r: Math.max(w, h) * 0.8 });
       }
       if (prop.lit && night > DUSK && this.lightsOn(prop.item)) {
         const bulb = prop.item.def.t === 'lamppost';

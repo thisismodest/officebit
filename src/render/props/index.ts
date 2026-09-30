@@ -26,6 +26,8 @@ export interface Prop {
   sortY: number;
   /** Screen that glows while in use, in world pixels. */
   screen?: Rect;
+  /** Where its spotlight goes, in world pixels. */
+  poster?: Rect;
 }
 
 export function buildProps(items: readonly Item[]): Prop[] {
@@ -44,6 +46,7 @@ export function buildProps(items: readonly Item[]): Prop[] {
     const x = item.def.p[0] * TILE;
     const y = item.def.p[1] * TILE - painter.up;
     const screen = painter.screen?.(w, h, painter.up);
+    const poster = painter.poster?.(w, h, painter.up);
     return [
       {
         item,
@@ -56,6 +59,7 @@ export function buildProps(items: readonly Item[]): Prop[] {
         y,
         sortY: painter.flat ? -Infinity : (item.def.p[1] + item.type.size[1]) * TILE + (painter.sortOffset ?? 0),
         screen: screen && [x + screen[0], y + screen[1], screen[2], screen[3]],
+        poster: poster && [x + poster[0], y + poster[1], poster[2], poster[3]],
       },
     ];
   });

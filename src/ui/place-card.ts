@@ -1,9 +1,11 @@
 // The card that pops up over a clicked building (its name, who's in, a Visit
-// button per floor) or a door or stairs (a button to go through). Pinned to
-// where you clicked as the camera moves, and kept inside the stage.
+// button per floor), a door or stairs (a button to go through), or a spotlight (what
+// it is, and a link to it). Pinned to where you clicked as the camera moves,
+// and kept inside the stage.
 import { occupants, type Exit, type Interior } from '../sim/places.ts';
 import type { Simulation } from '../sim/sim.ts';
 import type { Tile } from '../sim/world.ts';
+import type { Spotlight } from '../render/spotlights.ts';
 import type { Camera } from '../render/camera.ts';
 
 /** Gap between the card's tail and the clicked point, CSS px. */
@@ -60,6 +62,31 @@ export class PlaceCard {
     this.show(interior.name, at, interior.levels.map((level, i) => button(many ? level.name : 'Visit', level.id, i === 0)));
   }
 
+  /** Open for a spotlight: its picture, what it says, and a link to it (in a new tab). */
+  openSpotlight(spot: Spotlight, art: HTMLCanvasElement | null, at: { x: number; y: number }): void {
+    this.interior = null;
+    const picture = document.createElement('canvas');
+    picture.className = 'spotlight-art';
+    if (art) {
+      [picture.width, picture.height] = [art.width, art.height];
+      picture.getContext('2d')!.drawImage(art, 0, 0);
+    }
+    const about = document.createElement('p');
+    about.className = 'mdst-p--sm';
+    about.textContent = spot.description;
+    const link = document.createElement('a');
+    link.className = 'mdst-button mdst-button--sm mdst-button--inverted';
+    link.href = spot.url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = `Visit ${spot.host} ↗`;
+    const badge = document.createElement('span');
+    badge.className = 'mdst-badge mdst-badge--muted';
+    badge.textContent = spot.house ? 'officebit' : 'Spotlight';
+    this.show(spot.name, at, [...(art ? [picture] : []), about, badge, link]);
+    this.root.dataset.kind = 'spotlight';
+  }
+
   /** Open for a door or stairs: one button, straight through to the other side. */
   openExit(exit: Exit, at: { x: number; y: number }, sim: Simulation): void {
     this.interior = null;
@@ -70,8 +97,9 @@ export class PlaceCard {
     this.show(exit.kind === 'stairs' ? 'Stairs' : 'Door', at, [go]);
   }
 
-  private show(title: string, at: { x: number; y: number }, buttons: HTMLButtonElement[]): void {
+  private show(title: string, at: { x: number; y: number }, buttons: HTMLElement[]): void {
     this.anchor = at;
+    delete this.root.dataset.kind;
     this.title.textContent = title;
     this.root.setAttribute('aria-label', title);
     this.actions.replaceChildren(...buttons);

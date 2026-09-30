@@ -35,6 +35,7 @@ tile. Types describe **what they do**; art is separate.
 | `hardStanding` | Outdoors, goes on a forecourt or paving, not grass (chargers, bays, the canopy) |
 | `gather` | Seats where friends meet up to catch up (a diner booth: [PLANS](PLANS.md)) |
 | `worktop` | Seats to work on a laptop at, together (a booth, a park bench) |
+| `spotlight` | Shows a spotlight (a `billboard`, a `busStop`'s poster): click it for the spotlight's card ([Spotlights](#spotlights)) |
 | `parking` | A bay for visitors' cars: `'park'` or `'charge'` |
 
 People pick furniture by how much it would help their most urgent need, minus
@@ -54,6 +55,29 @@ clear way on; the map editor doesn't move trucks anyway, as the town brings them
 pavement, and at closing pulls back out and drives off. A truck drives by its
 middle, so it keeps to the lane. The pick of roads is the same every time for a
 given day, and rolls none of the story's dice.
+
+## Spotlights
+
+Billboards (`billboard`, up on posts by the highway) and bus stops (`busStop`,
+a shelter with a bench and a poster case) show spotlights. A spotlight is just an address in
+`SPOTLIGHTS` at the top of `src/render/spotlights.ts`. The rest comes from the page's Open Graph
+tags: its title (the card's heading is the name before any tagline), its line, and its
+`og:image`.
+
+- **Fetched with the site.** `scripts/spotlights.ts` reads each page and saves its
+  picture and `index.json` into `spotlights/`. The build runs it into `dist/spotlights/`, the
+  dev server into `.cache/spotlights/` (`npm run spotlights` to refresh). The town never asks
+  another site for anything, so it works offline.
+- **Pixelated to fit.** Each panel draws its spotlight shrunk to the panel and down to a
+  few colours. A banner is cropped to fill the panel; a logo (squarer than 1.3:1)
+  is framed on its own background colour.
+- **Taking turns.** A new one each game hour, each panel a step ahead of the one before
+  (in the order they were put up), so no two show the same one.
+- **The house spotlight.** A spotlight that couldn't be fetched shows officebit's own (its share
+  image, linking to the landing page) in its place.
+- **At night** the panels are lit. Nobody in town pays them any mind: they're just to look at.
+
+A painter's `poster` rectangle says where the spotlight goes; the renderer draws it live, as it does screens.
 
 ## Parking
 

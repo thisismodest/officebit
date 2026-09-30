@@ -95,6 +95,12 @@ Friday; doing well, they hire into free desks; struggling, the less committed le
 they close, their people look for work (old jobs back, the shop, anywhere) and the office is let to
 the next venture. Next, when wanted: ventures that outgrow eight desks (a floor added by a crew).
 
+### Spotlights ✓
+Done (see `docs/FURNITURE.md#spotlights`): billboards along the highway and a bus-stop poster, taking
+turns hourly with projects pixelated from their og:image (fetched with the site, so offline too; the
+house spotlight when one can't be); click one for its card and link. Named "spotlights" so ad blockers
+leave the town alone. Next, when wanted: buses to the stop (*open:* who rides, the route, the timetable).
+
 ### Also on the list
 - Co-founders and couples visiting each other's homes.
 - Feed transports (WebSocket, SSE, polled JSON) and bridges (Slack, agents).

@@ -48,6 +48,7 @@ npm run typecheck    # tsc; strict, erasableSyntaxOnly, noUnused*
 npx @biomejs/biome lint .   # lint (biome.jsonc; not an npm script, not a dependency)
 npm run probe -- 48  # headless: everyone's last 48 h as a timeline, plus venture events
 npm run bench -- 200 # how fast: a town of 200 people, timed (docs/DEVELOPING.md#speed)
+npm run spotlights          # fetch the spotlights' titles and pictures into .cache/spotlights/ (the build and dev server do it too)
 npm run build        # dist/ for GitHub Pages
 ```
 
@@ -94,7 +95,8 @@ src/worlds/   starter.ts (people, 2-floor office, venues, homes), town.ts (the 1
               rooms.ts (walled rooms and doorways)
 src/render/   renderer.ts (one level through a camera; y-sorted props+people; night lighting),
               camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, cars.ts,
-              palette.ts, pixels.ts, seasonal.ts (fairy lights, pumpkins, fireworks), play.ts (frisbees, laptops), props/* (one painter per catalog type)
+              palette.ts, pixels.ts, seasonal.ts (fairy lights, pumpkins, fireworks), play.ts (frisbees, laptops),
+              spotlights.ts (the spotlights on billboards and posters: which, when, pixelated), props/* (one painter per catalog type)
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
               editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (save, share links, files),
               timekeeper.ts (live/sandbox), time-jump.ts (jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
@@ -104,7 +106,7 @@ src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (
 src/feeds/    protocol.ts (validated data-only messages), local.ts (console + postMessage)
 public/       index.html + landing.css (the landing page), changelog/ (what's new, for players: add a line when something ships), town/index.html + style.css (the town), sw.js (the app's service worker), og-image.png, icons,
               site.webmanifest, sitemap.xml (addresses filled in from package.json `homepage`: docs/DEVELOPING.md#deploying)
-scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports, site address), probe.ts, bench.ts
+scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports, site address), probe.ts, bench.ts, spotlights.ts (fetches the spotlights with the site)
 test/         node:test suites, one per area
 ```
 
@@ -172,7 +174,8 @@ Working and verified in the browser:
   frisbee and picnics on the Green, catching up at the diner, working on laptops together.
 - **Places:** the two-floor office, the 24/7 Night Owl Diner and the Corner Shop,
   staffed in shifts (they close when nobody's minding them; customers queue),
-  food trucks on weekday lunchtimes, arcades.
+  food trucks on weekday lunchtimes, arcades, billboards by the highway and a bus stop showing spotlights
+  (friends' projects, pixelated from their og:image, fetched with the site, each linking out from its card).
 - **Movement:** one engine for everything that moves (movement.ts) and one collision layer (collision.ts):
   people give way, step aside and never get stuck; cars and food trucks drive the roads alike, trucks by their size.
 - **Time:** a real calendar: daylight follows the sun for the date where you are; UK bank holidays;
@@ -184,7 +187,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), a landing page, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-150 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+155 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);
