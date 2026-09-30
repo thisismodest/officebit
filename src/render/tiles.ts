@@ -149,15 +149,12 @@ function paintFloor(ctx: Ctx, tx: number, ty: number, style: FloorStyle, room: R
       if (!room) break;
       const [, ry, , rh] = room.rect;
       const middle = ry + rh / 2;
-      // Solid edge lines, a double line down the middle, and dashes between the lanes.
-      if (ty === ry) rect(ctx, x0, y0 + 1, TILE, 1, '#ecebe4');
-      if (ty === ry + rh - 1) rect(ctx, x0, y0 + TILE - 2, TILE, 1, '#ecebe4');
-      if (ty === middle) {
-        rect(ctx, x0, y0 - 2, TILE, 1, '#e8dfae');
-        rect(ctx, x0, y0 + 1, TILE, 1, '#e8dfae');
-      } else if (ty !== ry && tx % 3 === 0) {
-        rect(ctx, x0 + 2, y0 - 1, 8, 1, '#ecebe4');
-      }
+      // Like the town's roads, the lines sit on the lanes' edges, clear of the cars in them: solid lines along
+      // the outside edges, a solid stripe down the middle, and dashes between the lanes.
+      if (ty === ry) rect(ctx, x0, y0, TILE, 1, '#ecebe4');
+      if (ty === ry + rh - 1) rect(ctx, x0, y0 + TILE - 1, TILE, 1, '#ecebe4');
+      if (ty === middle) rect(ctx, x0, y0 - 1, TILE, 2, '#e8dfae');
+      else if (ty !== ry && tx % 3 === 0) rect(ctx, x0 + 2, y0 - 1, 8, 2, '#ecebe4');
       break;
     }
     case 'zebra': {
