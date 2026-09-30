@@ -701,7 +701,10 @@ export class Simulation {
 
   /** One person (or pet) moves out of town, leaving everyone else as they are. If it's the last person whose home it is, their family and pets go with them. */
   moveOut(p: Person): void {
-    if (this.lastAtHome(p)) return this.leaveTown(p);
+    if (this.lastAtHome(p)) {
+      this.leaveTown(p);
+      return;
+    }
     this.depart(p);
     this.log(`👋 ${p.name} moved out of town`, [p.id]);
   }
