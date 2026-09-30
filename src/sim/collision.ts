@@ -47,43 +47,58 @@ export interface Manners {
 }
 
 
-/** Each level's bodies, by layer, bucketed by the tile they were on when the layer was filled (they move less than a tile a step). */
+/** Bodies are bucketed in square cells this many tiles across, so looking round a point reads a few buckets, not every tile. */
+const CELL = 4;
+
+/** A body, and the tile it was on when its layer was filled. */
+interface Entry {
+  tx: number;
+  ty: number;
+  body: Body;
+}
+
+/** Each level's bodies, by layer, bucketed by where they were when the layer was filled (they move less than a tile a step). */
 export class Space {
-  private readonly layers = new Map<string, Map<number, Body[]>>();
+  private readonly layers = new Map<string, Map<number, Entry[]>>();
 
   /** Put a layer's bodies in, in place of whatever was there. */
   fill(layer: Layer, bodies: Iterable<{ level: string; body: Body }>): void {
     for (const key of [...this.layers.keys()]) if (key.endsWith(`|${layer}`)) this.layers.delete(key);
     for (const { level, body } of bodies) {
       const key = `${level}|${layer}`;
-      let tiles = this.layers.get(key);
-      if (!tiles) {
-        tiles = new Map();
-        this.layers.set(key, tiles);
+      let cells = this.layers.get(key);
+      if (!cells) {
+        cells = new Map();
+        this.layers.set(key, cells);
       }
-      const tile = tileKey(Math.round(body.x), Math.round(body.y));
-      const here = tiles.get(tile);
-      if (here) here.push(body);
-      else tiles.set(tile, [body]);
+      const [tx, ty] = [Math.round(body.x), Math.round(body.y)];
+      const cell = cellKey(Math.floor(tx / CELL), Math.floor(ty / CELL));
+      const here = cells.get(cell);
+      if (here) here.push({ tx, ty, body });
+      else cells.set(cell, [{ tx, ty, body }]);
     }
   }
 
-  /** A layer's bodies on a level within `radius` tiles (square) of a point, in the order they were put in, that are here now. */
+  /** A layer's bodies on a level within `radius` tiles (square) of a point, that are here now. */
   near(level: string, layer: Layer, x: number, y: number, radius: number): Body[] {
-    const tiles = this.layers.get(`${level}|${layer}`);
-    if (!tiles) return [];
+    const cells = this.layers.get(`${level}|${layer}`);
+    if (!cells) return [];
     const found: Body[] = [];
     const [cx, cy] = [Math.round(x), Math.round(y)];
     const r = Math.ceil(radius) + 1;
-    for (let j = cy - r; j <= cy + r; j++) {
-      for (let i = cx - r; i <= cx + r; i++) for (const body of tiles.get(tileKey(i, j)) ?? []) if (body.here && (body.level ?? level) === level) found.push(body);
+    for (let j = Math.floor((cy - r) / CELL); j <= Math.floor((cy + r) / CELL); j++) {
+      for (let i = Math.floor((cx - r) / CELL); i <= Math.floor((cx + r) / CELL); i++) {
+        for (const { tx, ty, body } of cells.get(cellKey(i, j)) ?? []) {
+          if (Math.abs(tx - cx) <= r && Math.abs(ty - cy) <= r && body.here && (body.level ?? level) === level) found.push(body);
+        }
+      }
     }
     return found;
   }
 
   /** A layer's bodies on a level that are standing still (a parked vehicle), for walkers' routes to go round. */
   still(level: string, layer: Layer): Body[] {
-    return [...(this.layers.get(`${level}|${layer}`)?.values() ?? [])].flat().filter((b) => b.here && !b.moving);
+    return [...(this.layers.get(`${level}|${layer}`)?.values() ?? [])].flat().map((e) => e.body).filter((b) => b.here && !b.moving);
   }
 }
 
@@ -123,7 +138,7 @@ export function inTheWay(me: Body, facing: Heading, others: readonly Body[], man
   return { step, passing };
 }
 
-function tileKey(x: number, y: number): number {
+function cellKey(x: number, y: number): number {
   return (y + 1024) * 4096 + (x + 1024);
 }
 

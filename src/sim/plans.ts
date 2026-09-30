@@ -205,7 +205,8 @@ export class Plans {
     if (maker && sim.rng.next() < 0.5) return 'cowork';
     const light = (id: ActivityId) => sim.daylight(start) > 0.6 && sim.daylight(start + ACTIVITIES[id].hours * TICKS_PER_HOUR) > 0.6;
     // On a day off, a picnic's the likeliest thing to suggest; on an evening, something to eat.
-    const options = (['catch', 'picnic', 'picnic', 'meetup', 'meal', 'meal'] as const).filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (ACTIVITIES[id].where !== 'park' || light(id)));
+    const likely: ActivityId[] = dayOff ? ['catch', 'picnic', 'picnic', 'picnic', 'meetup', 'meal'] : ['catch', 'meetup', 'meal', 'meal'];
+    const options = likely.filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (ACTIVITIES[id].where !== 'park' || light(id)));
     return options[sim.rng.int(0, options.length - 1)];
   }
 

@@ -14,7 +14,7 @@ import { Emitter } from './emitter.ts';
 import { MOVERS, advance, headingOf, speedOn } from './movement.ts';
 import { rulesFor } from './intents.ts';
 import { NEEDS, PANTRY_FULL, drain, restore, type Need } from './needs.ts';
-import { asleep, atDesk, seatedAtDesk, walkingAway, type Intent, type Person } from './person.ts';
+import { asleep, atDesk, catchingUp, seatedAtDesk, walkingAway, type Intent, type Person } from './person.ts';
 import { resolveTraits, type Traits } from './personality.ts';
 import { Housing } from './housing.ts';
 import { Interactions } from './interactions.ts';
@@ -94,6 +94,11 @@ export class Simulation {
   readonly levels = new Map<string, LevelDef>();
   readonly grids = new Map<string, Grid>();
   readonly companies = new Map<string, CompanyDef>();
+  /** Who's on each level (`peopleOn`): cleared whenever anyone joins, leaves or changes level. */
+  private readonly onLevel = new Map<string, Person[]>();
+  /** Each building's floors (`floorsOf`), till the levels change; and the venues open this step (`publicPlaces`). */
+  private readonly floors = new Map<string, string[]>();
+  private open: { step: number; places: string[] } | null = null;
   readonly items: Item[] = [];
   readonly people: Person[] = [];
   readonly events: SimEvent[] = [];
@@ -127,7 +132,8 @@ export class Simulation {
   /** The date of that first day, and where the town is (calendar.ts). The timekeeper sets it from your clock. */
   calendar: Calendar = DEFAULT_CALENDAR;
   /** Whether the last day asked about was a day off (asked constantly: phases, opening hours). */
-  private offDay = { day: Number.NaN, off: false };
+  /** The last day asked about (for this calendar): whether it's a day off, and its holiday. Asked about all the time; it changes once a day. */
+  private dayCache: { day: number; calendar: Calendar; off: boolean; holiday: Holiday | undefined } | null = null;
 
   private readonly byId = new Map<string, Person>();
   private readonly brains = new Map<string, Brain>();
@@ -346,8 +352,13 @@ export class Simulation {
   }
 
   /** Every floor of the building whose ground floor is `level`: it, then any you've added above it. */
-  floorsOf(level: string): string[] {
-    return [level, ...this.world.levels.filter((l) => l.floorOf === level).map((l) => l.id)];
+  floorsOf(level: string): readonly string[] {
+    let floors = this.floors.get(level);
+    if (!floors) {
+      floors = [level, ...this.world.levels.filter((l) => l.floorOf === level).map((l) => l.id)];
+      this.floors.set(level, floors);
+    }
+    return floors;
   }
 
   /** The ground floor of the building a level's in (itself, unless it's a floor you added). */
@@ -356,8 +367,10 @@ export class Simulation {
   }
 
   /** Venues anyone can walk into right now: the open ones. */
-  publicPlaces(): string[] {
-    return this.world.levels.filter((l) => l.kind === 'venue' && this.venueOpen(this.baseOf(l.id))).map((l) => l.id);
+  publicPlaces(): readonly string[] {
+    // Venues open and close at the start of a step (mindVenues), so this holds for the rest of it.
+    if (this.open?.step !== this.steps) this.open = { step: this.steps, places: this.world.levels.filter((l) => l.kind === 'venue' && this.venueOpen(this.baseOf(l.id))).map((l) => l.id) };
+    return this.open.places;
   }
 
   /** The tick of this person's next wake-up. */
@@ -640,7 +653,7 @@ export class Simulation {
       if (!bound) continue;
       this.stop(p);
       if (p.level === id) {
-        p.level = to.level;
+        this.setLevel(p, to.level);
         [p.x, p.y] = [p.px, p.py] = to.p;
       }
     }
@@ -698,6 +711,7 @@ export class Simulation {
     if (!p) return;
     this.stop(p);
     this.people.splice(this.people.indexOf(p), 1);
+    this.onLevel.clear();
     this.byId.delete(id);
     this.histories.delete(id);
     this.relationships.forget(id);
@@ -708,14 +722,23 @@ export class Simulation {
 
   /** A day off for offices and schools: the weekend, or a bank holiday. */
   dayOff(tick = this.tick): boolean {
-    const day = dayOf(tick);
-    if (day !== this.offDay.day) this.offDay = { day, off: isWeekend(tick) || bankHoliday(this.dateOf(tick)) };
-    return this.offDay.off;
+    return this.dayAt(tick).off;
   }
 
   /** The holiday it is today, if any (holidays.ts). */
   holiday(tick = this.tick): Holiday | undefined {
-    return holidayOn(this.dateOf(tick));
+    return this.dayAt(tick).holiday;
+  }
+
+  private dayAt(tick: number): { off: boolean; holiday: Holiday | undefined } {
+    const day = dayOf(tick);
+    const cached = this.dayCache;
+    if (cached && cached.day === day && cached.calendar === this.calendar) return cached;
+    const date = this.dateOf(tick);
+    const fresh = { day, calendar: this.calendar, off: isWeekend(tick) || bankHoliday(date), holiday: holidayOn(date) };
+    // Keep today's: a look at another day (yesterday's holiday) doesn't push it out.
+    if (day === dayOf(this.tick) || !cached) this.dayCache = fresh;
+    return fresh;
   }
 
   /** 0 at night, 1 in full daylight: the sun as it is on the day, where the town is. */
@@ -948,6 +971,8 @@ export class Simulation {
   }
 
   private changed(levels: string[]): void {
+    this.floors.clear();
+    this.open = null;
     this.changes.emit(levels);
   }
 
@@ -1018,6 +1043,7 @@ export class Simulation {
     };
     this.byId.set(def.id, p);
     this.people.push(p);
+    this.onLevel.clear();
     return p;
   }
 
@@ -1037,9 +1063,23 @@ export class Simulation {
 
   /** People on screen within `radius` tiles of a point, excluding `except`. */
   near(level: string, x: number, y: number, radius: number, except?: Person): Person[] {
-    return this.people.filter(
-      (p) => p !== except && p.level === level && this.present(p) && (p.x - x) ** 2 + (p.y - y) ** 2 <= radius * radius,
-    );
+    return this.peopleOn(level).filter((p) => p !== except && this.present(p) && (p.x - x) ** 2 + (p.y - y) ** 2 <= radius * radius);
+  }
+
+  /** Everyone on a level, in the town's order (an index, kept up to date as people come, go and change level). */
+  peopleOn(level: string): readonly Person[] {
+    let here = this.onLevel.get(level);
+    if (!here) {
+      here = this.people.filter((p) => p.level === level);
+      this.onLevel.set(level, here);
+    }
+    return here;
+  }
+
+  /** Put someone on another level (through a door, dropped off, back from a closed floor). */
+  setLevel(p: Person, level: string): void {
+    p.level = level;
+    this.onLevel.clear();
   }
 
   /** Is somewhere spoken for: someone heading there, or already standing there doing something? */
@@ -1145,7 +1185,8 @@ export class Simulation {
       return;
     }
     // A step along the way, at their pace for the floor underfoot (movement.ts), minding whoever's just in front (collision.ts).
-    const mover = p.crawling ? MOVERS.crawler : MOVERS.walker;
+    const target = p.intent?.kind === 'chat' ? this.byId.get(p.intent.with) : undefined;
+    const mover = p.crawling ? MOVERS.crawler : target && catchingUp(p, target) ? MOVERS.hurrying : MOVERS.walker;
     const step = this.mind(p, leg.tiles[0], mover.manners);
     if (!advance(p, leg.tiles, speedOn(mover, this.floorUnder(p)) * step)) return;
 
@@ -1165,7 +1206,7 @@ export class Simulation {
     }
     const from = this.levels.get(p.level)!;
     const arrival = at(portal.a) ? portal.b : portal.a;
-    p.level = level;
+    this.setLevel(p, level);
     p.x = p.px = arrival.p[0];
     p.y = p.py = arrival.p[1];
     p.transit = PORTAL_TICKS;

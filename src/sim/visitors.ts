@@ -131,15 +131,15 @@ export class Visitors {
     const out = outs[rng.int(0, outs.length - 1)]!;
     const streets = roads.tilesOf('road');
     const stops = Array.from({ length: rng.int(...TOUR_STOPS) }, () => streets[rng.int(0, streets.length - 1)]!);
-    let drive: Tile[] | null = [way.edge];
+    let drive: Tile[] = [way.edge];
     let heading: Heading = way.heading;
     for (const to of [...stops, out.edge]) {
-      const from: Tile = drive.at(-1)!;
-      const leg = roads.route(from, to, heading);
+      const leg = roads.route(drive.at(-1)!, to, heading);
       if (!leg) return;
       drive = [...drive, ...leg];
-      const [a, b] = drive.slice(-2) as [Tile, Tile];
-      heading = headingOf(b[0] - a[0], b[1] - a[1], heading);
+      // Setting off again the way it was going (a stop where it already is changes nothing).
+      const [a, b] = drive.slice(-2);
+      if (a && b) heading = headingOf(b[0] - a[0], b[1] - a[1], heading);
     }
     const car = sim.traffic.add(sim.traffic.randomLook(), way.off, [...drive, out.off], true);
     car.facing = way.heading;
@@ -156,7 +156,7 @@ export class Visitors {
     const driver = sim.addNpc({ id, name: 'Visitor', species: 'human', look: [rng.int(0, 5), rng.int(0, 7), rng.int(0, 7), rng.int(0, 3)], home: '', role: 'visitor' });
     sim.setBrain(id, new VisitorBrain(this));
     [driver.x, driver.y] = [driver.px, driver.py] = bay.def.p;
-    driver.level = bay.level;
+    sim.setLevel(driver, bay.level);
     visit.driver = id;
     visit.stage = 'visiting';
 

@@ -4,7 +4,8 @@ How anything gets about: people and pets walking, babies crawling, cars and
 food trucks driving. `src/sim/movement.ts`.
 
 - **Movers.** `MOVERS` is a table of the kinds of mover: on foot or on wheels,
-  their speeds in tiles per step (a walker 0.2, a crawling baby 0.06, a car or a
+  their speeds in tiles per step (a walker 0.2, a crawling baby 0.06, someone
+  hurrying to catch someone up 0.3, a car or a
   food truck 0.45 in town, 0.9 on the highway and off the map, 0.2 creeping over
   a path or pavement), and how far their body reaches from its middle (a truck,
   three tiles wide, reaches one). `speedOn(mover, floor)` is a mover's speed on a
@@ -41,8 +42,14 @@ food trucks driving. `src/sim/movement.ts`.
   their own spot (a desk, a seat). Vehicles keep 1.6 tiles behind the one in
   front, wait behind one stopped in their lane, and never mind other lanes; people
   on a zebra (or a path a car's crossing) have right of way, looked up in the same
-  space. Parked vehicles are the space's still bodies on wheels. Crowds spread out:
+  space. Parked vehicles are the space's still bodies on wheels. The space buckets
+  bodies in 4×4-tile cells, so a look round reads a few buckets whatever the crowd.
+  Crowds spread out:
   wander spots and places to watch the fireworks are ones nobody else has taken.
+- **Catching someone up.** Someone off to chat with a person who's walking
+  hurries (the `hurrying` mover) until they're within two tiles. Nobody sets off
+  after someone walking more than eight tiles away, and a chase is dropped once
+  they're that far ahead: they're off somewhere.
 - **What moves them** stays with each kind: the sim walks people to what their
   brain chose, `traffic.ts` drives every vehicle, and the timetables say when a
   vehicle sets off (`food-trucks.ts`, `visitors.ts`, `arrivals.ts`).

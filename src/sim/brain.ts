@@ -332,7 +332,7 @@ function idle(p: Person): Intent {
 }
 
 /** A random spot to wander to: on their current level if it's allowed, otherwise the first allowed one. Nobody potters about a diner. */
-function stroll(p: Person, sim: Simulation, area: string[]): Intent | null {
+function stroll(p: Person, sim: Simulation, area: readonly string[]): Intent | null {
   const here = area.includes(p.level) && (p.role === 'staff' || sim.levels.get(p.level)?.kind !== 'venue');
   const to = sim.randomWalkable(here ? p.level : area[0]!);
   return to ? { kind: 'wander', to } : null;

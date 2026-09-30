@@ -127,10 +127,20 @@ export function faceTowards(p: Person, x: number, y: number): void {
   p.facing = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
 }
 
-/** Someone on their way somewhere this far off (tiles) can't be caught up with: everyone walks at the same pace. */
-const CATCH_UP = 4;
+/**
+ * Someone on their way somewhere this far off (tiles) is out of reach for a
+ * chat; nearer than that, but more than `HAIL` away, the one who wants a word
+ * hurries to catch them up.
+ */
+const CATCH_UP = 8;
+const HAIL = 2;
 
 /** Is `q` off somewhere, too far ahead of `p` to catch for a chat? */
 export function walkingAway(p: Person, q: Person): boolean {
   return q.phase === 'moving' && (q.level !== p.level || Math.hypot(q.x - p.x, q.y - p.y) > CATCH_UP);
+}
+
+/** Is `p` hurrying to catch `q` up for a chat: `q` on the move, and not yet within earshot? */
+export function catchingUp(p: Person, q: Person): boolean {
+  return q.phase === 'moving' && q.level === p.level && Math.hypot(q.x - p.x, q.y - p.y) > HAIL;
 }

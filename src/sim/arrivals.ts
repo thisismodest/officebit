@@ -109,7 +109,7 @@ export class Arrivals {
   }
 
   private place(p: Person, at: Place): void {
-    p.level = at.level;
+    this.sim.setLevel(p, at.level);
     [p.x, p.y] = [p.px, p.py] = at.p;
     p.hidden = false;
   }

@@ -1,6 +1,6 @@
 // Plain-English summaries of what someone is up to, and where, for the panel.
 import { PRESETS, type PresetName } from '../sim/personality.ts';
-import { asleep, type Person } from '../sim/person.ts';
+import { asleep, catchingUp, type Person } from '../sim/person.ts';
 import type { Simulation } from '../sim/sim.ts';
 
 export function describe(p: Person, sim: Simulation): string {
@@ -68,7 +68,11 @@ export function describe(p: Person, sim: Simulation): string {
       return `At the ${name}`;
     }
     case 'chat':
-      return moving ? `Walking over to ${nameOf(intent.with)}` : 'Waiting awkwardly';
+    {
+      if (!moving) return 'Waiting awkwardly';
+      const other = sim.person(intent.with);
+      return other && catchingUp(p, other) ? `Hurrying to catch up with ${nameOf(intent.with)}` : `Walking over to ${nameOf(intent.with)}`;
+    }
     case 'wander':
       if (p.role === 'crew') return 'Heading to the building site';
       return moving ? 'Wandering' : 'Pottering about';

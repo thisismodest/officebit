@@ -25,9 +25,10 @@ export interface Mover {
   manners: Manners;
 }
 
-/** Walking pace, and a baby's crawl as a share of it. */
+/** Walking pace, a baby's crawl as a share of it, and hurrying to catch someone up. */
 const WALK = 0.2;
 const CRAWL = 0.3;
+const HURRY = 1.5;
 /** Tiles per step for vehicles: in town, on the highway, and creeping over a path or pavement. */
 const TOWN = 0.45;
 const HIGHWAY = 0.9;
@@ -41,6 +42,7 @@ const DRIVING: Manners = { slow: 1.6, stop: 1.6, width: 0.5, oncoming: "ignore",
 export const MOVERS = {
   walker: { on: "foot", speed: WALK, manners: WALKING },
   crawler: { on: "foot", speed: WALK * CRAWL, manners: WALKING },
+  hurrying: { on: "foot", speed: WALK * HURRY, manners: WALKING },
   car: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, manners: DRIVING },
   // A food truck: a car's pace, three tiles wide.
   truck: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING }

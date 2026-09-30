@@ -14,6 +14,7 @@ test('one table of speeds: cars and trucks alike, faster on the highway, slow ov
   assert.ok(speedOn(MOVERS.car, 'path') < speedOn(MOVERS.car, 'road'));
   assert.equal(speedOn(MOVERS.car, undefined), speedOn(MOVERS.car, 'highway'), 'off the map is the highway');
   assert.ok(speedOn(MOVERS.crawler, 'path') < speedOn(MOVERS.walker, 'path'));
+  assert.ok(speedOn(MOVERS.hurrying, 'path') > speedOn(MOVERS.walker, 'path'), 'hurrying to catch someone up');
 });
 
 test('one stepper: along a route at a pace, facing the way it goes, remembering where it was', () => {

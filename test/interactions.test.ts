@@ -100,8 +100,12 @@ test('talking to people while in control: keeping them from work grates, a free 
   // Someone Bea would get on with better than she does now, free (steered, so they stay put) and standing next to her.
   const free = sim.people.find((p) => p !== bea && p !== working && !p.npc && p.home && sim.relationships.compatibility(bea, p) > sim.relationships.affinity(bea, p))!;
   sim.interactions.control(free, true);
-  const spot = sim.beside(free, bea)!;
-  Object.assign(free, { level: spot.level, x: spot.p[0], y: spot.p[1], px: spot.p[0], py: spot.p[1], hidden: false, transit: 0, distracted: 0 });
+  // Beside her, or as near as there's room.
+  const grid = sim.grids.get(bea.level)!;
+  const room = [1, 2, 3].flatMap((r) => [-r, 0, r].flatMap((dy) => [-r, 0, r].map((dx): [number, number] => [Math.round(bea.x) + dx, Math.round(bea.y) + dy])));
+  const spot = sim.beside(free, bea) ?? { level: bea.level, p: room.find(([x, y]) => grid.walkable(x, y) && !sim.isClaimed({ level: bea.level, p: [x, y] }))! };
+  sim.setLevel(free, spot.level);
+  Object.assign(free, { x: spot.p[0], y: spot.p[1], px: spot.p[0], py: spot.p[1], hidden: false, transit: 0, distracted: 0 });
   sim.interrupt(free);
   sim.interactions.control(bea, true);
   assert.ok(chatWith(free.id, false) > 0, 'a chat on good terms');

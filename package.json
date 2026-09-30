@@ -14,7 +14,8 @@
     "build": "node scripts/build.ts",
     "test": "node --test",
     "typecheck": "tsc",
-    "probe": "node scripts/probe.ts"
+    "probe": "node scripts/probe.ts",
+    "bench": "node scripts/bench.ts"
   },
   "dependencies": {
     "mdst-ui": "^1.1.0"

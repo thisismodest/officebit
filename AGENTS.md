@@ -47,6 +47,7 @@ npm test             # node:test against the .ts sources (~1 min)
 npm run typecheck    # tsc; strict, erasableSyntaxOnly, noUnused*
 npx @biomejs/biome lint .   # lint (biome.jsonc; not an npm script, not a dependency)
 npm run probe -- 48  # headless: everyone's last 48 h as a timeline, plus venture events
+npm run bench -- 200 # how fast: a town of 200 people, timed (docs/DEVELOPING.md#speed)
 npm run build        # dist/ for GitHub Pages
 ```
 
@@ -103,7 +104,7 @@ src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (
 src/feeds/    protocol.ts (validated data-only messages), local.ts (console + postMessage)
 public/       index.html + landing.css (the landing page), changelog/ (what's new, for players: add a line when something ships), town/index.html + style.css (the town), sw.js (the app's service worker), og-image.png, icons,
               site.webmanifest, sitemap.xml (addresses filled in from package.json `homepage`: docs/DEVELOPING.md#deploying)
-scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports, site address), probe.ts
+scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports, site address), probe.ts, bench.ts
 test/         node:test suites, one per area
 ```
 
@@ -128,6 +129,8 @@ Dijkstra over portal anchors between levels); driving in `docs/TRAFFIC.md`.
   `removeItem`, `moveItem`, `edited`, `addPath`, `addPortal`, `addCompany`, `hire`,
   `addNpc`, `removePerson`, `employ`, `unemploy`). They rebuild grids and the
   navigator and fire `onChange`, which the renderer and panel listen to.
+- **Change a person's level with `sim.setLevel`**: it keeps the index of who's
+  where (`peopleOn`) up to date. A speed-up must leave `npm run probe -- 336` identical.
 - **Only erasable TypeScript**: no `enum`, `namespace` or parameter properties.
 - **Avoid runtime import cycles**: `person.ts` holds shared runtime helpers so
   `brain.ts` and `sim.ts` don't import values from each other. `roles.ts` names
@@ -181,7 +184,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), a landing page, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-149 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+150 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

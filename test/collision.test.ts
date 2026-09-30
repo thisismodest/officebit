@@ -1,7 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Space, asideOffset, easeAside, inTheWay, type Body } from '../src/sim/collision.ts';
+import { TICKS_PER_DAY } from '../src/sim/clock.ts';
 import { MOVERS } from '../src/sim/movement.ts';
+import { Simulation } from '../src/sim/sim.ts';
+import { STARTER } from '../src/worlds/starter.ts';
 
 const body = (id: string, x: number, y: number, facing: Body['facing'], moving = true, extra: Partial<Body> = {}): Body => ({ id, x, y, facing, moving, here: true, ...extra });
 const walking = MOVERS.walker.manners;
@@ -17,6 +20,9 @@ test('the space: who is near, on which layer and level, and only if they are her
   space.fill('wheels', [{ level: 'town', body: body('car', 6, 5, 'left', false) }]);
   assert.deepEqual(space.near('town', 'foot', 5, 5, 1).map((b) => b.id), ['a']);
   assert.deepEqual(space.still('town', 'wheels').map((b) => b.id), ['car']);
+  // Near means the square of tiles round the point, wherever the buckets fall.
+  space.fill('foot', [3, 4, 7, 8, 9].map((x) => ({ level: 'town', body: body(`at${x}`, x, 5, 'right') })));
+  assert.deepEqual(space.near('town', 'foot', 5, 5, 2).map((b) => b.id).sort(), ['at3', 'at4', 'at7', 'at8']);
   // Refilling a layer replaces it, leaving the other be.
   space.fill('foot', []);
   assert.equal(space.near('town', 'foot', 5, 5, 3).length, 0);
@@ -78,4 +84,15 @@ test('in the town: people give way and pass each other, and nobody is ever stuck
   assert.ok(waited > 0 && passed > 0, `some giving way (${waited}) and passing (${passed})`);
   // Patience runs out after a second or so, and then they squeeze past: a long wait means threading through a crowd, still moving.
   assert.ok(longest < 400, `the longest anyone was held up: ${longest} steps`);
+});
+
+test('the town keeps an index of who is on each level, always the same as looking through everyone', () => {
+  const sim = new Simulation(structuredClone(STARTER));
+  for (let t = 0; t < TICKS_PER_DAY; t++) {
+    sim.step();
+    if (t % 50) continue;
+    for (const level of sim.levels.keys()) {
+      assert.deepEqual(sim.peopleOn(level), sim.people.filter((p) => p.level === level), `${level} at ${t}`);
+    }
+  }
 });

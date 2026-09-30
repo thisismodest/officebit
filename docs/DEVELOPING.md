@@ -46,6 +46,21 @@ Rowan   z>WWWWWuWWWuuuuuuzzzzzzz   W25% H0% u28% c1% >14%  int 2/1
          int: interruptions made / suffered
 ```
 
+## Speed
+
+`npm run bench -- [people] [days]` fills the starter town out to that many
+people (sharing its homes and workplaces) and times a few days headless. Keep
+an eye on it at 200 (about 6.5 s a game day on a laptop, from 8.2 before the indexes). The sim keeps a few
+indexes so the cost grows with people, not people squared:
+- `sim.peopleOn(level)`: who's on a level. Always change someone's level
+  with `sim.setLevel`, which keeps it up to date.
+- The collision space, bucketed by cell.
+- Per-day answers (`dayOff`, `holiday`), per-step ones (`publicPlaces`), and
+  each building's floors (`floorsOf`, cleared when the levels change).
+
+A speed-up shouldn't change the story. Compare `npm run probe -- 336` before
+and after; the output should be identical.
+
 `validate(world)` catches most authoring mistakes (furniture in walls,
 unreachable beds); the starter world must always validate clean.
 

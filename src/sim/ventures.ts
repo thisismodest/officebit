@@ -117,6 +117,8 @@ export class Ventures {
       this.progress(venture, hours);
       return;
     }
+    // Taking a break after a venture closed: tinkering doesn't add up to anything yet.
+    if (!this.wantsToHustle(p)) return;
     p.ideas += hours;
     if (p.ideas >= IDEA_HOURS) this.found(p);
   }
