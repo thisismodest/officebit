@@ -46,7 +46,7 @@ Moving the coffee machine really does change the day.
 Street vehicles (`hours` + `street`) are traffic (`src/sim/food-trucks.ts`): on
 weekdays each comes into town an hour before opening (a few minutes apart), by
 whichever road it picks that day (the highway, or any road off the edge of the
-map, in its left-hand lane), and leaves by another. It drives through town on the roads at the same speed as the cars, keeping
+map, in its left-hand lane: `traffic.ways`), and leaves by another. It drives through town on the roads at the same speed as the cars, keeping
 its distance and giving way at crossings, and pulls straight up off the road in
 front of its pitch, onto the pavement's edge, by a route that keeps the whole truck clear
 ([MOVEMENT](MOVEMENT.md)). Placing one (`worlds/placement.ts`) is refused where there's no

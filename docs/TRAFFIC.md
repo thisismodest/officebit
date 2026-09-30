@@ -1,7 +1,7 @@
 # Traffic
 
-Cars on the town's roads: through-traffic on the highway, and visitors who
-turn off it. Food trucks drive among them, on their own timetable ([FURNITURE](FURNITURE.md#food-trucks)).
+Cars on the town's roads: through-traffic on the highway, visitors who
+turn off it, and people out for a drive round town. Food trucks drive among them, on their own timetable ([FURNITURE](FURNITURE.md#food-trucks)).
 
 ## Roads
 
@@ -47,6 +47,16 @@ Then they walk back, get in, and carry on west. Drivers are people with the
 `visitor` role (see [PEOPLE](PEOPLE.md#kinds)). They're served at the diner
 and show in the People tab and News, but they don't make friends, fall in
 love, or get saved into the world. At most three visit at once.
+
+## Out for a drive
+
+Between 08:00 and 21:00, every 20 minutes to two hours, a car comes in by
+any road off the edge of the map (the highway, or a town road, in its
+left-hand lane; the same ways in and out as the food trucks, `traffic.ways`).
+It drives past two to four places on the town's roads and leaves by another
+way. It doesn't stop. At most two are out at once. They're traffic like any
+other: they keep their distance and give way at crossings. They draw on
+visitors' own random stream, so they don't change the story.
 
 ## In the starter town
 

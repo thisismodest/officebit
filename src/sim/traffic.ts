@@ -7,7 +7,7 @@ import { between, hourOf } from './clock.ts';
 import type { Grid } from './grid.ts';
 import { inTheWay, type Body } from './collision.ts';
 import { footprint } from './geometry.ts';
-import { AHEAD, MOVERS, OPPOSITE, advance, speedOn } from './movement.ts';
+import { AHEAD, MOVERS, OPPOSITE, advance, speedOn, type Heading } from './movement.ts';
 import { RoadMap, type Driver } from './roads.ts';
 import { Rng } from './rng.ts';
 import type { Simulation } from './sim.ts';
@@ -39,6 +39,14 @@ export interface Car extends Driver {
   truck?: number;
   /** Gone from the roads (off the map, done). */
   removed?: boolean;
+}
+
+/** A way into (or out of) town: a road's lane at the edge of the map, heading in (or out). */
+export interface Way {
+  /** Just off the map, and the lane's tile at the edge. */
+  off: Tile;
+  edge: Tile;
+  heading: Heading;
 }
 
 /** A highway lane: its row, which way it runs, its first and last tiles on the map, and where cars come on and go off (just off it). */
@@ -78,6 +86,46 @@ export class Traffic {
   /** Every highway lane. The north half of a highway runs east, the south half west (we drive on the left). */
   lanes(): Lane[] {
     return this.current()?.lanes ?? [];
+  }
+
+  /**
+   * Every road off the edge of the map, one lane each: the one you'd drive in
+   * on (we drive on the left), or out on. A road two lanes wide at the east edge
+   * comes in westbound on its south lane, and so on round the compass.
+   */
+  ways(direction: 'in' | 'out'): Way[] {
+    const roads = this.roads();
+    const level = this.sim.levels.get(this.level ?? '');
+    if (!roads || !level) return [];
+    const [w, h] = level.size;
+    const road = (x: number, y: number) => roads.drivable(x, y) && roads.floorAt(x, y) !== 'path';
+    const ways: Way[] = [];
+    // Each side: which way in is, how to walk along the edge, and which end of a run of lanes is the left-hand one going in.
+    const sides: { heading: Heading; out: Heading; tile: (i: number) => Tile; length: number; step: Tile; leftIn: 'first' | 'last' }[] = [
+      { heading: 'left', out: 'right', tile: (i) => [w - 1, i], length: h, step: [OFFSTAGE, 0], leftIn: 'last' },
+      { heading: 'right', out: 'left', tile: (i) => [0, i], length: h, step: [-OFFSTAGE, 0], leftIn: 'first' },
+      { heading: 'down', out: 'up', tile: (i) => [i, 0], length: w, step: [0, -OFFSTAGE], leftIn: 'last' },
+      { heading: 'up', out: 'down', tile: (i) => [i, h - 1], length: w, step: [0, OFFSTAGE], leftIn: 'first' },
+    ];
+    for (const side of sides) {
+      let run: Tile[] = [];
+      for (let i = 0; i <= side.length; i++) {
+        const tile = i < side.length ? side.tile(i) : undefined;
+        if (tile && road(...tile)) {
+          run.push(tile);
+          continue;
+        }
+        if (run.length) {
+          // In on the left-hand lane of the run, out on the other.
+          const inLane = side.leftIn === 'first' ? run[0]! : run.at(-1)!;
+          const outLane = side.leftIn === 'first' ? run.at(-1)! : run[0]!;
+          const edge = direction === 'in' ? inLane : outLane;
+          ways.push({ edge, off: [edge[0] + side.step[0], edge[1] + side.step[1]], heading: direction === 'in' ? side.heading : side.out });
+        }
+        run = [];
+      }
+    }
+    return ways;
   }
 
   /** Put a car on the road. */

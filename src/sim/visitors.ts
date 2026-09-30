@@ -2,9 +2,10 @@
 // highway, drives round town and pulls into a parking bay. Its driver gets
 // out, either for something to eat or to charge the car, pops into somewhere
 // public (or waits by the car), then gets back in and carries on their
-// journey. Arrivals come from the clock and traffic's own random stream, so
-// the same town always gets the same visitors.
-import { TICKS_PER_HOUR } from './clock.ts';
+// journey. Others just come for a drive round: in by any road, past a few
+// places, and out by another. Arrivals come from the clock and visitors' own
+// random stream, so the same town always gets the same visitors.
+import { TICKS_PER_HOUR, between, hourOf } from './clock.ts';
 import type { Intent, Person } from './person.ts';
 import { AHEAD, headingOf, type Heading } from './movement.ts';
 import { Rng } from './rng.ts';
@@ -23,6 +24,11 @@ const HUNGRY = 0.5;
 const WAIT_BY_CAR = 0.3;
 /** How long a charge takes, in game minutes. */
 const CHARGE_MINUTES: [number, number] = [25, 50];
+/** Cars out for a drive round town: game minutes between them (in the hours they're about), how many at once, and how many places each drives by. */
+const TOUR_GAP_MINUTES: [number, number] = [20, 120];
+const TOUR_HOURS: [number, number] = [8, 21];
+const MOST_TOURING = 2;
+const TOUR_STOPS: [number, number] = [2, 4];
 /** Mixing the world's seed for visitors' own random stream. */
 const VISITOR_SEED = 0x51717025;
 
@@ -44,12 +50,16 @@ export class Visitors {
   private readonly rng: Rng;
   private readonly visits: Visit[] = [];
   private next: number;
+  private nextTour: number;
+  /** Cars out for a drive round, till they're off the map. */
+  readonly touring: Car[] = [];
   private count = 0;
 
   constructor(sim: Simulation) {
     this.sim = sim;
     this.rng = new Rng(sim.world.seed ^ VISITOR_SEED);
     this.next = sim.tick + this.gap();
+    this.nextTour = sim.tick + this.tourGap();
   }
 
   /** The visit someone's on, if they're a visitor. */
@@ -68,6 +78,11 @@ export class Visitors {
     if (sim.tick >= this.next) {
       this.next = sim.tick + this.gap();
       if (this.visits.length < MOST_AT_ONCE) this.arrive();
+    }
+    if (sim.tick >= this.nextTour) {
+      this.nextTour = sim.tick + this.tourGap();
+      for (const car of this.touring.filter((c) => c.removed)) this.touring.splice(this.touring.indexOf(car), 1);
+      if (this.touring.length < MOST_TOURING && between(hourOf(sim.tick), ...TOUR_HOURS)) this.tour();
     }
     for (const visit of [...this.visits]) {
       const { car } = visit;
@@ -103,6 +118,32 @@ export class Visitors {
     const car = sim.traffic.add(sim.traffic.randomLook(), lane.on, [lane.first, ...drive, ...(approach === front ? [there] : [])]);
     car.facing = lane.heading;
     this.visits.push({ car, bay, reason, stage: 'arriving', errand: null });
+  }
+
+  /** A car out for a drive: in by one road, round a few of the town's streets, and out by another. */
+  private tour(): void {
+    const { sim, rng } = this;
+    const roads = sim.traffic.roads();
+    const ins = sim.traffic.ways('in');
+    const outs = sim.traffic.ways('out');
+    if (!roads || !ins.length || !outs.length) return;
+    const way = ins[rng.int(0, ins.length - 1)]!;
+    const out = outs[rng.int(0, outs.length - 1)]!;
+    const streets = roads.tilesOf('road');
+    const stops = Array.from({ length: rng.int(...TOUR_STOPS) }, () => streets[rng.int(0, streets.length - 1)]!);
+    let drive: Tile[] | null = [way.edge];
+    let heading: Heading = way.heading;
+    for (const to of [...stops, out.edge]) {
+      const from: Tile = drive.at(-1)!;
+      const leg = roads.route(from, to, heading);
+      if (!leg) return;
+      drive = [...drive, ...leg];
+      const [a, b] = drive.slice(-2) as [Tile, Tile];
+      heading = headingOf(b[0] - a[0], b[1] - a[1], heading);
+    }
+    const car = sim.traffic.add(sim.traffic.randomLook(), way.off, [...drive, out.off], true);
+    car.facing = way.heading;
+    this.touring.push(car);
   }
 
   /** Pulled up: the driver gets out, and knows what they're here for. */
@@ -188,6 +229,11 @@ export class Visitors {
 
   private placeName(item: Item): string {
     return item.type.street ? `the ${item.def.label ?? item.type.name}` : (this.sim.levels.get(item.level)?.name ?? 'somewhere');
+  }
+
+  /** Ticks till the next car out for a drive. */
+  private tourGap(): number {
+    return Math.round((this.rng.range(...TOUR_GAP_MINUTES) / 60) * TICKS_PER_HOUR);
   }
 
   /** Hours till the next visitor, skewed towards the short end. */

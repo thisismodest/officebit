@@ -10,8 +10,9 @@ from late morning, and on weekday evenings after work.
 | Activity | Who | Where | How long |
 |---|---|---|---|
 | 🥏 Catch (a frisbee or a ball) | 2–4 friends | A clear spot of grass in a park | 1 h |
-| 🧺 A picnic (days off only) | 3–6: friends, plus partners and children | A blanket laid out in a park | 1½ h |
+| 🧺 A picnic (days off only) | 3–6: friends, plus partners and children (counted in the six) | A blanket laid out in a park | 1½ h |
 | ☕ Catching up | 2–4 friends | Seats that `gather` (a diner booth) | 1½ h |
+| 🍔 A bite to eat | 3–4 friends, round one table | Seats that `gather` | 1½ h |
 | 💻 Working on projects together | 2–4 makers | Seats that are a `worktop` (a booth, a park bench) | 2 h |
 
 Park plans need daylight. A park is any room with `park: true` (the Green).
@@ -29,7 +30,8 @@ Any venue, or new furniture, joins in by having the catalog flags
    well the two get on. They're only asked if they're free then: at home as
    their day has it, and not on a date. Nobody is in two plans at once.
 4. **On the day.** They set off 45 minutes before it starts, and drop what
-   they're doing at home to go. The organiser lays out the blanket, the
+   they're doing at home to go. Their seats are kept for them from then till
+   it's over, so the group sits together. The organiser lays out the blanket, the
    frisbee flies round the ring, and laptops come out.
 5. **Afterwards.** Time together grows friendships, at a quarter of a chat's
    rate. The blanket is packed away.

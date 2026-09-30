@@ -126,3 +126,11 @@ export function faceTowards(p: Person, x: number, y: number): void {
   const dy = y - p.y;
   p.facing = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
 }
+
+/** Someone on their way somewhere this far off (tiles) can't be caught up with: everyone walks at the same pace. */
+const CATCH_UP = 4;
+
+/** Is `q` off somewhere, too far ahead of `p` to catch for a chat? */
+export function walkingAway(p: Person, q: Person): boolean {
+  return q.phase === 'moving' && (q.level !== p.level || Math.hypot(q.x - p.x, q.y - p.y) > CATCH_UP);
+}

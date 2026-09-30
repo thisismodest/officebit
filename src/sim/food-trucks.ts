@@ -12,23 +12,13 @@ import { MOVERS, type Heading } from './movement.ts';
 import { hashOf } from './rng.ts';
 import type { RoadMap } from './roads.ts';
 import type { Item, Simulation } from './sim.ts';
-import type { Car } from './traffic.ts';
+import type { Car, Way } from './traffic.ts';
 import type { FurnitureDef, Tile } from './world.ts';
 
 /** How long before opening (game hours) the first truck sets off: time to cross town even at a slow pace. */
 const SET_OFF_EARLY = 1;
 /** Each truck in the convoy sets off, and leaves, this many game minutes after the one before. */
 const STAGGER_MINUTES = 3;
-/** How far off the map (tiles) a truck comes on and goes off, so it drives on rather than pops. */
-const OFFSTAGE = 3;
-
-/** A way into (or out of) town: a road's lane at the edge of the map, heading in (or out). */
-interface Way {
-  /** Just off the map, and the lane's tile at the edge. */
-  off: Tile;
-  edge: Tile;
-  heading: Heading;
-}
 
 export interface VehiclePose {
   x: number;
@@ -92,7 +82,7 @@ export class FoodTrucks {
   private setOff(item: Item): void {
     const { sim } = this;
     const roads = sim.traffic.roads();
-    const way = this.pick(this.ways('in'), item, 1);
+    const way = this.pick(sim.traffic.ways('in'), item, 1);
     const kerb = roads && kerbOf(roads, item.def);
     const route = roads && way && kerb && this.byRoad(way.edge, kerb, way.heading);
     if (!route || !way || !kerb || !roads) return;
@@ -109,7 +99,7 @@ export class FoodTrucks {
   private pullOut(item: Item, run: Run): void {
     const { sim } = this;
     const roads = sim.traffic.roads();
-    const way = this.pick(this.ways('out'), item, 2);
+    const way = this.pick(sim.traffic.ways('out'), item, 2);
     const kerb = roads && kerbOf(roads, item.def);
     const route = roads && way && kerb && this.byRoad(kerb, way.edge);
     run.car.parked = false;
@@ -129,46 +119,6 @@ export class FoodTrucks {
   private pick(ways: Way[], item: Item, salt: number): Way | undefined {
     const n = hashOf(`${item.index}:${dayOf(this.sim.tick)}:${salt}`, this.sim.world.seed) >>> 0;
     return ways[n % Math.max(1, ways.length)];
-  }
-
-  /**
-   * Every road off the edge of the map, one lane each: the one you'd drive in
-   * on (we drive on the left), or out on. A road two lanes wide at the east edge
-   * comes in westbound on its south lane, and so on round the compass.
-   */
-  private ways(direction: 'in' | 'out'): Way[] {
-    const roads = this.sim.traffic.roads();
-    const level = this.sim.levels.get(this.sim.traffic.level ?? '');
-    if (!roads || !level) return [];
-    const [w, h] = level.size;
-    const road = (x: number, y: number) => roads.drivable(x, y) && roads.floorAt(x, y) !== 'path';
-    const ways: Way[] = [];
-    // Each side: which way in is, how to walk along the edge, and which end of a run of lanes is the left-hand one going in.
-    const sides: { heading: Heading; out: Heading; tile: (i: number) => Tile; length: number; step: Tile; leftIn: 'first' | 'last' }[] = [
-      { heading: 'left', out: 'right', tile: (i) => [w - 1, i], length: h, step: [OFFSTAGE, 0], leftIn: 'last' },
-      { heading: 'right', out: 'left', tile: (i) => [0, i], length: h, step: [-OFFSTAGE, 0], leftIn: 'first' },
-      { heading: 'down', out: 'up', tile: (i) => [i, 0], length: w, step: [0, -OFFSTAGE], leftIn: 'last' },
-      { heading: 'up', out: 'down', tile: (i) => [i, h - 1], length: w, step: [0, OFFSTAGE], leftIn: 'first' },
-    ];
-    for (const side of sides) {
-      let run: Tile[] = [];
-      for (let i = 0; i <= side.length; i++) {
-        const tile = i < side.length ? side.tile(i) : undefined;
-        if (tile && road(...tile)) {
-          run.push(tile);
-          continue;
-        }
-        if (run.length) {
-          // In on the left-hand lane of the run, out on the other.
-          const inLane = side.leftIn === 'first' ? run[0]! : run.at(-1)!;
-          const outLane = side.leftIn === 'first' ? run.at(-1)! : run[0]!;
-          const edge = direction === 'in' ? inLane : outLane;
-          ways.push({ edge, off: [edge[0] + side.step[0], edge[1] + side.step[1]], heading: direction === 'in' ? side.heading : side.out });
-        }
-        run = [];
-      }
-    }
-    return ways;
   }
 }
 

@@ -14,7 +14,7 @@ import { Emitter } from './emitter.ts';
 import { MOVERS, advance, headingOf, speedOn } from './movement.ts';
 import { rulesFor } from './intents.ts';
 import { NEEDS, PANTRY_FULL, drain, restore, type Need } from './needs.ts';
-import { asleep, atDesk, seatedAtDesk, type Intent, type Person } from './person.ts';
+import { asleep, atDesk, seatedAtDesk, walkingAway, type Intent, type Person } from './person.ts';
 import { resolveTraits, type Traits } from './personality.ts';
 import { Housing } from './housing.ts';
 import { Interactions } from './interactions.ts';
@@ -326,7 +326,8 @@ export class Simulation {
       case 'employee':
         if (p.status.presence === 'away') return natural === 'sleep' ? 'sleep' : 'home';
         if (p.status.presence === 'here' || WORKING_STATUSES.has(p.status.activity ?? '')) return 'work';
-        if (natural === 'work' && !this.companies.get(p.company ?? '')) return 'home';
+        // Out of work, or their office isn't built yet (a venture's, while the builders are in): working hours at home.
+        if (natural === 'work' && !this.companies.get(p.company ?? '')?.levels.length) return 'home';
         return natural;
     }
   }
@@ -1127,7 +1128,7 @@ export class Simulation {
     // Chasing a conversation partner: re-plan if they've moved on.
     if (p.intent?.kind === 'chat' && this.steps % 8 === 0) {
       const target = this.byId.get(p.intent.with);
-      if (!target || !this.present(target) || asleep(target)) {
+      if (!target || !this.present(target) || asleep(target) || walkingAway(p, target)) {
         this.stop(p);
         return;
       }

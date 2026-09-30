@@ -7,7 +7,7 @@ import { asleep } from '../sim/person.ts';
 import { occupants } from '../sim/places.ts';
 import type { Simulation } from '../sim/sim.ts';
 import type { LevelDef } from '../sim/world.ts';
-import { esc } from './html.ts';
+import { esc, patch } from './html.ts';
 import { icon, iconButton, isIcon, type IconName } from './icons.ts';
 
 export type OfficeEvent = 'pizza' | 'drill';
@@ -104,7 +104,7 @@ export class Overview {
       <section><h3>Homes</h3>
         <p class="today mdst-p--sm">${stat('home', `${athome} at home across ${homes.length} homes${toLet ? ` · ${toLet} to let` : ''}${low ? ` · ${low} kitchen${low === 1 ? '' : 's'} running low` : ''}`)}</p></section>`;
     if (html !== this.html) {
-      this.root.innerHTML = html;
+      patch(this.root, html);
       this.html = html;
     }
   }

@@ -81,8 +81,8 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   ventures.ts     side project → launch → grow; Friday takings (hire, struggle, close; empty offices re-let); offices built by crews (construction.ts)
   careers.ts      Friday review (let go / quit / change) and weekday job hunt
   food-trucks.ts  the trucks' lunchtime runs: in on the roads as traffic, onto the pitch, and away again
-  roads.ts        the road map for vehicles and routes along it; traffic.ts: highway through-traffic and cars
-  visitors.ts     cars that turn off the highway; drivers stop to eat or charge, then drive on
+  roads.ts        the road map for vehicles and routes along it; traffic.ts: highway through-traffic, cars, the ways in and out of town
+  visitors.ts     cars that turn off the highway to eat or charge, and cars out for a drive round town
   arrivals.ts     new family members coming home: a baby dropped off by car (it crawls in), others on foot
   interactions.ts pizza (rider), fire drills, taking control (ControlledBrain)
   places.ts       buildings on the map and what's inside (for the click card); validate.ts: world checks
@@ -181,7 +181,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), a landing page, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-148 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+149 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

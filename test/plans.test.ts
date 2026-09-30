@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DEFAULT_CALENDAR } from '../src/sim/calendar.ts';
+import { ACTIVITIES, type ActivityId } from '../src/sim/plans.ts';
 import { TICKS_PER_DAY } from '../src/sim/clock.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { validate } from '../src/sim/validate.ts';
@@ -10,7 +11,7 @@ import { STARTER } from '../src/worlds/starter.ts';
 const watch = () => {
   const sim = new Simulation(structuredClone(STARTER));
   sim.calendar = { ...DEFAULT_CALENDAR, start: [2026, 6, 1] };
-  const seen = new Map<number, { activity: string; begun: boolean; members: string[]; level: string }>();
+  const seen = new Map<number, { activity: ActivityId; begun: boolean; members: string[]; level: string }>();
   let blanket = false;
   let laptops = false;
   let games = false;
@@ -28,9 +29,9 @@ const watch = () => {
   return { sim, plans: [...seen.values()], blanket, laptops, games, doubleBooked };
 };
 
-test('friends make plans and keep them: frisbee, picnics, catching up, and working on projects together', () => {
+test('friends make plans and keep them: frisbee, picnics, catching up, a meal, and working on projects together', () => {
   const { sim, plans, blanket, laptops, games } = watch();
-  for (const activity of ['catch', 'picnic', 'meetup', 'cowork']) assert.ok(plans.some((p) => p.activity === activity && p.begun), `a ${activity} happened`);
+  for (const activity of ['catch', 'picnic', 'meetup', 'meal', 'cowork']) assert.ok(plans.some((p) => p.activity === activity && p.begun), `a ${activity} happened`);
   assert.ok(plans.filter((p) => p.begun).length >= plans.length * 0.7, 'most plans come off');
   assert.ok(games, 'a game in the park');
   assert.ok(blanket, 'a picnic laid out');
@@ -43,7 +44,7 @@ test('friends make plans and keep them: frisbee, picnics, catching up, and worki
 test('nobody is in two plans at once, and plans go only where they belong', () => {
   const { plans, doubleBooked } = watch();
   assert.equal(doubleBooked, 0, 'never in two plans at once');
-  assert.ok(plans.every((p) => p.members.length >= 2));
+  assert.ok(plans.every((p) => p.members.length >= 2 && p.members.length <= ACTIVITIES[p.activity].group[1]), 'no more than it takes, family and all');
   // Parks for the games and picnics, the diner (or a bench) for the rest.
   for (const plan of plans) assert.ok(plan.activity === 'catch' || plan.activity === 'picnic' ? plan.level === 'town' : ['diner', 'town'].includes(plan.level), `${plan.activity} at ${plan.level}`);
 });

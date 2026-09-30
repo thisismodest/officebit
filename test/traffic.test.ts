@@ -97,3 +97,21 @@ test('cars take a path only when there’s no other way, and back out of a bay',
   }
   assert.ok(backedOut, 'reversing out, still facing the bay');
 });
+
+test('cars come in by any road for a drive round town, and leave again by day’s end', () => {
+  const sim = fresh();
+  const seen = new Set<string>();
+  let inTown = 0;
+  const level = sim.levels.get(sim.traffic.level!)!;
+  for (let t = 0; t < TICKS_PER_DAY; t++) {
+    sim.step();
+    for (const car of sim.visitors.touring) {
+      seen.add(car.id);
+      // Well into town, off the highway.
+      if (car.x > 5 && car.x < level.size[0] - 5 && car.y > 20) inTown++;
+    }
+  }
+  assert.ok(seen.size >= 4, `${seen.size} drives round town in a day`);
+  assert.ok(inTown > 0, 'they drive through town');
+  assert.equal(sim.visitors.touring.filter((c) => !c.removed).length, 0, 'and all gone by the small hours');
+});

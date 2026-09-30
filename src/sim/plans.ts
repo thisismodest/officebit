@@ -1,6 +1,6 @@
 // Plans (docs/PLANS.md): people arranging things together. Each morning some
 // sociable people (and ambitious ones, for their projects) suggest something for
-// later: frisbee or a picnic in the park, a get-together at the diner, working on
+// later: frisbee or a picnic in the park, a get-together or a meal at the diner, working on
 // a project together over laptops. They ask friends and colleagues they get on
 // with; those who are free and fancy it say yes, and it's in the News. When it's
 // time, they're drawn there; together, they bond. An activity says who it's for,
@@ -14,7 +14,7 @@ import { phaseAt } from './schedule.ts';
 import type { Item, Simulation } from './sim.ts';
 import type { Place, Tile } from './world.ts';
 
-export type ActivityId = 'catch' | 'picnic' | 'meetup' | 'cowork';
+export type ActivityId = 'catch' | 'picnic' | 'meetup' | 'meal' | 'cowork';
 
 interface Activity {
   /** How it reads in the News: "for frisbee", "for a picnic"… */
@@ -38,6 +38,7 @@ export const ACTIVITIES: Record<ActivityId, Activity> = {
   catch: { news: 'for frisbee', emoji: '🥏', group: [2, 4], who: 'friends', where: 'park', hours: 1 },
   picnic: { news: 'for a picnic', emoji: '🧺', group: [3, 6], who: 'friends', family: true, where: 'park', hours: 1.5, daysOffOnly: true },
   meetup: { news: 'to catch up', emoji: '☕', group: [2, 4], who: 'friends', where: 'gather', hours: 1.5 },
+  meal: { news: 'for a bite to eat', emoji: '🍔', group: [3, 4], who: 'friends', where: 'gather', hours: 1.5 },
   cowork: { news: 'to work on their projects together', emoji: '💻', group: [2, 4], who: 'makers', where: 'worktop', hours: 2 },
 };
 
@@ -109,9 +110,15 @@ export class Plans {
     const plan = this.of(p);
     if (!plan) return '';
     const { emoji } = ACTIVITIES[plan.activity];
-    const what = { catch: 'Frisbee', picnic: 'A picnic', meetup: 'Catching up', cowork: 'Working on projects together' }[plan.activity];
+    const what = { catch: 'Frisbee', picnic: 'A picnic', meetup: 'Catching up', meal: 'A bite to eat', cowork: 'Working on projects together' }[plan.activity];
     const with_ = names(plan.members.filter((id) => id !== p.id).map((id) => this.sim.person(id)?.name ?? '').filter(Boolean));
     return `${emoji} ${what} at ${placeName(plan, this.sim)}${with_ ? ` with ${with_}` : ''}, ${formatTime(plan.start)}`;
+  }
+
+  /** Seats kept for a plan from when its people set off till it's over: nobody else takes them. */
+  reserved(item: number, p: Person): boolean {
+    const { tick } = this.sim;
+    return this.list.some((plan) => plan.item === item && tick >= plan.start - SET_OFF * TICKS_PER_HOUR && tick < plan.end && !plan.members.includes(p.id));
   }
 
   /** Is it time they were off to their plan, and what they're doing isn't it? (Grown-ups with somewhere to be drop what they're doing; a chat there is fine.) */
@@ -197,8 +204,8 @@ export class Plans {
     const { sim } = this;
     if (maker && sim.rng.next() < 0.5) return 'cowork';
     const light = (id: ActivityId) => sim.daylight(start) > 0.6 && sim.daylight(start + ACTIVITIES[id].hours * TICKS_PER_HOUR) > 0.6;
-    // On a day off, a picnic's the likeliest thing to suggest.
-    const options = (['catch', 'picnic', 'picnic', 'meetup'] as const).filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (ACTIVITIES[id].where !== 'park' || light(id)));
+    // On a day off, a picnic's the likeliest thing to suggest; on an evening, something to eat.
+    const options = (['catch', 'picnic', 'picnic', 'meetup', 'meal', 'meal'] as const).filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (ACTIVITIES[id].where !== 'park' || light(id)));
     return options[sim.rng.int(0, options.length - 1)];
   }
 
@@ -215,8 +222,12 @@ export class Plans {
       const keen = ACCEPT.base + ACCEPT.social * q.traits.social + ACCEPT.affinity * sim.affinity(organiser, q) + (who === 'makers' ? 0.2 * q.traits.ambition : 0);
       if (sim.rng.next() < keen) going.push(q);
     }
-    // Partners and children come along to a picnic (and count towards the numbers).
-    const along = family ? sim.people.filter((q) => q.species === 'human' && q.npc && q.plan === undefined && !going.includes(q) && going.some((g) => g.home && g.home === q.home) && q.role !== 'staff') : [];
+    // Partners and children come along to a picnic (and count towards the numbers, up to the most it takes).
+    const along = family
+      ? sim.people
+          .filter((q) => q.species === 'human' && q.npc && q.plan === undefined && !going.includes(q) && going.some((g) => g.home && g.home === q.home) && q.role !== 'staff')
+          .slice(0, Math.max(0, group[1] - going.length))
+      : [];
     if (going.length < 2 || going.length + along.length < group[0]) return;
     const end = start + ACTIVITIES[activity].hours * TICKS_PER_HOUR;
     const place = this.placeFor(activity, going.length + along.length, start, end);
@@ -340,6 +351,8 @@ function gathered(plan: Plan, sim: Simulation): string {
       return 'are having a picnic in the park';
     case 'meetup':
       return `are catching up at ${place}`;
+    case 'meal':
+      return `are having a bite to eat together at ${place}`;
     case 'cowork':
       return `are working on their projects together at ${place}`;
   }

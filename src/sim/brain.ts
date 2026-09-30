@@ -3,7 +3,7 @@
 // time of day: the office during work hours, their home otherwise.
 import { TICKS_PER_DAY, TICKS_PER_HOUR, between, hourOf } from './clock.ts';
 import { NEEDS, PANTRY_FULL, urgency, type Need } from './needs.ts';
-import { asleep, type Intent, type Person, type UseMode } from './person.ts';
+import { asleep, walkingAway, type Intent, type Person, type UseMode } from './person.ts';
 import { outsideDoor } from './places.ts';
 import { roleOf } from './roles.ts';
 import { DISLIKE } from './relationships.ts';
@@ -120,7 +120,7 @@ export class PersonalityBrain implements Brain {
     const timeToGo = isVenue(p.level) && outFor > OUTING_TICKS && !date;
     for (const item of sim.activeItems()) {
       const { type } = item;
-      if (!type.offers || type.desk || !sim.canUse(p, item, phase) || sim.freeSpots(item.index) === 0) continue;
+      if (!type.offers || type.desk || !sim.canUse(p, item, phase) || sim.freeSpots(item.index) === 0 || sim.plans.reserved(item.index, p)) continue;
       // Children raid the fridge rather than cook.
       if (p.role === 'child' && (type.usesPantry ?? 0) >= 1) continue;
       if ((outing(item.level) && wentOutToday && !date) || (isVenue(item.level) && timeToGo)) continue;
@@ -216,7 +216,7 @@ export class PersonalityBrain implements Brain {
     // Other people (and pets): company, charisma, and for some, the thrill of interrupting.
     for (const q of sim.people) {
       if (q === p || !sim.present(q) || !area.includes(q.level) || asleep(q)) continue;
-      if (q.intent?.kind === 'meeting' || q.intent?.kind === 'retreat') continue;
+      if (q.intent?.kind === 'meeting' || q.intent?.kind === 'retreat' || walkingAway(p, q)) continue;
       // People out at a venue are only company for those already there, and only while the outing lasts.
       if (isVenue(q.level) && (q.level !== p.level || timeToGo)) continue;
       let score = benefit('social', CHAT_SOCIAL, 0.3 + t.social);
@@ -294,7 +294,7 @@ export class PetBrain implements Brain {
     const nap = sleep(p, sim, sim.tick + sim.rng.int(300, 900));
     if (nap) options.push({ intent: nap, score: 0.1 + urgency(p.needs, 'energy') * 1.5 + noise() });
     for (const q of sim.people) {
-      if (q === p || q.species !== 'human' || q.level !== p.level || !sim.present(q) || asleep(q)) continue;
+      if (q === p || q.species !== 'human' || q.level !== p.level || !sim.present(q) || asleep(q) || walkingAway(p, q)) continue;
       options.push({ intent: { kind: 'chat', with: q.id }, score: 0.15 + urgency(p.needs, 'social') + urgency(p.needs, 'fun') + noise() });
     }
     const wander = stroll(p, sim, sim.floorsOf(p.home));

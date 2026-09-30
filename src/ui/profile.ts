@@ -10,7 +10,7 @@ import type { Simulation } from '../sim/sim.ts';
 import type { Renderer } from '../render/renderer.ts';
 import { formatTime, weekdayOf } from '../sim/clock.ts';
 import { describe, presetLabel, whereIs } from './describe.ts';
-import { esc } from './html.ts';
+import { esc, patch } from './html.ts';
 import { iconButton } from './icons.ts';
 import { editable, type PersonEditor } from './person-editor.ts';
 import { describeRole, householdOf, optionLabel, routineOf } from './who.ts';
@@ -253,7 +253,7 @@ export class Profile {
     const el = this.fields.get(field);
     const html = items.length ? items.join('') : '<li class="mdst-p--muted">—</li>';
     if (el && el.dataset.html !== html) {
-      el.innerHTML = html;
+      patch(el, html);
       el.dataset.html = html;
     }
   }
