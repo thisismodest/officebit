@@ -53,8 +53,9 @@ love, or get saved into the world. At most three visit at once.
 Between 08:00 and 21:00, every 20 minutes to two hours, a car comes in by
 any road off the edge of the map (the highway, or a town road, in its
 left-hand lane; the same ways in and out as the food trucks, `traffic.ways`).
-It drives past two to four places on the town's roads and leaves by another
-way. It doesn't stop. At most two are out at once. They're traffic like any
+It drives to two to four road ends (junctions and the ends of closes, where
+turning is natural) and leaves by another way. It doesn't stop, and it goes
+round the block rather than turn round in the road where it can. At most two are out at once. They're traffic like any
 other: they keep their distance and give way at crossings. They draw on
 visitors' own random stream, so they don't change the story.
 

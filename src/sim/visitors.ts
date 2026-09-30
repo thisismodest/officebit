@@ -29,6 +29,8 @@ const TOUR_GAP_MINUTES: [number, number] = [20, 120];
 const TOUR_HOURS: [number, number] = [8, 21];
 const MOST_TOURING = 2;
 const TOUR_STOPS: [number, number] = [2, 4];
+/** Out for a drive, a car goes round the block rather than turn round in the road (roads.ts): what turning round costs it, in tiles' worth of driving. */
+const TOUR_TURN_ROUND = 200;
 /** Mixing the world's seed for visitors' own random stream. */
 const VISITOR_SEED = 0x51717025;
 
@@ -129,12 +131,14 @@ export class Visitors {
     if (!roads || !ins.length || !outs.length) return;
     const way = ins[rng.int(0, ins.length - 1)]!;
     const out = outs[rng.int(0, outs.length - 1)]!;
-    const streets = roads.tilesOf('road');
-    const stops = Array.from({ length: rng.int(...TOUR_STOPS) }, () => streets[rng.int(0, streets.length - 1)]!);
+    // Places to drive to: the ends of the town's roads (junctions and the ends of closes), where turning is natural.
+    const ends = this.roadEnds();
+    if (!ends.length) return;
+    const stops = Array.from({ length: rng.int(...TOUR_STOPS) }, () => ends[rng.int(0, ends.length - 1)]!);
     let drive: Tile[] = [way.edge];
     let heading: Heading = way.heading;
     for (const to of [...stops, out.edge]) {
-      const leg = roads.route(drive.at(-1)!, to, heading);
+      const leg = roads.route(drive.at(-1)!, to, heading, { turnRound: TOUR_TURN_ROUND });
       if (!leg) return;
       drive = [...drive, ...leg];
       // Setting off again the way it was going (a stop where it already is changes nothing).
@@ -144,6 +148,16 @@ export class Visitors {
     const car = sim.traffic.add(sim.traffic.randomLook(), way.off, [...drive, out.off], true);
     car.facing = way.heading;
     this.touring.push(car);
+  }
+
+  /** The ends of every road in town (the middle of each end of a road's strip): where roads meet, or stop. */
+  private roadEnds(): Tile[] {
+    const level = this.sim.levels.get(this.sim.traffic.level ?? '');
+    return (level?.rooms ?? [])
+      .filter((r) => r.floor === 'road')
+      .flatMap(({ rect: [x, y, w, h] }): Tile[] =>
+        w >= h ? [[x, y + Math.floor(h / 2)], [x + w - 1, y + Math.floor(h / 2)]] : [[x + Math.floor(w / 2), y], [x + Math.floor(w / 2), y + h - 1]],
+      );
   }
 
   /** Pulled up: the driver gets out, and knows what they're here for. */
