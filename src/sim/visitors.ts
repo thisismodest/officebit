@@ -29,7 +29,7 @@ const TOUR_GAP_MINUTES: [number, number] = [20, 120];
 const TOUR_HOURS: [number, number] = [8, 21];
 const MOST_TOURING = 2;
 const TOUR_STOPS: [number, number] = [2, 4];
-/** Out for a drive, a car goes round the block rather than turn round in the road (roads.ts): what turning round costs it, in tiles' worth of driving. */
+/** Driving round town (out for a drive, or a visitor on the way in), a car goes round the block rather than turn round in the road (roads.ts): what turning round costs it, in tiles' worth of driving. */
 const TOUR_TURN_ROUND = 200;
 /** Mixing the world's seed for visitors' own random stream. */
 const VISITOR_SEED = 0x51717025;
@@ -109,13 +109,16 @@ export class Visitors {
     const bay = bays.find((i) => i.type.parking === 'park') ?? bays[0];
     if (!roads || !lane || !bay) return;
 
-    const tours = roads.tilesOf('road');
-    const tour = tours[rng.int(0, tours.length - 1)];
+    // A drive round town first (to a road end, where turning is natural, going round rather than turning in the road).
+    const ends = this.roadEnds();
+    const tour = ends.length ? ends[rng.int(0, ends.length - 1)] : undefined;
+    const fit = { turnRound: TOUR_TURN_ROUND };
     // Nose in: to the tile in front of the bay, then up into it.
     const there = bay.def.p;
     const front: Tile = [there[0], there[1] + 1];
     const approach = roads.drivable(...front) ? front : there;
-    const drive = (tour && join(roads.route(lane.first, tour, lane.heading), (after) => roads.route(tour, approach, after))) ?? roads.route(lane.first, approach, lane.heading);
+    const drive =
+      (tour && join(roads.route(lane.first, tour, lane.heading, fit), (after) => roads.route(tour, approach, after, fit))) ?? roads.route(lane.first, approach, lane.heading);
     if (!drive) return;
     const car = sim.traffic.add(sim.traffic.randomLook(), lane.on, [lane.first, ...drive, ...(approach === front ? [there] : [])]);
     car.facing = lane.heading;
