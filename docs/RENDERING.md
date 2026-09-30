@@ -9,7 +9,7 @@ in code; the only image file is the favicon (`public/favicon.svg`).
 | `props/` | Furniture sprites (see [FURNITURE](FURNITURE.md)) |
 | `characters.ts` | People: ASCII templates, palette-swapped, cached |
 | `pets.ts` | Cats and dogs, side-on |
-| `cars.ts` | Cars from above, in a few paint jobs, the bus, food trucks on the move, and their lights |
+| `vehicles.ts` | Every vehicle from its look in `VEHICLES` (cars, food trucks on the move, the bus), and their lights |
 | `palette.ts`, `pixels.ts` | Shared colours and drawing helpers |
 | `renderer.ts` | Composes a frame for the current level |
 | `camera.ts` | Pan, zoom, follow (DOM-free, unit tested) |
@@ -43,13 +43,35 @@ shirt…) with poses for standing, walking, sitting at a desk, on a sofa, and
 asleep. Hairstyles, headphones and the department badge are painted on top.
 Tests check every template is the right width and front and back views are symmetric.
 
-Cars (`cars.ts`) are one cached sprite per paint job and direction, sized to
-sit inside a one-tile lane; a car on charge blinks a bolt. The bus and food
-trucks on the move are long vehicles, in scale with people (21px tall): the bus
-48×32 side on and 18 wide end on, a van 40×27 and 15 wide. Side on they stand on
-their lane (wheels at its foot, body rising up the screen, over the centre line).
-A food truck is a van with its hatch shut while it drives, and opens into the
-full stall once it's parked on its pitch.
+Vehicles (`vehicles.ts`) are all drawn by one painter from their looks in
+`VEHICLES`, keyed like the sim's `MOVERS` (`car`, `truck`, `bus`). A look is:
+- **`size`:** length and height side on, width end on (px, in scale with people,
+  who are 21px tall), and `wheelsBelow`. Side on, every vehicle stands on its
+  lane, and `wheelsBelow` nudges it up or down (cars at -2 sit centred). End on,
+  it's centred across the lane.
+- **`colours`:** a body and a band. Cars get a paint job from their look
+  (`paintJob`), and food trucks their own colours.
+- **`side` and `end`:** the rectangles that draw it, in order, as
+  `[x, y, width, height, paint]`.
+  - A negative position counts from the far edge. A size of zero or less is the
+    whole length less that much, so parts fit if you change the size.
+  - End on, a pair is `[driving away, coming towards]`.
+  - `every` repeats a part along the side (the bus's windows), and `centred`
+    measures x from the middle.
+  - Side on, parts are drawn facing left, and mirrored facing right.
+
+**Paint** is a role or a colour of its own:
+- roles shaded from the body or band: body, highlight, cabin, door, hatch, band
+- fixed roles: glass, tyre, lamps and so on
+- a literal `#hex` colour
+
+A food truck on the move is a van with its hatch shut, and opens into the full
+stall (its furniture painter) once it's parked on its pitch. A car on charge
+blinks a bolt.
+
+To add a vehicle: a mover in `MOVERS` (sim: speed, reach) and a look in
+`VEHICLES` by the same name, and have `vehicleKind` (`traffic.ts`) say which
+cars are one.
 
 ## Camera
 

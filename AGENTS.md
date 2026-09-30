@@ -96,7 +96,7 @@ src/worlds/   starter.ts (people, 2-floor office, venues, homes), town.ts (the 1
               school.ts, upgrades.ts (VERSION, and what each release adds to older towns), edit.ts (world edits: moving buildings, turning houses, floors, team), placement.ts (safe zones),
               rooms.ts (walled rooms and doorways)
 src/render/   renderer.ts (one level through a camera; y-sorted props+people; night lighting),
-              camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, cars.ts,
+              camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, vehicles.ts (every vehicle from its look in VEHICLES: cars, food trucks, the bus),
               palette.ts, pixels.ts, seasonal.ts (fairy lights, pumpkins, fireworks), play.ts (frisbees, laptops),
               spotlights.ts (the spotlights on billboards and posters: which, when, pixelated), props/* (one painter per catalog type)
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
@@ -192,7 +192,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), an About page and a welcome card, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-162 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+165 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

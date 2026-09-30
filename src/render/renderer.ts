@@ -6,9 +6,9 @@ import { interiorOf, occupants } from '../sim/places.ts';
 import type { Item, Simulation } from '../sim/sim.ts';
 import { asideOffset } from '../sim/collision.ts';
 import { AHEAD } from '../sim/movement.ts';
-import type { Car } from '../sim/traffic.ts';
+import { vehicleKind, type Car } from '../sim/traffic.ts';
 import { Camera } from './camera.ts';
-import { busSprite, carOrigin, carSprite, longOrigin, paintCarLights, vanSprite } from './cars.ts';
+import { paintJob, paintVehicleLights, vehicleOrigin, vehicleSprite, type Colours } from './vehicles.ts';
 import { truckColours } from './props/outdoor.ts';
 import { characterSprite, type Facing, type Look, type Pose, SPRITE_H } from './characters.ts';
 import { BACKGROUND, NIGHT, OUTLINE, PANTS, hashString } from './palette.ts';
@@ -176,8 +176,8 @@ export class Renderer {
       // On the move it's a van in its lane, hatch shut; it opens up into the stall once it's parked.
       if (pose?.moving) {
         const [mx, my] = [pose.x + pose.middle[0], pose.y + pose.middle[1]];
-        const sprite = vanSprite(truckColours(prop.item.def.label), pose.facing);
-        return { sortY: my * TILE + TILE, draw: () => this.onMap(() => this.ctx.drawImage(sprite, ...longOrigin(sprite, mx, my, pose.facing))) };
+        const sprite = vehicleSprite('truck', pose.facing, truckLook(prop.item.def.label));
+        return { sortY: my * TILE + TILE, draw: () => this.onMap(() => this.ctx.drawImage(sprite, ...vehicleOrigin(sprite, mx, my, pose.facing))) };
       }
       const sortY = pose ? (pose.y + prop.item.type.size[1]) * TILE : prop.sortY;
       return { sortY, draw: pose ? () => this.onMap(() => this.paintProp(prop, night, pose)) : () => this.paintProp(prop, night, pose) };
@@ -208,9 +208,8 @@ export class Renderer {
         if (car.parked) continue;
         const truck = car.truck === undefined ? undefined : sim.items[car.truck];
         if (truck && sim.foodTrucks.parked(truck)) continue;
-        const sprite = truck ? vanSprite(truckColours(truck.def.label), car.facing) : car.bus ? busSprite(car.facing) : carSprite(car.look, car.facing);
-        const origin = truck || car.bus ? longOrigin(sprite, pos.x, pos.y, car.facing) : carOrigin(sprite, pos.x, pos.y);
-        this.onMap(() => paintCarLights(this.ctx, sprite, origin, car.facing));
+        const sprite = this.spriteOf(car);
+        this.onMap(() => paintVehicleLights(this.ctx, sprite, vehicleOrigin(sprite, pos.x, pos.y, car.facing), car.facing));
       }
     }
 
@@ -462,10 +461,18 @@ export class Renderer {
     ctx.restore();
   }
 
+  /** How a vehicle looks right now, by its kind (vehicles.ts): a car in its paint job, a food truck in its own colours, the bus. */
+  private spriteOf(car: Car): HTMLCanvasElement {
+    const kind = vehicleKind(car);
+    const truck = car.truck === undefined ? undefined : this.sim.items[car.truck];
+    const colours: Partial<Colours> | undefined = kind === 'car' ? paintJob(car.look) : truck ? truckLook(truck.def.label) : undefined;
+    return vehicleSprite(kind, car.facing, colours);
+  }
+
   /** A car where it's got to; one on charge shows a blinking bolt. */
   private paintCar(car: Car, pos: { x: number; y: number }): void {
-    const sprite = car.bus ? busSprite(car.facing) : carSprite(car.look, car.facing);
-    const [x, y] = car.bus ? longOrigin(sprite, pos.x, pos.y, car.facing) : carOrigin(sprite, pos.x, pos.y);
+    const sprite = this.spriteOf(car);
+    const [x, y] = vehicleOrigin(sprite, pos.x, pos.y, car.facing);
     this.ctx.drawImage(sprite, x, y);
     if (car.chargedAt && this.sim.tick < car.chargedAt && Math.floor(this.time / 600) % 2 === 0) {
       for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [0, 2]] as const) dot(this.ctx, x + sprite.width / 2 - 1 + dx, y - 4 + dy, '#9be38a');
@@ -618,4 +625,10 @@ export function bubbleFor(p: Person, sim: Simulation): string | null {
     default:
       return null;
   }
+}
+
+/** A food truck's colours on the move: its own body, its stripe as the band. */
+function truckLook(label: string | undefined): Colours {
+  const { body, stripe } = truckColours(label);
+  return { body, band: stripe };
 }

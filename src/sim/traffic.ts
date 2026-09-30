@@ -270,7 +270,11 @@ export class Traffic {
   }
 }
 
-/** What kind of mover a vehicle is: a car, a food truck or the bus (movement.ts). */
+/** What kind of vehicle it is: a car, a food truck or the bus (the same names as its mover, movement.ts, and its look, render/vehicles.ts). */
+export function vehicleKind(car: Car): 'car' | 'truck' | 'bus' {
+  return car.bus ? 'bus' : car.truck === undefined ? 'car' : 'truck';
+}
+
 function moverOf(car: Car): Mover {
-  return car.bus ? MOVERS.bus : car.truck === undefined ? MOVERS.car : MOVERS.truck;
+  return MOVERS[vehicleKind(car)];
 }
