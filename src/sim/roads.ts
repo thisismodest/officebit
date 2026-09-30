@@ -44,6 +44,8 @@ export class RoadMap {
   /** Tiles with something standing on them (a lamppost, a charger, a canopy's posts): no car goes there. Bays are for cars. */
   private readonly standing: Uint8Array;
 
+  private scratch: { cost: Float64Array; came: Int32Array } | null = null;
+
   constructor(level: LevelDef, grid: Grid) {
     [this.w, this.h] = level.size;
     this.floors = Array.from({ length: this.w * this.h }, (_, i) => level.rooms[grid.room[i]!]?.floor);
@@ -110,9 +112,12 @@ export class RoadMap {
     const offRoad = (x: number, y: number) => !this.drivable(x, y) && this.inside(x, y) && !!fit.offRoad?.(x, y);
     const enter = (x: number, y: number) => (road(x, y) || offRoad(x, y)) && (reach === 0 || clear(x, y));
     if (!enter(...from) || !enter(...to)) return null;
+    // The search's scratch space, kept between searches (it's the whole map, every heading).
     const states = this.w * this.h * 4;
-    const cost = new Float64Array(states).fill(Infinity);
-    const came = new Int32Array(states).fill(-1);
+    if (this.scratch?.cost.length !== states) this.scratch = { cost: new Float64Array(states), came: new Int32Array(states) };
+    const { cost, came } = this.scratch;
+    cost.fill(Infinity);
+    came.fill(-1);
     const open = new Heap();
     const tile = (x: number, y: number) => y * this.w + x;
     for (const [d, h] of HEADINGS.entries()) {

@@ -59,11 +59,14 @@ export class FoodTrucks {
     return this.runs.get(item.index)?.stage === 'parked';
   }
 
+  /** The food trucks among the furniture, worked out again only when the furniture changes. */
+  private trucks: { items: readonly Item[]; convoy: Item[] } | null = null;
+
   /** Every step: trucks set off on time, park when they get there, and head off at closing. */
   step(): void {
     const { sim } = this;
     const traffic = sim.traffic;
-    const convoy = sim.activeItems().filter((i) => i.type.street && i.type.hours);
+    const convoy = this.convoy();
     const hour = hourOf(sim.tick);
     for (const [n, item] of convoy.entries()) {
       const [open, close] = item.type.hours!;
@@ -78,6 +81,13 @@ export class FoodTrucks {
       else if (run?.stage === 'leaving' && !traffic.cars.includes(run.car)) this.runs.delete(item.index);
     }
     for (const index of this.runs.keys()) if (!convoy.some((i) => i.index === index)) this.runs.delete(index);
+  }
+
+  /** The town's food trucks (the same list till the furniture changes). */
+  private convoy(): Item[] {
+    const items = this.sim.activeItems();
+    if (this.trucks?.items !== items) this.trucks = { items, convoy: items.filter((i) => i.type.street && i.type.hours) };
+    return this.trucks.convoy;
   }
 
   /** In by today's road, along the roads to the kerb by the pitch, then up onto it. */

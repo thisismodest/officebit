@@ -20,6 +20,8 @@ const LIVE_DT = STEP_MS / TICK_MS;
 const BEHIND = 2;
 /** Fast-forwarding may use this much of each frame, in ms, leaving enough to keep the page responsive. */
 const FAST_BUDGET_MS = 40;
+/** A long jump ahead (one the sim can't keep pace with) takes more of each frame: fewer frames drawn, more of the time spent getting there. */
+const LONG_JUMP_BUDGET_MS = 150;
 /** A jump ahead aims to play out over this long (real ms), so you can watch it; but never slower than 60×. */
 const JUMP_MS = 8000;
 const SLOWEST_JUMP = (60 * TICKS_PER_SECOND) / 1000;
@@ -122,7 +124,9 @@ export class Timekeeper {
       // At the jump's pace (up to what a frame can manage), stopping at the target.
       const { to, rate } = this.travelling;
       this.carry += elapsed * rate;
-      const until = performance.now() + FAST_BUDGET_MS;
+      // Falling behind its pace: it's a long one, so give it more of each frame.
+      const budget = this.carry > rate * FAST_BUDGET_MS ? LONG_JUMP_BUDGET_MS : FAST_BUDGET_MS;
+      const until = performance.now() + budget;
       while (this.carry >= 1 && sim.tick + 1 <= to && performance.now() < until) {
         sim.step();
         this.carry -= 1;
@@ -130,7 +134,7 @@ export class Timekeeper {
       if (sim.tick + 1 > to) {
         this.travelling = null;
         this.carry = 0;
-      } else if (this.carry > rate * FAST_BUDGET_MS) this.carry = rate * FAST_BUDGET_MS;
+      } else if (this.carry > rate * LONG_JUMP_BUDGET_MS) this.carry = rate * LONG_JUMP_BUDGET_MS;
       return 1;
     }
     this.catchingUp = false;

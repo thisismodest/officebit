@@ -492,7 +492,7 @@ export class Simulation {
     this.construction.step();
     this.interactions.step();
     this.foodTrucks.step();
-    this.space.fill('foot', this.people.map((p) => ({ level: p.level, body: this.bodyOf(p) })));
+    this.space.fill('foot', this.people.map((p) => this.bodyOf(p)));
     this.traffic.step();
     this.visitors.step();
     this.buses.step();
@@ -547,7 +547,7 @@ export class Simulation {
       const was = this.minded.get(level.id);
       this.minded.set(level.id, open);
       // Closing time isn't news; staff not being there in opening hours is.
-      if (news && this.inHours(level.id) && was !== undefined && was !== open) this.log(open ? `🔓 ${level.name} is open` : `🔒 ${level.name} is shut: nobody's minding it`, []);
+      if (news && was !== undefined && was !== open && this.inHours(level.id)) this.log(open ? `🔓 ${level.name} is open` : `🔒 ${level.name} is shut: nobody's minding it`, []);
     }
   }
 

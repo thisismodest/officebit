@@ -6,22 +6,18 @@ import { MOVERS } from '../src/sim/movement.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { STARTER } from '../src/worlds/starter.ts';
 
-const body = (id: string, x: number, y: number, facing: Body['facing'], moving = true, extra: Partial<Body> = {}): Body => ({ id, x, y, facing, moving, here: true, ...extra });
+const body = (id: string, x: number, y: number, facing: Body['facing'], moving = true, extra: Partial<Body> = {}): Body => ({ id, x, y, facing, moving, here: true, level: 'town', ...extra });
 const walking = MOVERS.walker.manners;
 const driving = MOVERS.car.manners;
 
 test('the space: who is near, on which layer and level, and only if they are here', () => {
   const space = new Space();
-  space.fill('foot', [
-    { level: 'town', body: body('a', 5, 5, 'right') },
-    { level: 'town', body: body('gone', 5, 6, 'right', true, { here: false }) },
-    { level: 'home', body: body('b', 5, 5, 'right') },
-  ]);
-  space.fill('wheels', [{ level: 'town', body: body('car', 6, 5, 'left', false) }]);
+  space.fill('foot', [body('a', 5, 5, 'right'), body('gone', 5, 6, 'right', true, { here: false }), body('b', 5, 5, 'right', true, { level: 'home' })]);
+  space.fill('wheels', [body('car', 6, 5, 'left', false)]);
   assert.deepEqual(space.near('town', 'foot', 5, 5, 1).map((b) => b.id), ['a']);
   assert.deepEqual(space.still('town', 'wheels').map((b) => b.id), ['car']);
   // Near means the square of tiles round the point, wherever the buckets fall.
-  space.fill('foot', [3, 4, 7, 8, 9].map((x) => ({ level: 'town', body: body(`at${x}`, x, 5, 'right') })));
+  space.fill('foot', [3, 4, 7, 8, 9].map((x) => body(`at${x}`, x, 5, 'right')));
   assert.deepEqual(space.near('town', 'foot', 5, 5, 2).map((b) => b.id).sort(), ['at3', 'at4', 'at7', 'at8']);
   // Refilling a layer replaces it, leaving the other be.
   space.fill('foot', []);

@@ -68,6 +68,8 @@ interface Route {
   roads: RoadMap;
   /** The town's furniture it was worked out from (the same list till anything's added, moved or taken away). */
   items: readonly Item[];
+  /** Each bus's drive, worked out once: `legs[0]` in to the first stop, `legs[i]` on from the stop before to stop `i`, and the last out of town. */
+  legs: Tile[][];
 }
 
 export class Buses {
@@ -154,9 +156,8 @@ export class Buses {
     const plan = this.plan();
     const roads = sim.traffic.roads();
     if (!plan || !roads) return;
-    const first = this.bayOf(plan.stops[0]!)!;
-    const drive = this.drive(roads, plan.in.edge, first, plan.in.heading, this.headingAt(plan.stops[0]!));
-    if (!drive) return;
+    const drive = plan.legs[0];
+    if (!drive?.length) return;
     const car = sim.traffic.add(0, plan.in.off, [plan.in.edge, ...drive]);
     car.facing = plan.in.heading;
     car.bus = true;
@@ -186,18 +187,15 @@ export class Buses {
     if (service.dwell < DWELL) return;
     service.dwell = 0;
     service.next++;
-    const roads = sim.traffic.roads();
-    const here = this.bayOf(stop)!;
-    const next = plan.stops[service.next];
-    if (next && roads) {
-      const bay = this.bayOf(next)!;
-      service.car.path = this.drive(roads, here, bay, this.headingAt(stop), this.headingAt(next)) ?? [];
-      if (service.car.path.length === 0) this.call(service);
+    const leg = plan.legs[service.next] ?? [];
+    if (service.next < plan.stops.length) {
+      service.car.path = [...leg];
+      if (leg.length === 0) this.call(service);
       return;
     }
     service.leaving = true;
     service.car.through = true;
-    service.car.path = [...((roads && this.drive(roads, here, plan.out.edge, this.headingAt(stop))) ?? []), plan.out.off];
+    service.car.path = [...leg, plan.out.off];
   }
 
   private alight(rider: Rider, stop: Item): void {
@@ -277,7 +275,16 @@ export class Buses {
     }
     if (best.length === Infinity) return null;
     const ordered = best.order.map((i) => stops[i]!);
-    this.route = { stops: ordered, in: into[best.order[0]!]!.way, out: outOf[best.order.at(-1)!]!.way, key, roads, items };
+    const [into_, out] = [into[best.order[0]!]!.way, outOf[best.order.at(-1)!]!.way];
+    // The drives between, once and for all (the same every trip).
+    const bay = (i: number) => bays[best.order[i]!]!;
+    const heading = (i: number) => headings[best.order[i]!]!;
+    const legs = [
+      this.drive(roads, into_.edge, bay(0), into_.heading, heading(0)) ?? [],
+      ...ordered.slice(1).map((_, k) => this.drive(roads, bay(k), bay(k + 1), heading(k), heading(k + 1)) ?? []),
+      this.drive(roads, bay(ordered.length - 1), out.edge, heading(ordered.length - 1)) ?? [],
+    ];
+    this.route = { stops: ordered, in: into_, out, key, roads, items, legs };
     return this.route;
   }
 }

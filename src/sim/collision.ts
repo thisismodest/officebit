@@ -24,7 +24,7 @@ export interface Body {
   readonly moving: boolean;
   readonly here: boolean;
   /** The level it's on now (bodies are found by where they were when the layer was filled, and people go through doors). */
-  readonly level?: string;
+  readonly level: string;
   /** Settled at its own spot (a desk, a seat, a bed): in nobody's way. */
   readonly settled?: boolean;
   /** The tiles it stands on, if more than the one under its middle (a parked truck: its pitch). */
@@ -61,17 +61,17 @@ interface Entry {
 
 /** Each level's bodies, by layer, bucketed by where they were when the layer was filled (they move less than a tile a step). */
 export class Space {
-  private readonly layers = new Map<string, Map<number, Entry[]>>();
+  /** Layer, then level, then cell: the bodies there. */
+  private readonly layers: Record<Layer, Map<string, Map<number, Entry[]>>> = { foot: new Map(), wheels: new Map() };
 
-  /** Put a layer's bodies in, in place of whatever was there. */
-  fill(layer: Layer, bodies: Iterable<{ level: string; body: Body }>): void {
-    for (const key of [...this.layers.keys()]) if (key.endsWith(`|${layer}`)) this.layers.delete(key);
-    for (const { level, body } of bodies) {
-      const key = `${level}|${layer}`;
-      let cells = this.layers.get(key);
+  /** Put a layer's bodies in (each on its level), in place of whatever was there. */
+  fill(layer: Layer, bodies: Iterable<Body>): void {
+    const levels = new Map<string, Map<number, Entry[]>>();
+    for (const body of bodies) {
+      let cells = levels.get(body.level);
       if (!cells) {
         cells = new Map();
-        this.layers.set(key, cells);
+        levels.set(body.level, cells);
       }
       const [tx, ty] = [Math.round(body.x), Math.round(body.y)];
       const cell = cellKey(Math.floor(tx / CELL), Math.floor(ty / CELL));
@@ -79,11 +79,12 @@ export class Space {
       if (here) here.push({ tx, ty, body });
       else cells.set(cell, [{ tx, ty, body }]);
     }
+    this.layers[layer] = levels;
   }
 
   /** A layer's bodies on a level within `radius` tiles (square) of a point, that are here now. */
   near(level: string, layer: Layer, x: number, y: number, radius: number): Body[] {
-    const cells = this.layers.get(`${level}|${layer}`);
+    const cells = this.layers[layer].get(level);
     if (!cells) return [];
     const found: Body[] = [];
     const [cx, cy] = [Math.round(x), Math.round(y)];
@@ -91,7 +92,7 @@ export class Space {
     for (let j = Math.floor((cy - r) / CELL); j <= Math.floor((cy + r) / CELL); j++) {
       for (let i = Math.floor((cx - r) / CELL); i <= Math.floor((cx + r) / CELL); i++) {
         for (const { tx, ty, body } of cells.get(cellKey(i, j)) ?? []) {
-          if (Math.abs(tx - cx) <= r && Math.abs(ty - cy) <= r && body.here && (body.level ?? level) === level) found.push(body);
+          if (Math.abs(tx - cx) <= r && Math.abs(ty - cy) <= r && body.here && body.level === level) found.push(body);
         }
       }
     }
@@ -100,7 +101,7 @@ export class Space {
 
   /** A layer's bodies on a level that are standing still (a parked vehicle), for walkers' routes to go round. */
   still(level: string, layer: Layer): Body[] {
-    return [...(this.layers.get(`${level}|${layer}`)?.values() ?? [])].flat().map((e) => e.body).filter((b) => b.here && !b.moving);
+    return [...(this.layers[layer].get(level)?.values() ?? [])].flat().map((e) => e.body).filter((b) => b.here && !b.moving);
   }
 }
 

@@ -159,7 +159,7 @@ export class Traffic {
       car.facing = lane.heading;
     }
     const level = this.level!;
-    this.sim.space.fill('wheels', this.cars.map((car) => ({ level, body: this.bodyOf(car) })));
+    this.sim.space.fill('wheels', this.cars.map((car) => this.bodyOf(car)));
     this.markParked(level);
     for (const car of [...this.cars]) {
       // Parked, or held up: it stays exactly where it is (nothing to draw moving between steps).
@@ -180,6 +180,7 @@ export class Traffic {
       body = {
         id: car.id,
         reach: moverOf(car).reach ?? 0,
+        level: this.level!,
         get x() {
           return car.x;
         },

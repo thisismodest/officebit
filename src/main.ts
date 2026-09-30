@@ -240,8 +240,6 @@ function follow(id: string | null): void {
   updateCameraUi();
 }
 
-/** A spotlight's picture on its card, in pixels. */
-const SPOTLIGHT_CARD: [number, number] = [96, 50];
 
 /** Buildings you can click: anything with a door leading inside. */
 const enterable = (item: Item) => interiorOf(sim, item) !== null;
@@ -257,9 +255,9 @@ attachControls(renderer, {
     }
     const panel = renderer.pickItem(x, y, (item) => !!item.type.spotlight);
     if (panel) {
-      // The card shows the spotlight landscape, like a billboard, whatever shape the panel.
+      // The card shows its picture as it is, whatever the panel (a poster shows the icon).
       const spot = renderer.spotlightOn(panel.item);
-      return card.openSpotlight(spot, renderer.spotlights.pixels(spot, SPOTLIGHT_CARD[0], SPOTLIGHT_CARD[1]), renderer.toWorld(x, y));
+      return card.openSpotlight(spot, renderer.toWorld(x, y));
     }
     const building = renderer.pickItem(x, y, enterable);
     const inside = building && interiorOf(sim, building.item);

@@ -17,11 +17,12 @@ export function paintStaticLayer(level: LevelDef, grid: Grid): HTMLCanvasElement
   const floorAt = (x: number, y: number): FloorStyle => FLOORS[roomAt(x, y)?.floor ?? ''] ?? DEFAULT_FLOOR;
   const doors = new Set(level.doors.map(([x, y]) => `${x},${y}`));
   const indoors = level.kind !== 'outside';
+  const road = (x: number, y: number) => grid.inBounds(x, y) && CARRIAGEWAY.has(roomAt(x, y)?.floor ?? '');
 
   for (let ty = 0; ty < grid.h; ty++) {
     for (let tx = 0; tx < grid.w; tx++) {
       if (indoors && isWall(tx, ty)) continue;
-      paintFloor(ctx, tx, ty, floorAt(tx, ty), roomAt(tx, ty));
+      paintFloor(ctx, tx, ty, floorAt(tx, ty), roomAt(tx, ty), road);
       if (!indoors) continue;
       paintWallShadow(ctx, tx, ty, isWall);
       if (doors.has(`${tx},${ty}`)) paintThreshold(ctx, tx, ty, isWall, ty === grid.h - 1);
@@ -47,7 +48,11 @@ function wallpaper(style: FloorStyle): string {
   return shade(base, 0.45);
 }
 
-function paintFloor(ctx: Ctx, tx: number, ty: number, style: FloorStyle, room: RoomDef | undefined): void {
+/** Floors a road's traffic drives over: where road carries on past a road's edge, it's a bend or a junction. */
+const CARRIAGEWAY = new Set(['road', 'zebra', 'zebraSide', 'highway']);
+
+/** `road`: is there carriageway at a tile (for keeping the centre line out of bends and junctions)? */
+function paintFloor(ctx: Ctx, tx: number, ty: number, style: FloorStyle, room: RoomDef | undefined, road: (x: number, y: number) => boolean): void {
   const x0 = tx * TILE;
   const y0 = ty * TILE;
   const speckle = (base: string, dark: number, light: number, salt: number) => {
@@ -134,13 +139,14 @@ function paintFloor(ctx: Ctx, tx: number, ty: number, style: FloorStyle, room: R
     case 'road': {
       rect(ctx, x0, y0, TILE, TILE, style.base);
       speckle(style.base, 0.07, 0.04, 9);
-      // Dashed centre line down the middle of the road.
+      // Dashed centre line down the middle of the road, stopping short of a bend or a junction (road carrying on past its edges).
       if (!room) break;
       const [rx, ry, rw, rh] = room.rect;
       const horizontal = rw >= rh;
       const edge = horizontal ? ry + rh / 2 : rx + rw / 2;
-      if (horizontal && ty === edge && tx % 2 === 0) rect(ctx, x0 + 2, y0 - 1, 10, 2, '#e8dfae');
-      if (!horizontal && tx === edge && ty % 2 === 0) rect(ctx, x0 - 1, y0 + 2, 2, 10, '#e8dfae');
+      const junction = horizontal ? road(tx, ry - 1) || road(tx, ry + rh) : road(rx - 1, ty) || road(rx + rw, ty);
+      if (horizontal && ty === edge && tx % 2 === 0 && !junction) rect(ctx, x0 + 2, y0 - 1, 10, 2, '#e8dfae');
+      if (!horizontal && tx === edge && ty % 2 === 0 && !junction) rect(ctx, x0 - 1, y0 + 2, 2, 10, '#e8dfae');
       break;
     }
     case 'highway': {

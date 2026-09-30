@@ -62,15 +62,14 @@ export class PlaceCard {
     this.show(interior.name, at, interior.levels.map((level, i) => button(many ? level.name : 'Visit', level.id, i === 0)));
   }
 
-  /** Open for a spotlight: its picture, what it says, and a link to it (in a new tab). */
-  openSpotlight(spot: Spotlight, art: HTMLCanvasElement | null, at: { x: number; y: number }): void {
+  /** Open for a spotlight: its picture as it is (pixelated only out in town), what it says, and a link to it (in a new tab). */
+  openSpotlight(spot: Spotlight, at: { x: number; y: number }): void {
     this.interior = null;
-    const picture = document.createElement('canvas');
+    const src = spot.image?.src;
+    const picture = document.createElement('img');
     picture.className = 'spotlight-art';
-    if (art) {
-      [picture.width, picture.height] = [art.width, art.height];
-      picture.getContext('2d')!.drawImage(art, 0, 0);
-    }
+    picture.alt = '';
+    if (src) picture.src = src;
     const about = document.createElement('p');
     about.className = 'mdst-p--sm';
     about.textContent = spot.description;
@@ -80,7 +79,7 @@ export class PlaceCard {
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.textContent = `Visit ${spot.host} ↗`;
-    this.show(spot.name, at, [...(art ? [picture] : []), about, link]);
+    this.show(spot.name, at, [...(src ? [picture] : []), about, link]);
     this.root.dataset.kind = 'spotlight';
   }
 

@@ -20,7 +20,7 @@
 button,
 svg,
 canvas,
-[role='tab'] {
+[role="tab"] {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
@@ -162,15 +162,29 @@ body {
     image-rendering: pixelated;
   }
 
-  & .hair { fill: var(--hair); }
-  & .shirt { fill: var(--shirt); }
-  & .skin { fill: #e0a883; }
-  & .legs { fill: #34405e; }
-  & .shoes { fill: #2a2033; }
+  & .hair {
+    fill: var(--hair);
+  }
+  & .shirt {
+    fill: var(--shirt);
+  }
+  & .skin {
+    fill: #e0a883;
+  }
+  & .legs {
+    fill: #34405e;
+  }
+  & .shoes {
+    fill: #2a2033;
+  }
 
   /* Two frames of legs, swapping on each step. */
-  & .step-a { animation: step 0.5s steps(1) infinite; }
-  & .step-b { animation: step 0.5s steps(1) infinite reverse; }
+  & .step-a {
+    animation: step 0.5s steps(1) infinite;
+  }
+  & .step-b {
+    animation: step 0.5s steps(1) infinite reverse;
+  }
 }
 
 @keyframes turn {
@@ -272,7 +286,7 @@ body {
   }
 
   /* Hover is modest-ui's own (black, white text, border kept); a button stays black while its menu is open. */
-  & button[aria-expanded='true'] {
+  & button[aria-expanded="true"] {
     background: var(--mdst-color-fg);
     color: var(--mdst-color-bg);
   }
@@ -291,7 +305,7 @@ body {
   z-index: 3;
   background: var(--mdst-color-bg);
 
-  & [aria-pressed='true'] {
+  & [aria-pressed="true"] {
     background: var(--mdst-color-fg);
     color: var(--mdst-color-bg);
   }
@@ -399,14 +413,14 @@ button#fullscreen {
     gap: var(--mdst-space-sm);
   }
 
-  & input[type='range'] {
+  & input[type="range"] {
     width: 100%;
     margin: 0 0 var(--mdst-space-xs);
   }
 }
 
 /* The speed you're on, inverted. */
-.menubar .speed-menu [aria-pressed='true'] {
+.menubar .speed-menu [aria-pressed="true"] {
   background: var(--mdst-color-fg);
   color: var(--mdst-color-bg);
   border-color: var(--mdst-color-fg);
@@ -549,13 +563,13 @@ main {
 
     & .actions {
       align-items: center;
+      gap: var(--mdst-space-sm);
     }
 
     & .spotlight-art {
       display: block;
       width: 100%;
       height: auto;
-      image-rendering: pixelated;
       border: var(--mdst-border-width) solid var(--mdst-color-border);
     }
 
@@ -674,7 +688,7 @@ aside {
     gap: var(--mdst-space-xs);
   }
 
-  & [aria-expanded='true'] {
+  & [aria-expanded="true"] {
     background: var(--mdst-color-fg);
     color: var(--mdst-color-bg);
   }
@@ -876,7 +890,7 @@ aside {
     display: flex;
     gap: var(--mdst-space-xs);
 
-    & [aria-pressed='true'] {
+    & [aria-pressed="true"] {
       background: var(--mdst-color-fg);
       color: var(--mdst-color-bg);
     }
@@ -955,12 +969,12 @@ aside {
       background: var(--swatch);
     }
 
-    & .swatches .mdst-button--sm[aria-pressed='true'] {
+    & .swatches .mdst-button--sm[aria-pressed="true"] {
       background: var(--mdst-color-fg);
       color: var(--mdst-color-bg);
     }
 
-    & .swatch[aria-pressed='true'] {
+    & .swatch[aria-pressed="true"] {
       outline: 2px solid var(--mdst-color-fg);
       outline-offset: 2px;
     }
@@ -992,7 +1006,7 @@ aside {
       }
     }
 
-    & [data-action='show-newcomer'] {
+    & [data-action="show-newcomer"] {
       align-self: flex-start;
     }
 
@@ -1072,7 +1086,7 @@ button.icon-button {
     font-size: var(--mdst-text-sm);
   }
 
-  & input[type='number'] {
+  & input[type="number"] {
     width: 4rem;
   }
 
@@ -1156,7 +1170,7 @@ button.icon-button {
   padding: 3px;
   background: var(--mdst-color-bg);
 
-  & [aria-pressed='true'] {
+  & [aria-pressed="true"] {
     background: var(--mdst-color-fg);
     color: var(--mdst-color-bg);
   }
@@ -1263,7 +1277,7 @@ button.icon-button {
     background: var(--mdst-color-subtle);
   }
 
-  & .grid button[aria-pressed='true'] {
+  & .grid button[aria-pressed="true"] {
     border-color: var(--mdst-color-fg);
     background: var(--mdst-color-subtle);
   }
@@ -1462,7 +1476,7 @@ button.icon-button {
       align-self: flex-start;
       align-items: center;
 
-      & .grid button:not([aria-pressed='true']) {
+      & .grid button:not([aria-pressed="true"]) {
         display: none;
       }
 
@@ -1497,4 +1511,3 @@ button.icon-button {
     max-width: calc(100vw - 1rem);
   }
 }
-
