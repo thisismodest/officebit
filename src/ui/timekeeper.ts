@@ -101,9 +101,23 @@ export class Timekeeper {
       return;
     }
     this.origin = origin;
-    // Up to a day behind: straight to now, before anything is drawn (a fraction of a second).
-    // Further: a slice now, and the rest a frame at a time (out of sight), so the page stays responsive.
-    const target = liveTick(this.origin, this.now());
+    this.catchUp(sim);
+  }
+
+  /** Carry on a Live town restored from a snapshot (snapshot.ts): it catches up from where it was saved, not from its first morning. */
+  resume(sim: Simulation): void {
+    this.carry = 0;
+    this.travelling = null;
+    this.origin = liveOrigin(new Date(this.since ?? this.now()));
+    this.catchUp(sim);
+  }
+
+  /**
+   * Up to a day behind: straight to now, before anything is drawn (a fraction of a second).
+   * Further: a slice now, and the rest a frame at a time (out of sight), so the page stays responsive.
+   */
+  private catchUp(sim: Simulation): void {
+    const target = liveTick(this.origin!, this.now());
     this.catchingUp = !this.fastForward(sim, target, target - sim.tick <= TICKS_PER_DAY ? Infinity : CATCH_UP_BUDGET_MS);
   }
 

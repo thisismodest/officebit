@@ -54,6 +54,26 @@ reads the wall clock; the timekeeper does.
   on any date: to see the town at Halloween or Christmas without waiting.
 - The mode is remembered in `localStorage` (`officebit:mode`).
 
+### Snapshots
+
+A Live town is saved as it's running (`sim/snapshot.ts`, stored by
+`ui/snapshots.ts` in IndexedDB): when you leave the page or switch to Sandbox,
+once it's caught up, and every 10 minutes. Next time it's restored and only
+catches up from then. A snapshot is the sim's whole object graph as cloneable
+data (about 1 MB): class instances are tagged and come back with their class,
+shared constant tables (CATALOG, MOVERS…) as references, emitters and the
+collision layers made afresh. It's only used for the same release, design
+(a fingerprint, seed included) and start date; otherwise the town replays
+from its first morning.
+
+- **A new class in the sim?** Add it to `CLASSES` in `snapshot.ts` (saving
+  throws, naming it, and the snapshot test catches it).
+- **No functions in sim state**: what happens later is data (a construction
+  job's `after`), not a callback.
+- **Caches** a class can make again go in `static readonly unsaved` and come
+  back `null` (the road map's search scratch).
+- The test restores a town and checks it carries on with exactly the same story.
+
 ## The calendar
 
 `src/sim/calendar.ts`. The story's first day has a date (`sim.calendar.start`:

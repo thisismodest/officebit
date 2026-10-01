@@ -11,6 +11,7 @@
 // which later grows.
 import { buildOffice, type Tier } from '../worlds/offices.ts';
 import { TICKS_PER_DAY, TICKS_PER_HOUR, dayOf, hourOf } from './clock.ts';
+import type { After } from './construction.ts';
 import type { Person } from './person.ts';
 import type { Item, Simulation } from './sim.ts';
 import type { PersonDef, Tile } from './world.ts';
@@ -241,7 +242,7 @@ export class Ventures {
       venture.site = { level: lot!.level, p: lot!.def.p };
       venture.stem = venture.id;
       venture.stage = 'building';
-      this.build(venture, lot!, 1, () => this.opened(venture));
+      this.build(venture, lot!, 1, 'open');
     }
   }
 
@@ -281,7 +282,7 @@ export class Ventures {
     venture.stage = 'rebuilding';
     // Everyone works from home while the builders are in.
     sim.companies.get(venture.id)!.levels = [];
-    this.build(venture, building, 2, () => this.moved(venture));
+    this.build(venture, building, 2, 'move');
   }
 
   /** The bigger office is done: move in, bring the keen part-timers across, hire. */
@@ -396,7 +397,7 @@ export class Ventures {
   }
 
   /** Send a crew to replace `where` with this venture's tier-`tier` office. */
-  private build(venture: Venture, where: Item, tier: Tier, onDone: () => void): void {
+  private build(venture: Venture, where: Item, tier: Tier, next: After['next']): void {
     const origin = venture.site!.p;
     // The small office sits in the middle of the lot; the big one fills it. Both doors line up.
     const at: Tile = tier === 1 ? [origin[0] + 2, origin[1] + 2] : [origin[0], origin[1]];
@@ -409,8 +410,16 @@ export class Ventures {
       building: { t: office.building, p: at, label: venture.name, owner: venture.founder },
       door: doorOf(origin),
       hours: BUILD_HOURS[tier],
-      onDone,
+      after: { venture: venture.id, next },
     });
+  }
+
+  /** A crew's finished this venture's office: open it, or move in. */
+  built({ venture: id, next }: After): void {
+    const venture = this.list.find((v) => v.id === id);
+    if (!venture) return;
+    if (next === 'open') this.opened(venture);
+    else this.moved(venture);
   }
 }
 

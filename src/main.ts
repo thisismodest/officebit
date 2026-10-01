@@ -7,6 +7,7 @@ import { TICKS_PER_DAY, formatClock, formatTime, weekdayOf } from './sim/clock.t
 import { TILE } from './render/pixels.ts';
 import { exitAt, insideDoor, interiorOf, type Exit } from './sim/places.ts';
 import { Simulation, type Item } from './sim/sim.ts';
+import { restore, snapshot } from './sim/snapshot.ts';
 import { asleep, type Intent } from './sim/person.ts';
 import type { Tile, WorldDef } from './sim/world.ts';
 import { attachControls } from './ui/controls.ts';
@@ -26,6 +27,7 @@ import { upgrade } from './worlds/upgrades.ts';
 import { Welcome } from './ui/welcome.ts';
 import { attachTabs } from './ui/tabs.ts';
 import { checkWorld, fromHash, loadLocal, saveLocal } from './ui/world-io.ts';
+import { fits, loadSnapshot, saveSnapshot, saved } from './ui/snapshots.ts';
 import { validate } from './sim/validate.ts';
 import { AudioMenu } from './ui/audio-menu.ts';
 import { Soundscape } from './ui/soundscape.ts';
@@ -58,6 +60,8 @@ if (!loaded.fromLink) design.seed = storySeed();
 const today = new Date();
 const now = { year: today.getFullYear(), month: today.getMonth() + 1, day: today.getDate(), hour: today.getHours() };
 if (upgrade(design, now) > 0 && !loaded.fromLink) saveLocal(design);
+// The Live town as it was last time, so it only catches up from then (docs/TIME.md#snapshots).
+let lastSaved = time.mode === 'live' && !loaded.fromLink ? await loadSnapshot() : null;
 let sim = newSim();
 
 async function loadDesign(): Promise<{ world: WorldDef; note: string; fromLink: boolean }> {
@@ -84,8 +88,16 @@ function storySeed(fresh = false): number {
   return seed;
 }
 
-/** A fresh town from the design, set up for the current time mode. Live mode's first start is remembered, so the story carries on between visits. */
+/**
+ * A town from the design, set up for the current time mode. Live mode's first start is remembered, so the story
+ * carries on between visits; it carries on from its last snapshot if there's one of this town.
+ */
 function newSim(): Simulation {
+  if (time.mode === 'live' && fits(lastSaved, design, time.since)) {
+    const next = restore(structuredClone(lastSaved.snap));
+    time.resume(next);
+    return next;
+  }
   const next = new Simulation(structuredClone(design));
   if (time.mode === 'live' && !time.since) {
     time.since = Date.now();
@@ -94,6 +106,15 @@ function newSim(): Simulation {
   time.start(next);
   return next;
 }
+
+/** Save the Live town as it is now (when it's caught up), for next time. */
+const SNAPSHOT_EVERY_MS = 10 * 60 * 1000;
+function saveTown(): void {
+  if (time.mode !== 'live' || time.catchingUp || !time.since) return;
+  lastSaved = saved(snapshot(sim), design, time.since);
+  void saveSnapshot(lastSaved);
+}
+setInterval(saveTown, SNAPSHOT_EVERY_MS);
 
 const placeLabel = $('#place');
 const stage = $('#stage');
@@ -143,9 +164,14 @@ function saveNow(): void {
   saveLocal(design);
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 }
-addEventListener('pagehide', saveNow);
+addEventListener('pagehide', () => {
+  saveNow();
+  saveTown();
+});
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') saveNow();
+  if (document.visibilityState !== 'hidden') return;
+  saveNow();
+  saveTown();
 });
 editButton.addEventListener('click', () => setEditing(!editor.active));
 function setEditing(on: boolean): void {
@@ -515,6 +541,8 @@ const modeSelect = $<HTMLSelectElement>('#mode');
 modeSelect.addEventListener('change', () => setMode(modeSelect.value as Mode));
 /** Sandbox keeps the town you have. Live follows the real clock, so it goes back to the town that's been running since live mode started. */
 function setMode(mode: Mode): void {
+  // Leaving Live: the town as it is, for coming back to.
+  if (time.mode === 'live') saveTown();
   localStorage.setItem(MODE_KEY, mode);
   time.mode = mode;
   if (mode === 'live') restart();
@@ -617,8 +645,11 @@ const clock = $('#clock');
 function frame(now: number): void {
   const dt = now - last;
   last = now;
+  const wasCatchingUp = time.catchingUp;
   const between = time.advance(sim, dt);
   const { travelling, catchingUp } = time;
+  // Caught up: save it there, so coming straight back doesn't do it all again.
+  if (wasCatchingUp && !catchingUp) saveTown();
   travelBar.hidden = !travelling && !catchingUp;
   travelBar.querySelector('span')!.textContent = travelling ? `Jumping ahead… ${formatClock(sim.tick, sim.firstDay)}` : 'Catching up with the clock…';
   travelBar.querySelector<HTMLElement>('[data-action="stop"]')!.hidden = !travelling;

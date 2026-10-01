@@ -32,7 +32,13 @@ export interface Job {
   crew: string[];
   siteItem?: Item;
   finished: boolean;
-  onDone: () => void;
+  after?: After;
+}
+
+/** What happens once a job's done, as data (so a town can be saved mid-job): a venture's office is ready to open, or to move into. */
+export interface After {
+  venture: string;
+  next: 'open' | 'move';
 }
 
 export interface JobSpec {
@@ -46,7 +52,7 @@ export interface JobSpec {
   door: Tile;
   hours: number;
   news?: [start: string, done: string];
-  onDone: () => void;
+  after?: After;
 }
 
 export class Construction {
@@ -85,7 +91,7 @@ export class Construction {
       done: 0,
       crew,
       finished: false,
-      onDone: spec.onDone,
+      ...(spec.after ? { after: spec.after } : {}),
     });
   }
 
@@ -135,6 +141,6 @@ export class Construction {
     if (job.siteItem) sim.removeItem(job.siteItem);
     if (job.building) sim.addItem(job.level, job.building);
     sim.log(job.news[1], job.crew);
-    job.onDone();
+    if (job.after) sim.ventures.built(job.after);
   }
 }

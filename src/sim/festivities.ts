@@ -230,10 +230,10 @@ export class Festivities {
     if (wanted && !there) {
       const at = this.spot(near);
       if (!at) return;
-      sim.construction.start({ label, level: outside, siteType: 'siteTiny', at, building: { t, p: at }, door: [at[0], at[1] + 2], hours: PUT_UP_HOURS, news: news[0], onDone: () => {} });
+      sim.construction.start({ label, level: outside, siteType: 'siteTiny', at, building: { t, p: at }, door: [at[0], at[1] + 2], hours: PUT_UP_HOURS, news: news[0] });
     } else if (!wanted && there) {
       const at = there.def.p;
-      sim.construction.start({ label, clears: there, siteType: 'siteTiny', at, door: [at[0], at[1] + 2], hours: TAKE_DOWN_HOURS, news: news[1], onDone: () => {} });
+      sim.construction.start({ label, clears: there, siteType: 'siteTiny', at, door: [at[0], at[1] + 2], hours: TAKE_DOWN_HOURS, news: news[1] });
     }
   }
 

@@ -198,7 +198,7 @@ export class ControlledBrain implements Brain {
 }
 
 /** The pizza rider: to the kitchen, drop it off, back out of town. */
-class CourierBrain implements Brain {
+export class CourierBrain implements Brain {
   private readonly events: Interactions;
   private readonly id: string;
 

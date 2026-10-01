@@ -134,7 +134,7 @@ export class Arrivals {
 }
 
 /** Heads for home; once there, their usual brain takes over (Arrivals lets go of them). */
-class HomewardBrain implements Brain {
+export class HomewardBrain implements Brain {
   decide(p: Person, sim: Simulation): Intent {
     if (p.level === p.home && !p.crawling) sim.clearBrain(p.id);
     return { kind: 'wander', to: sim.randomWalkable(p.home!) ?? { level: p.home!, p: [1, 1] } };

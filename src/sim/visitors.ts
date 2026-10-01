@@ -262,7 +262,7 @@ export class Visitors {
 }
 
 /** A visitor: off to do what they stopped for, then back to the car to wait for it (or just to get in). */
-class VisitorBrain implements Brain {
+export class VisitorBrain implements Brain {
   private readonly visitors: Visitors;
 
   constructor(visitors: Visitors) {

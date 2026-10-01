@@ -93,6 +93,7 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   deliveries.ts   the shop's weekly delivery lorry: in on the roads, pulls up outside, unloads, away
   interactions.ts pizza (rider), fire drills, taking control (ControlledBrain)
   works.ts        what a newer release adds to an older town, put up by crews (docs/UPGRADES.md)
+  snapshot.ts     a running town saved and restored whole, as cloneable data (docs/TIME.md#snapshots)
   places.ts       buildings on the map and what's inside (for the click card); validate.ts: world checks
 src/worlds/   starter.ts (people, 2-floor office, venues, homes), town.ts (the 160×160 town, house plots, lots),
               ground.ts (roads, paths, crossings, generated pavements), layout.ts (LevelBuilder),
@@ -106,7 +107,7 @@ src/render/   renderer.ts (one level through a camera; y-sorted props+people; ni
               props/* (one painter per catalog type)
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
               editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (the cog: your town's name, save, share links, townfiles),
-              timekeeper.ts (live/sandbox), time-jump.ts (jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
+              timekeeper.ts (live/sandbox; catching up brisk), snapshots.ts (Live towns saved in IndexedDB), time-jump.ts (jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
               place-card.ts, fullscreen.ts, welcome.ts (the first-visit card and ?), tour.ts (the tour, from the welcome card), team-form.ts (adding someone
               to the team), describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects), noise.ts;
@@ -152,6 +153,8 @@ Dijkstra over portal anchors between levels); driving in `docs/TRAFFIC.md`.
   `brain.ts` and `sim.ts` don't import values from each other. `roles.ts` names
   each kind's brain as a factory the sim calls when first needed, so brains may
   read the roles table without a load-order problem.
+- **Sim state must be saveable** (snapshots: docs/TIME.md#snapshots): no functions in it (callbacks become data),
+  new classes go in `CLASSES` in `sim/snapshot.ts`, caches in a class's `static readonly unsaved`.
 - **Tunable numbers are named constants** at the top of their module, with units.
 - **Every catalog type needs a painter** in `render/props/` with the same id.
 - The starter world must `validate()` clean (tested). Run validate on any world
@@ -205,7 +208,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), an About page and a welcome card, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-177 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+178 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

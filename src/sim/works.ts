@@ -45,7 +45,6 @@ export class Works {
         door,
         hours: PUT_UP_HOURS,
         news: [`🚧 A crew came to put up a ${name}`, `🏗️ The new ${name} is up`],
-        onDone: () => {},
       });
     }
   }

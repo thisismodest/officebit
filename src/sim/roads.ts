@@ -76,6 +76,8 @@ export interface Driver extends Moving {
 }
 
 export class RoadMap {
+  /** Not saved with the town (snapshot.ts): made again on the next search. */
+  static readonly unsaved = ['scratch'];
   private readonly w: number;
   private readonly h: number;
   private readonly floors: (string | undefined)[];
