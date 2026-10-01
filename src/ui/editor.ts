@@ -30,7 +30,7 @@ import { ROOM_HINTS, RoomTools, type RoomTool } from './room-tools.ts';
 
 type Tool = 'move' | 'add' | Surface | 'crossing' | 'erase' | RoomTool;
 /** Tools for the ground outside: they only work on the town map. */
-const GROUND_TOOLS = new Set<Tool>(['road', 'path', 'forecourt', 'crossing', 'erase']);
+const GROUND_TOOLS = new Set<Tool>(['road', 'path', 'forecourt', 'water', 'crossing', 'erase']);
 /** Tools for walls, doorways and floors: they only work indoors (room-tools.ts). */
 const INDOOR_TOOLS = new Set<Tool>(['room', 'area', 'door', 'stairs']);
 const HOUSES = new Set(['terrace', 'house', 'detached']);
@@ -51,6 +51,7 @@ const GROUND: Record<GroundTool, string> = {
   path: 'Path: drag to draw one',
   forecourt: 'Forecourt: drag to draw hard standing cars can drive on',
   crossing: 'Zebra crossing: click a road',
+  water: 'Water: drag to draw a river, canal or pond',
 };
 /** How long (ms) to hold the ground button down for the others; and with a mouse, how long after leaving them they stay open. */
 const HOLD_MS = 450;
@@ -622,7 +623,7 @@ export class Editor {
     });
     if (!done) return;
     this.host.renderer.ghost = null;
-    const what = tool === 'erase' ? 'Rubbed it out' : `Laid ${aOrAn(tool)}`;
+    const what = tool === 'erase' ? 'Rubbed it out' : tool === 'water' ? 'Drew some water' : `Laid ${aOrAn(tool)}`;
     this.say(`${what}.${cleared ? ` Cleared ${cleared === 1 ? 'a tree or bush' : `${cleared} trees, bushes and the like`} out of the way.` : ''}`);
   }
 
@@ -662,12 +663,13 @@ export class Editor {
 
   /** Is the tool one that draws ground (a road, path or forecourt)? */
   private drawing(tool: Tool = this.tool): tool is Surface {
-    return tool === 'road' || tool === 'path' || tool === 'forecourt';
+    return tool === 'road' || tool === 'path' || tool === 'forecourt' || tool === 'water';
   }
 
   private brushProblem(tile: Tile): string | null {
     const level = this.level();
-    return level ? groundProblem(level, this.brushRect(tile)) : 'Nowhere to draw.';
+    const tool = this.tool;
+    return level ? groundProblem(level, this.brushRect(tile), this.drawing(tool) ? tool : undefined) : 'Nowhere to draw.';
   }
 
   /**
@@ -862,7 +864,8 @@ const GROUND_HINTS = {
   road: 'Drag to draw a road: it follows you along the grid and turns where you turn. Trees and the like in the way are cleared.',
   path: 'Drag to draw a path. Draw one to a front door so people keep to it.',
   forecourt: 'Drag to draw a forecourt: paving cars can drive and park on, like the charging station’s.',
+  water: 'Drag to draw water: a river, a canal or a pond. Draw a road or path across it afterwards and it’s bridged.',
   crossing: 'Click a road to put in a zebra crossing, where you’d like people to cross.',
-  erase: 'Drag over roads, paths, forecourts, pavements or crossings to rub them out.',
+  erase: 'Drag over roads, paths, forecourts, water, pavements, crossings or bridges to rub them out.',
 } as const;
 

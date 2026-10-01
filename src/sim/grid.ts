@@ -9,9 +9,22 @@ const DIRS: readonly Tile[] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
  * How much stepping onto a floor costs, relative to a pavement. People take the
  * cheapest route, not the shortest, so outdoors they keep to the paths and
  * only cut across roads and grass when it really saves them a walk. Nobody
- * walks on the highway.
+ * walks on the highway or in deep water; the shallows are for wading (slowly),
+ * and a bridge is as good as a pavement.
  */
-const WALK_COST: Record<string, number> = { path: 1, zebra: 1, zebraSide: 1, forecourt: 1, road: 3, grass: 4, highway: Infinity };
+const WALK_COST: Record<string, number> = {
+  path: 1,
+  zebra: 1,
+  zebraSide: 1,
+  forecourt: 1,
+  bridge: 1,
+  bridgeSide: 1,
+  road: 3,
+  grass: 4,
+  shallows: 6,
+  highway: Infinity,
+  water: Infinity,
+};
 
 export class Grid {
   readonly w: number;

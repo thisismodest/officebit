@@ -4,15 +4,17 @@ import { Simulation } from '../src/sim/sim.ts';
 import { validate } from '../src/sim/validate.ts';
 import type { FurnitureDef, LevelDef, WorldDef } from '../src/sim/world.ts';
 import { buildingMoveProblem, flipHouse, moveBuilding, snapshot } from '../src/worlds/edit.ts';
-import { addCrossing, erase, joinsUp, lay, strokeRects } from '../src/worlds/ground.ts';
+import { addCrossing, erase, groundProblem, joinsUp, lay, strokeRects } from '../src/worlds/ground.ts';
+import { Grid } from '../src/sim/grid.ts';
+import { RoadMap } from '../src/sim/roads.ts';
 import { STARTER } from '../src/worlds/starter.ts';
 
 const world = (): WorldDef => structuredClone(STARTER);
 const townOf = (w: WorldDef) => w.levels.find((l) => l.kind === 'outside')!;
 const floorAt = (level: LevelDef, x: number, y: number) =>
   level.rooms.filter((r) => x >= r.rect[0] && y >= r.rect[1] && x < r.rect[0] + r.rect[2] && y < r.rect[1] + r.rect[3]).sort((a, b) => a.rect[2] * a.rect[3] - b.rect[2] * b.rect[3])[0]?.floor;
-/** Somewhere empty in the countryside at the bottom of the map. */
-const FIELD = { x: 20, y: 146 };
+/** Somewhere empty in the countryside, south of Cedar Crescent and north of the river. */
+const FIELD = { x: 20, y: 132 };
 
 test('a stroke becomes one rectangle per straight run, overlapping at the corners', () => {
   const along = [0, 1, 2, 3].map((i): [number, number] => [10 + i, 5]);
@@ -108,4 +110,19 @@ test('undo puts a map back as it was, with the same pieces', () => {
   assert.equal(town.rooms.length, rooms);
   assert.ok(!item.gone, 'and it’s back, the same tree');
   assert.equal(sim.items.filter((i) => i.def === tree).length, 1);
+});
+
+test('water: nobody walks in it and nothing drives on it; a road drawn across it is a bridge, with no pavement on the water, and rubbing it out takes the bridge too', () => {
+  const town = structuredClone(STARTER).levels.find((l) => l.kind === 'outside')!;
+  assert.match(groundProblem(town, [76, 100, 2, 2], 'water') ?? '', /across the water/, 'no water over a road');
+  lay(town, strokeRects([[80, 136], [80, 152]], 'road'), 'road');
+  const bridge = town.rooms.find((r) => r.floor === 'bridge' && r.rect[0] === 80)!;
+  assert.deepEqual(bridge.rect, [80, 144, 2, 5], 'bridged just where it crosses the river');
+  const grid = new Grid(town);
+  assert.ok(!grid.walkable(70, 146), 'nobody walks in the river');
+  assert.ok(grid.walkable(81, 146), 'but over the bridge');
+  assert.equal(new RoadMap(town, grid).route([80, 137], [81, 151])?.at(-1)?.join(), '81,151', 'and drives over it');
+  assert.ok(!town.rooms.some((r) => r.id.startsWith('pavement-') && r.rect[1] >= 144 && r.rect[1] < 149), 'no pavement on the water');
+  erase(town, [80, 146]);
+  assert.ok(!town.rooms.some((r) => r.floor === 'bridge' && r.rect[0] === 80), 'rubbed out, bridge and all');
 });

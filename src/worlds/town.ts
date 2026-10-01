@@ -54,6 +54,10 @@ export const BUS_STOPS: FurnitureDef[] = [
   { t: 'busStop', p: [89, 104], label: 'Acacia Primary' },
 ];
 
+/** The river along the bottom of town, from one edge to the other. */
+export const RIVER: Rect = [0, 144, TOWN, 5];
+const RIVER_NAME = 'River Dove';
+
 /** The highway across the top of the map: two lanes each way, eastbound on the north side (we drive on the left). */
 const HIGHWAY: Rect = [0, 4, TOWN, 4];
 
@@ -241,6 +245,11 @@ export function buildTown(residents: Resident[]): LevelBuilder {
     .room('park', 'Dover Park', [80, 110, 60, 30], 'grass')
     .room('park-path', 'Path', [80, 120, 60, 1], 'path')
     .room('park-cut', 'Path', [108, 109, 1, 31], 'path')
+    // The river along the bottom of town, edge to edge, and a footbridge carrying the park's path over it.
+    .room('river', RIVER_NAME, RIVER, 'water')
+    .room('park-cut-river', 'Path', [108, 140, 1, RIVER[1] - 140], 'path')
+    .room('footbridge', 'Footbridge', [108, RIVER[1], 1, RIVER[3]], 'bridge')
+    .room('south-bank-path', 'Path', [108, RIVER[1] + RIVER[3], 1, 3], 'path')
     .put('pond', 96, 113)
     .put('pond', 122, 126)
     .row('bench', [86, 104, 116, 130], 119)

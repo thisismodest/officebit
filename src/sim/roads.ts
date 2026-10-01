@@ -9,9 +9,9 @@ import { AHEAD, MOVERS, blocks, type Heading, type Mover, type Moving } from './
 import type { FurnitureDef, LevelDef, Tile } from './world.ts';
 
 /** Floors a vehicle can drive on, and what each tile costs to route over: a path only when there's no other way. */
-const FLOOR_COST: Record<string, number> = { road: 1, zebra: 1, zebraSide: 1, highway: 1, forecourt: 1, path: 8 };
+const FLOOR_COST: Record<string, number> = { road: 1, zebra: 1, zebraSide: 1, bridge: 1, bridgeSide: 1, highway: 1, forecourt: 1, path: 8 };
 /** Floors that are road proper (not a path or pavement a car's only crossing). */
-export const DRIVABLE = new Set(['road', 'zebra', 'zebraSide', 'highway', 'forecourt']);
+export const DRIVABLE = new Set(['road', 'zebra', 'zebraSide', 'bridge', 'bridgeSide', 'highway', 'forecourt']);
 /** Route costs, on top of one per tile: a turn, a tile in the wrong lane (more road on your left: we drive on the left), and turning round. */
 const TURN = 2;
 const WRONG_LANE = 3;

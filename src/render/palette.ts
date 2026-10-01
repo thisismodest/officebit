@@ -22,7 +22,11 @@ export type FloorStyle =
   /** Two carriageways, each two lanes wide, with a central reservation. */
   | { kind: 'highway'; base: string }
   /** A zebra crossing: stripes run with the traffic, so `across` is the way people walk over it. */
-  | { kind: 'zebra'; base: string; across: 'ns' | 'ew' };
+  | { kind: 'zebra'; base: string; across: 'ns' | 'ew' }
+  /** Water: a river or canal, deep (`water`) or shallow enough to wade (`shallows`). */
+  | { kind: 'water'; base: string }
+  /** A bridge over water: planks running the way you cross (`across`), railings along its sides. */
+  | { kind: 'bridge'; base: string; across: 'ns' | 'ew' };
 
 export const FLOORS: Record<string, FloorStyle> = {
   carpetGrey: { kind: 'carpet', base: '#b8bfc6' },
@@ -42,6 +46,10 @@ export const FLOORS: Record<string, FloorStyle> = {
   forecourt: { kind: 'slabs', base: '#8f9297', size: 32 },
   zebra: { kind: 'zebra', base: '#55535c', across: 'ns' },
   zebraSide: { kind: 'zebra', base: '#55535c', across: 'ew' },
+  water: { kind: 'water', base: '#3d78a8' },
+  shallows: { kind: 'water', base: '#62a2c4' },
+  bridge: { kind: 'bridge', base: '#9b7451', across: 'ns' },
+  bridgeSide: { kind: 'bridge', base: '#9b7451', across: 'ew' },
 };
 
 export const DEFAULT_FLOOR: FloorStyle = FLOORS.carpetGrey!;

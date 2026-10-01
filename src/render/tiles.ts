@@ -18,11 +18,12 @@ export function paintStaticLayer(level: LevelDef, grid: Grid): HTMLCanvasElement
   const doors = new Set(level.doors.map(([x, y]) => `${x},${y}`));
   const indoors = level.kind !== 'outside';
   const road = (x: number, y: number) => grid.inBounds(x, y) && CARRIAGEWAY.has(roomAt(x, y)?.floor ?? '');
+  const same = (x: number, y: number, kind: FloorStyle['kind']) => !grid.inBounds(x, y) || floorAt(x, y).kind === kind;
 
   for (let ty = 0; ty < grid.h; ty++) {
     for (let tx = 0; tx < grid.w; tx++) {
       if (indoors && isWall(tx, ty)) continue;
-      paintFloor(ctx, tx, ty, floorAt(tx, ty), roomAt(tx, ty), road);
+      paintFloor(ctx, tx, ty, floorAt(tx, ty), roomAt(tx, ty), road, same);
       if (!indoors) continue;
       paintWallShadow(ctx, tx, ty, isWall);
       if (doors.has(`${tx},${ty}`)) paintThreshold(ctx, tx, ty, isWall, ty === grid.h - 1);
@@ -51,8 +52,16 @@ function wallpaper(style: FloorStyle): string {
 /** Floors a road's traffic drives over: where road carries on past a road's edge, it's a bend or a junction. */
 const CARRIAGEWAY = new Set(['road', 'zebra', 'zebraSide', 'highway']);
 
-/** `road`: is there carriageway at a tile (for keeping the centre line out of bends and junctions)? */
-function paintFloor(ctx: Ctx, tx: number, ty: number, style: FloorStyle, room: RoomDef | undefined, road: (x: number, y: number) => boolean): void {
+/** `road`: is there carriageway at a tile (for keeping the centre line out of bends and junctions)? `same`: is the floor at a tile of this kind (off the map counts), for banks and railings? */
+function paintFloor(
+  ctx: Ctx,
+  tx: number,
+  ty: number,
+  style: FloorStyle,
+  room: RoomDef | undefined,
+  road: (x: number, y: number) => boolean,
+  same: (x: number, y: number, kind: FloorStyle['kind']) => boolean,
+): void {
   const x0 = tx * TILE;
   const y0 = ty * TILE;
   const speckle = (base: string, dark: number, light: number, salt: number) => {
@@ -163,6 +172,45 @@ function paintFloor(ctx: Ctx, tx: number, ty: number, style: FloorStyle, room: R
       if (ty === ry + rh - 1) rect(ctx, x0, y0 + TILE - 1, TILE, 1, '#ecebe4');
       if (ty === middle) rect(ctx, x0, y0 - 1, TILE, 2, '#e8dfae');
       else if (ty !== ry && tx % 3 === 0) rect(ctx, x0 + 2, y0 - 1, 8, 2, '#ecebe4');
+      break;
+    }
+    case 'water': {
+      rect(ctx, x0, y0, TILE, TILE, style.base);
+      // Ripples: short light and dark strokes, a few to a tile.
+      for (let i = 0; i < 4; i++) {
+        const x = x0 + Math.floor(hash(tx, ty, 80 + i) * 12);
+        const y = y0 + Math.floor(hash(tx, ty, 90 + i) * 15);
+        rect(ctx, x, y, 3 + Math.floor(hash(tx, ty, 100 + i) * 3), 1, shade(style.base, hash(tx, ty, 110 + i) > 0.5 ? 0.3 : -0.18));
+      }
+      // The bank: earth and a line of foam where it meets dry land, above (seen from here) and to either side.
+      const bank = (x: number, y: number) => !same(x, y, 'water') && !same(x, y, 'bridge');
+      if (bank(tx, ty - 1)) {
+        rect(ctx, x0, y0, TILE, 3, '#6b5a3e');
+        rect(ctx, x0, y0 + 3, TILE, 1, shade(style.base, 0.3));
+      }
+      if (bank(tx, ty + 1)) rect(ctx, x0, y0 + TILE - 1, TILE, 1, shade(style.base, 0.3));
+      if (bank(tx - 1, ty)) rect(ctx, x0, y0, 1, TILE, shade(style.base, 0.3));
+      if (bank(tx + 1, ty)) rect(ctx, x0 + TILE - 1, y0, 1, TILE, shade(style.base, 0.3));
+      break;
+    }
+    case 'bridge': {
+      // Water beneath, glimpsed at the edges; planks laid across the way you cross; railings along both sides.
+      const water = FLOORS.water;
+      rect(ctx, x0, y0, TILE, TILE, water?.kind === 'water' ? water.base : style.base);
+      const ns = style.across === 'ns';
+      for (let i = 0; i < TILE; i += 3) {
+        const fill = hash(tx * 7 + i, ty, 12) > 0.5 ? style.base : shade(style.base, -0.08);
+        if (ns) rect(ctx, x0 + 1, y0 + i, TILE - 2, 2, fill);
+        else rect(ctx, x0 + i, y0 + 1, 2, TILE - 2, fill);
+      }
+      const rail = shade(style.base, -0.35);
+      if (ns) {
+        if (!same(tx - 1, ty, 'bridge')) rect(ctx, x0, y0, 2, TILE, rail);
+        if (!same(tx + 1, ty, 'bridge')) rect(ctx, x0 + TILE - 2, y0, 2, TILE, rail);
+      } else {
+        if (!same(tx, ty - 1, 'bridge')) rect(ctx, x0, y0, TILE, 2, rail);
+        if (!same(tx, ty + 1, 'bridge')) rect(ctx, x0, y0 + TILE - 2, TILE, 2, rail);
+      }
       break;
     }
     case 'zebra': {
