@@ -27,6 +27,7 @@ import { Social } from './social.ts';
 import { Traffic } from './traffic.ts';
 import { Visitors } from './visitors.ts';
 import { Arrivals } from './arrivals.ts';
+import { Boats } from './boats.ts';
 import { Birthdays } from './birthdays.ts';
 import { Skies } from './weather.ts';
 import { Festivities } from './festivities.ts';
@@ -120,6 +121,7 @@ export class Simulation {
   readonly festivities: Festivities;
   readonly weather: Skies;
   readonly birthdays: Birthdays;
+  readonly boats: Boats;
   readonly foodTrucks: FoodTrucks;
   readonly plans: Plans;
   readonly works: Works;
@@ -186,6 +188,7 @@ export class Simulation {
     this.festivities = new Festivities(this);
     this.weather = new Skies(this);
     this.birthdays = new Birthdays(this);
+    this.boats = new Boats(this);
     this.foodTrucks = new FoodTrucks(this);
     this.plans = new Plans(this);
     this.works = new Works(this);
@@ -238,7 +241,19 @@ export class Simulation {
   /** Is it open right now: within its hours, and (in a venue with staff) with someone minding it? */
   isOpen(item: Item): boolean {
     // A food truck serves once it's parked on its pitch; a swim is for summer days.
-    return this.withinHours(item) && this.venueOpen(item.level) && (!item.type.street || this.foodTrucks.parked(item)) && (!item.type.summer || this.summerDay());
+    return (
+      this.withinHours(item) &&
+      this.venueOpen(item.level) &&
+      (!item.type.street || this.foodTrucks.parked(item)) &&
+      (!item.type.summer || this.summerDay()) &&
+      (!item.type.boating || this.boatingDay())
+    );
+  }
+
+  /** A day for the river: April to October, in daylight, and dry. */
+  boatingDay(): boolean {
+    const { month } = this.dateOf();
+    return month >= 4 && month <= 10 && this.daylight() > 0.6 && this.weather.wet() === 0;
   }
 
   /** A summer's day: June to August, in daylight, and dry. */
@@ -283,8 +298,8 @@ export class Simulation {
     if (item.gone || !(opening ? this.withinHours(item) : this.isOpen(item))) return false;
     const needs = item.type.usesPantry ?? 0;
     if (needs > 0 && this.levels.get(item.level)?.kind === 'home' && this.pantry(this.baseOf(item.level)) < needs) return false;
-    // Out of work: a swim on a summer's day is somewhere to go too (for anyone who goes out at all).
-    const swim = phase === 'home' && !!item.type.summer && roleOf(p).goesOut;
+    // Out of work: a swim on a summer's day, or a row on the river, is somewhere to go too (for anyone who goes out at all).
+    const swim = phase === 'home' && !!(item.type.summer || item.type.boating) && roleOf(p).goesOut;
     return this.areaOf(p, phase).includes(item.level) || (phase === 'work' && !!item.type.street) || swim;
   }
 
@@ -513,6 +528,7 @@ export class Simulation {
     this.arrivals.step();
     this.plans.step();
     this.birthdays.step();
+    this.boats.step();
     const gone: Person[] = [];
     for (const [i, p] of this.people.entries()) {
       p.px = p.x;
@@ -1128,10 +1144,11 @@ export class Simulation {
   }
 
   /** On the bus: out of sight (their seat at the stop let go of) till their stop. */
-  board(p: Person, bus: string): void {
+  /** On board a vehicle (the bus, a boat), out of sight till they get off; it's in the News. */
+  board(p: Person, vehicle: string, news: string | null = `🚌 ${p.name} got on the bus`): void {
     this.stop(p);
-    p.riding = bus;
-    this.log(`🚌 ${p.name} got on the bus`, [p.id]);
+    p.riding = vehicle;
+    if (news) this.log(news, [p.id]);
   }
 
   /** Off the bus at a stop, and on with what they were off to do (on foot from here). */

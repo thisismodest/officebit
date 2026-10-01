@@ -88,8 +88,8 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
       const item = sim.items[intent.item]!;
       p.timer = sim.rng.int(...(item.type.duration ?? USE));
       sim.used(p, item);
-      // A swim is the day's outing.
-      if (item.type.summer) p.lastOuting = sim.tick;
+      // A swim, or a row on the river, is the day's outing.
+      if (item.type.summer || item.type.boating) p.lastOuting = sim.tick;
       const offers: Partial<Needs> = { ...item.type.offers };
       eatFrom(sim, p, item);
       if (intent.mode === 'takeaway') {

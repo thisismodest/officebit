@@ -67,6 +67,8 @@ const WET_OUTSIDE = 0.35;
 const WET_INSIDE = 0.06;
 /** A swim on a summer's day (once a day at most, as an outing): worth the walk down to the river, more so for the sociable and the playful. */
 const SWIM_PULL = 0.9;
+/** Taking a rowing boat out from the club (days off and fine evenings, April to October). */
+const ROW_PULL = 1.2;
 
 export interface Option {
   intent: Intent;
@@ -141,9 +143,10 @@ export class PersonalityBrain implements Brain {
       if (type.hangout) score += (crowd * 0.08 + sim.pullAt(item.level, x, y, 2.5, p) * 0.35) * t.social * lonely;
       if (type.treat) score += TREAT_BONUS + t.chaos * 0.1;
       if (type.event) score += EVENT_PULL * (0.3 + t.social);
-      if (type.summer) {
+      // A swim, or a row on the river: the day's outing, for the sociable and the playful (a row, for the restless and the driven).
+      if (type.summer || type.boating) {
         if (wentOutToday && !(p.intent?.kind === 'use' && p.intent.item === item.index)) continue;
-        score += SWIM_PULL * (0.6 + t.social * 0.4 + t.chaos * 0.3);
+        score += type.summer ? SWIM_PULL * (0.6 + t.social * 0.4 + t.chaos * 0.3) : ROW_PULL * (0.4 + t.ambition * 0.4 + t.chaos * 0.4);
       }
       if (outing(item.level) && sim.festivities.nightOut()) score += NIGHT_OUT;
       if (type.game) score += ARCADE_PULL * (gamer ? 1 : ARCADE_SHARE) * (0.5 + t.chaos) * (1.3 - p.needs.fun);

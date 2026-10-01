@@ -14,7 +14,7 @@ import { phaseAt } from './schedule.ts';
 import type { Item, Simulation } from './sim.ts';
 import type { Place, Tile } from './world.ts';
 
-export type ActivityId = 'catch' | 'picnic' | 'meetup' | 'meal' | 'cowork';
+export type ActivityId = 'catch' | 'picnic' | 'meetup' | 'meal' | 'cowork' | 'boat';
 
 interface Activity {
   /** How it reads in the News: "for frisbee", "for a picnic"… */
@@ -26,8 +26,8 @@ interface Activity {
   who: 'friends' | 'makers';
   /** Partners and children come along too. */
   family?: boolean;
-  /** Out in the park, in daylight; otherwise at a venue's seats. */
-  where: 'park' | 'gather' | 'worktop';
+  /** Out in the park, in daylight; on the river (from the jetty, in daylight, April to October); otherwise at a venue's seats. */
+  where: 'park' | 'river' | 'gather' | 'worktop';
   /** Game hours it lasts. */
   hours: number;
   /** Days off only (a picnic), or evenings too. */
@@ -40,7 +40,11 @@ export const ACTIVITIES: Record<ActivityId, Activity> = {
   meetup: { news: 'to catch up', emoji: '☕', group: [2, 4], who: 'friends', where: 'gather', hours: 1.5 },
   meal: { news: 'for a bite to eat', emoji: '🍔', group: [3, 4], who: 'friends', where: 'gather', hours: 1.5 },
   cowork: { news: 'to work on their projects together', emoji: '💻', group: [2, 4], who: 'makers', where: 'worktop', hours: 2 },
+  boat: { news: 'for a boat trip', emoji: '⛵', group: [2, 4], who: 'friends', where: 'river', hours: 1.5 },
 };
+
+/** Months the boats go out (1–12). */
+const BOATING: [from: number, to: number] = [4, 10];
 
 /** Days the town has its own do, or everyone's at home: no plans. */
 const NO_PLANS = new Set(['bonfireNight', 'newYearsEve', 'christmas']);
@@ -112,7 +116,7 @@ export class Plans {
     const plan = this.of(p);
     if (!plan) return '';
     const { emoji } = ACTIVITIES[plan.activity];
-    const what = { catch: 'Frisbee', picnic: 'A picnic', meetup: 'Catching up', meal: 'A bite to eat', cowork: 'Working on projects together' }[plan.activity];
+    const what = { catch: 'Frisbee', picnic: 'A picnic', meetup: 'Catching up', meal: 'A bite to eat', cowork: 'Working on projects together', boat: 'A boat trip' }[plan.activity];
     const with_ = names(plan.members.filter((id) => id !== p.id).map((id) => this.sim.person(id)?.name ?? '').filter(Boolean));
     return `${emoji} ${what} at ${placeName(plan, this.sim)}${with_ ? ` with ${with_}` : ''}, ${formatTime(plan.start)}`;
   }
@@ -206,11 +210,16 @@ export class Plans {
     const { sim } = this;
     if (maker && sim.rng.next() < 0.5) return 'cowork';
     const light = (id: ActivityId) => sim.daylight(start) > 0.6 && sim.daylight(start + ACTIVITIES[id].hours * TICKS_PER_HOUR) > 0.6;
-    // In the wet, the park's mostly off: now and then someone suggests it anyway.
-    const dry = (id: ActivityId) => ACTIVITIES[id].where !== 'park' || sim.weather.wet(start) === 0 || sim.rng.next() < WET_PARK;
+    const outdoors = (id: ActivityId) => ACTIVITIES[id].where === 'park' || ACTIVITIES[id].where === 'river';
+    // In the wet, the park's mostly off (now and then someone suggests it anyway); the river's off altogether, and out of season.
+    const { month } = sim.dateOf(start);
+    const dry = (id: ActivityId) =>
+      ACTIVITIES[id].where === 'river'
+        ? sim.weather.wet(start) === 0 && month >= BOATING[0] && month <= BOATING[1]
+        : ACTIVITIES[id].where !== 'park' || sim.weather.wet(start) === 0 || sim.rng.next() < WET_PARK;
     // On a day off, a picnic's the likeliest thing to suggest; on an evening, something to eat.
-    const likely: ActivityId[] = dayOff ? ['catch', 'picnic', 'picnic', 'picnic', 'meetup', 'meal'] : ['catch', 'meetup', 'meal', 'meal'];
-    const options = likely.filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (ACTIVITIES[id].where !== 'park' || light(id)) && dry(id));
+    const likely: ActivityId[] = dayOff ? ['catch', 'picnic', 'picnic', 'picnic', 'meetup', 'meal', 'boat', 'boat'] : ['catch', 'meetup', 'meal', 'meal', 'boat'];
+    const options = likely.filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (!outdoors(id) || light(id)) && dry(id));
     return options[sim.rng.int(0, options.length - 1)];
   }
 
@@ -266,6 +275,7 @@ export class Plans {
     const { sim } = this;
     const { where } = ACTIVITIES[activity];
     if (where === 'park') return this.parkSpot();
+    if (where === 'river') return this.jetty(start, end);
     const taken = new Set(this.list.filter((plan) => plan.start < end && start < plan.end).map((plan) => plan.item));
     const seats = sim
       .activeItems()
@@ -281,6 +291,16 @@ export class Plans {
     if (level?.kind === 'venue') return true;
     const inPark = level?.kind === 'outside' && level.rooms.some((r) => r.park && inRect(r.rect, item.def.p));
     return inPark && sim.daylight(start) > 0.6 && sim.daylight(end) > 0.6;
+  }
+
+  /** The bank at the root of the jetty, where a boat trip meets: if there's a jetty and boats, and no other trip then. */
+  private jetty(start: number, end: number): { level: string; at: Tile } | undefined {
+    const { sim } = this;
+    const outside = sim.traffic.level;
+    const jetty = outside ? sim.levels.get(outside)?.rooms.find((r) => r.floor === 'jetty') : undefined;
+    if (!outside || !jetty || !sim.activeItems().some((i) => i.type.boat)) return undefined;
+    if (this.list.some((plan) => plan.activity === 'boat' && plan.start < end && start < plan.end)) return undefined;
+    return { level: outside, at: [jetty.rect[0], jetty.rect[1] - 1] };
   }
 
   /** A clear bit of park: grass, free, with room round it for a ring or a blanket. */
@@ -342,6 +362,7 @@ function names(list: string[]): string {
 
 /** Where a plan is, by name: the park it's in (the Green), or the venue (the diner). */
 function placeName(plan: Plan, sim: Simulation): string {
+  if (plan.activity === 'boat') return 'the jetty';
   const level = sim.levels.get(plan.level);
   return level?.rooms.find((r) => r.park && inRect(r.rect, plan.at))?.name ?? level?.name ?? 'town';
 }
@@ -360,6 +381,8 @@ function gathered(plan: Plan, sim: Simulation): string {
       return `are having a bite to eat together at ${place}`;
     case 'cowork':
       return `are working on their projects together at ${place}`;
+    case 'boat':
+      return 'are down at the jetty for a boat trip';
   }
 }
 

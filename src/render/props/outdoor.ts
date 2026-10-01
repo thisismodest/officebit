@@ -355,6 +355,58 @@ export const OUTDOOR: Record<string, Painter> = {
     },
   },
 
+  // The boating club on the river bank: a timber shed with a pitched roof, big doors onto the water and a flag.
+  boathouse: {
+    up: 26,
+    paint(ctx, w, h, o) {
+      rect(ctx, 0, o + h - 3, w, 3, 'rgba(20,14,30,0.18)');
+      // Walls: dark-stained boards.
+      rect(ctx, 2, o - 8, w - 4, h + 5, OUTLINE);
+      rect(ctx, 3, o - 7, w - 6, h + 3, '#5b4a3a');
+      for (let x = 6; x < w - 4; x += 4) rect(ctx, x, o - 7, 1, h + 3, '#4a3b2e');
+      // Roof.
+      for (let row = 0; row < 12; row++) rect(ctx, 2 + row, o - 20 + row, w - 4 - row * 2, 1, row === 0 ? OUTLINE : row % 3 ? '#2f5d7a' : '#274e67');
+      rect(ctx, 0, o - 9, w, 2, OUTLINE);
+      // The doors onto the slipway, and a window.
+      rect(ctx, w / 2 - 14, o + h - 18, 28, 16, OUTLINE);
+      rect(ctx, w / 2 - 13, o + h - 17, 13, 15, '#7a5a40');
+      rect(ctx, w / 2 + 1, o + h - 17, 12, 15, '#7a5a40');
+      rect(ctx, 8, o - 3, 10, 7, OUTLINE);
+      rect(ctx, 9, o - 2, 8, 5, '#9fc6dc');
+      // A sign, and a flag on the gable.
+      rect(ctx, w - 30, o - 4, 22, 6, '#e8e2d6');
+      rect(ctx, w - 28, o - 2, 18, 2, '#2f5d7a');
+      rect(ctx, w / 2, o - 28, 1, 9, OUTLINE);
+      rect(ctx, w / 2 + 1, o - 28, 6, 4, '#c8453a');
+    },
+  },
+
+  // A sailing boat: a white hull, a mast and a sail (on the water, moored or out on the river).
+  sailboat: {
+    up: 24,
+    flat: true,
+    paint(ctx, w, h, o) {
+      pill(ctx, 1, o + 4, w - 2, h - 6, '#f1eee6', OUTLINE);
+      rect(ctx, 4, o + 6, w - 8, 1, '#3d78a8');
+      rect(ctx, w / 2, o - 22, 1, 27, OUTLINE);
+      for (let row = 0; row < 18; row++) rect(ctx, w / 2 + 1, o - 20 + row, Math.floor(row * 0.8) + 1, 1, row % 6 === 5 ? '#d9d4c7' : '#fbfaf6');
+      rect(ctx, w / 2 - 6, o - 6, 6, 8, '#fbfaf6');
+    },
+  },
+
+  // A rowing boat: wooden, with a pair of oars (only out on the water while someone's rowing it).
+  rowboat: {
+    up: 2,
+    flat: true,
+    paint(ctx, w, h, o) {
+      pill(ctx, 2, o + 3, w - 4, h - 5, '#9b6a43', OUTLINE);
+      rect(ctx, 5, o + 5, w - 10, 3, '#b8875b');
+      rect(ctx, w / 2 - 1, o + 4, 2, 6, '#6b4a33');
+      rect(ctx, 0, o + 9, 6, 1, '#d9b886');
+      rect(ctx, w - 6, o + 9, 6, 1, '#d9b886');
+    },
+  },
+
   // A billboard on two posts, its spotlight in the panel (render/spotlights.ts), with lamps on top that light it at night.
   billboard: {
     up: 50,

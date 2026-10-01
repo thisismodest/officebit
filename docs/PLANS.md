@@ -14,8 +14,9 @@ from late morning, and on weekday evenings after work.
 | ☕ Catching up | 2–4 friends | Seats that `gather` (a diner booth) | 1½ h |
 | 🍔 A bite to eat | 3–4 friends, round one table | Seats that `gather` | 1½ h |
 | 💻 Working on projects together | 2–4 makers | Seats that are a `worktop` (a booth, a park bench) | 2 h |
+| ⛵ A boat trip | 2–4 friends | The jetty: a rowing boat for two, a sailing boat for more ([RIVER](RIVER.md#boats)) | 1½ h |
 
-Park plans need daylight. A park is any room with `park: true` (the Green).
+Park plans need daylight. Boat trips need daylight, a dry day, April to October, and no other trip on the river then. A park is any room with `park: true` (the Green).
 Any venue, or new furniture, joins in by having the catalog flags
 ([FURNITURE](FURNITURE.md)). The venue has to be open the whole time.
 

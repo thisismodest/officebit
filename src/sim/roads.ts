@@ -12,6 +12,17 @@ import type { FurnitureDef, LevelDef, Tile } from './world.ts';
 const FLOOR_COST: Record<string, number> = { road: 1, zebra: 1, zebraSide: 1, bridge: 1, bridgeSide: 1, highway: 1, forecourt: 1, path: 8 };
 /** Floors that are road proper (not a path or pavement a car's only crossing). */
 export const DRIVABLE = new Set(['road', 'zebra', 'zebraSide', 'bridge', 'bridgeSide', 'highway', 'forecourt']);
+
+/** Somewhere to route over: what each floor costs to cross (any other floor is off it), whether it has lanes (we drive on the left), and whose way furniture may stand in. */
+export interface Network {
+  costs: Record<string, number>;
+  lanes: boolean;
+  mover: Mover;
+}
+/** The roads, for cars, trucks and buses. */
+export const ROADS: Network = { costs: FLOOR_COST, lanes: true, mover: MOVERS.car };
+/** The river, for boats: open water (under bridges too), no lanes, and the shallows only at a pinch. */
+export const WATERWAYS: Network = { costs: { water: 1, bridge: 1, bridgeSide: 1, shallows: 6 }, lanes: false, mover: MOVERS.boat };
 /** Route costs, on top of one per tile: a turn, a tile in the wrong lane (more road on your left: we drive on the left), and turning round. */
 const TURN = 2;
 const WRONG_LANE = 3;
@@ -72,14 +83,16 @@ export class RoadMap {
   private readonly standing: Uint8Array;
 
   private scratch: { cost: Float64Array; came: Int32Array } | null = null;
+  private readonly network: Network;
 
-  constructor(level: LevelDef, grid: Grid) {
+  constructor(level: LevelDef, grid: Grid, network: Network = ROADS) {
+    this.network = network;
     [this.w, this.h] = level.size;
     this.floors = Array.from({ length: this.w * this.h }, (_, i) => level.rooms[grid.room[i]!]?.floor);
     this.standing = new Uint8Array(this.w * this.h);
     for (const f of level.furniture) {
       const type = CATALOG[f.t];
-      if (!type || !blocks(type, MOVERS.car)) continue;
+      if (!type || !blocks(type, network.mover)) continue;
       const [fw, fh] = type.size;
       for (let y = f.p[1]; y < f.p[1] + fh; y++) for (let x = f.p[0]; x < f.p[0] + fw; x++) if (x >= 0 && y >= 0 && x < this.w && y < this.h) this.standing[y * this.w + x] = 1;
     }
@@ -94,7 +107,7 @@ export class RoadMap {
   }
 
   drivable(x: number, y: number): boolean {
-    return Object.hasOwn(FLOOR_COST, this.floorAt(x, y) ?? '') && !this.standing[y * this.w + x];
+    return Object.hasOwn(this.network.costs, this.floorAt(x, y) ?? '') && !this.standing[y * this.w + x];
   }
 
   /** Is this somewhere people walk (a path or pavement), where a car goes carefully? */
@@ -129,6 +142,7 @@ export class RoadMap {
 
   /** Driving (dx, dy) on the road here, with more road on your left: you're on the wrong side. (Forecourts and paths have no sides.) */
   private wrongLane(x: number, y: number, dx: number, dy: number): boolean {
+    if (!this.network.lanes) return false;
     const onRoad = (fx: number, fy: number) => DRIVABLE.has(this.floorAt(fx, fy) ?? '') && this.floorAt(fx, fy) !== 'forecourt';
     return onRoad(x, y) && onRoad(x + dy, y - dx);
   }
@@ -222,7 +236,7 @@ export class RoadMap {
         const turn = nd === d ? 0 : (nd + 2) % 4 === d || again ? turnRound : hop ? LANE_CHANGE : TURN;
         const nm = clockwise ? 1 : anticlockwise ? 3 : m === 1 ? 2 : m === 3 ? 4 : 0;
         const next = stateOf(tile(nx, ny), nd, nm);
-        const surface = offRoad(nx, ny) ? OFF_ROAD : FLOOR_COST[this.floorAt(nx, ny)!]!;
+        const surface = offRoad(nx, ny) ? OFF_ROAD : this.network.costs[this.floorAt(nx, ny)!]!;
         const g = cost[state]! + surface + turn + (this.wrongLane(nx, ny, dx, dy) ? WRONG_LANE : 0);
         if (g >= cost[next]!) continue;
         cost[next] = g;

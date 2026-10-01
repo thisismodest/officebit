@@ -60,6 +60,10 @@ export interface FurnitureType {
   event?: boolean;
   /** Only for summer days: June to August, in daylight, when it's dry (a swim in the river). */
   summer?: boolean;
+  /** A boat (boats.ts): moored (a sailboat) or kept in the clubhouse (a rowing boat) till someone takes it out on the river. */
+  boat?: 'sail' | 'row';
+  /** Where to take a boat out from (the boating club): open on fine days in the boating season (April to October, by day, dry). */
+  boating?: boolean;
   /** A workstation you work standing up (the diner's grill), not sat at. */
   standing?: boolean;
   /** A game machine (arcades): gamers seek it out whether or not they're bored. */
@@ -238,6 +242,18 @@ export const CATALOG: Record<string, FurnitureType> = {
     hangout: true,
     treat: true,
   },
+  boathouse: {
+    name: 'Boating club',
+    size: [6, 3],
+    solid: true,
+    // At its doors on the bank: someone going rowing.
+    spots: [[2, 3], [3, 3]],
+    offers: { fun: 0.4 },
+    duration: [10, 20],
+    boating: true,
+  },
+  sailboat: { ...decor('Sailing boat', [3, 1], false), boat: 'sail', blocks: { foot: true, wheels: false } },
+  rowboat: { ...decor('Rowing boat', [2, 1], false), boat: 'row', blocks: { foot: true, wheels: false } },
   lifebuoy: {
     name: 'Bathing spot',
     size: [1, 1],

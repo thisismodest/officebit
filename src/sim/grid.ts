@@ -19,6 +19,7 @@ const WALK_COST: Record<string, number> = {
   forecourt: 1,
   bridge: 1,
   bridgeSide: 1,
+  jetty: 1,
   road: 3,
   grass: 4,
   sand: 3,

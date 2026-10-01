@@ -33,6 +33,8 @@ const HURRY = 1.5;
 const TOWN = 0.45;
 const HIGHWAY = 0.9;
 const CREEP = 0.2;
+/** Tiles per step for a boat on the river. */
+const BOAT = 0.15;
 
 /** On foot: slow for someone just ahead, wait right behind them, step aside for someone coming the other way, give way to someone crossing, and after a second or so squeeze past. */
 const WALKING: Manners = { slow: 0.9, stop: 0.55, width: 0.5, oncoming: "pass", crossing: "yield", patience: 12 };
@@ -47,7 +49,9 @@ export const MOVERS = {
   // A food truck: a car's pace, three tiles wide.
   truck: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
   // A bus: a car's pace, three tiles long.
-  bus: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING }
+  bus: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
+  // A boat on the river: a gentle pace, rowed or under sail.
+  boat: { on: "wheels", speed: BOAT, manners: DRIVING }
 } satisfies Record<string, Mover>;
 
 /**

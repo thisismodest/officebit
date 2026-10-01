@@ -182,7 +182,8 @@ export class Renderer {
     const visible = this.visible();
     const drawables: { sortY: number; draw: () => void }[] = props.map((prop) => {
       // Food trucks are wherever their drive has got to (and only on the map, not the dark beyond it).
-      const moving = prop.item.type.street ? vehicleAt(sim, prop.item) : undefined;
+      // Boats are on their moorings, out on the river, or (a rowing boat) put away in the club.
+      const moving = prop.item.type.street ? vehicleAt(sim, prop.item) : prop.item.type.boat ? sim.boats.poseOf(prop.item) : undefined;
       // Between steps, like the cars.
       const pose = moving && { ...moving, x: moving.px + (moving.x - moving.px) * alpha, y: moving.py + (moving.y - moving.py) * alpha };
       if (pose === null) return { sortY: 0, draw: () => {} };
@@ -193,6 +194,7 @@ export class Renderer {
         return { sortY: my * TILE + TILE, draw: () => this.onMap(() => this.ctx.drawImage(sprite, ...vehicleOrigin(sprite, mx, my, pose.facing))) };
       }
       const sortY = pose ? (pose.y + prop.item.type.size[1]) * TILE : prop.sortY;
+      if (pose && prop.item.type.boat) return { sortY, draw: () => this.onMap(() => this.paintBoat(prop, night, pose)) };
       return { sortY, draw: pose ? () => this.onMap(() => this.paintProp(prop, night, pose)) : () => this.paintProp(prop, night, pose) };
     });
     for (const p of visible) {
@@ -543,6 +545,20 @@ export class Renderer {
     // Working on a project away from a desk (a booth, a bench): a laptop out (docs/PLANS.md).
     const at = p.intent?.kind === 'hustle' && p.phase === 'doing' ? this.sim.items[p.intent.item] : undefined;
     if (at && !at.type.study) paintLaptop(ctx, x, feet);
+  }
+
+  /** A boat out on the river, with whoever's aboard sitting in it (head and shoulders, along it). */
+  private paintBoat(prop: Prop, night: number, pose: { x: number; y: number; facing: string }): void {
+    this.paintProp(prop, night, pose);
+    const aboard = this.sim.boats.aboard(prop.item);
+    const length = prop.item.type.size[0] * TILE;
+    aboard.forEach((p, i) => {
+      const sprite = characterSprite(this.lookOf(p), 'down', 'stand', false);
+      const cut = headTop(sprite) + SWIM_SHOWS - 2;
+      const x = Math.round(pose.x * TILE + ((i + 1) * length) / (aboard.length + 1) - sprite.width / 2);
+      const y = Math.round(pose.y * TILE) + 8 - cut;
+      this.ctx.drawImage(sprite, 0, 0, sprite.width, cut, x, y, sprite.width, cut);
+    });
   }
 
   /** Is someone standing in water (the shallows, for a swim)? */

@@ -15,7 +15,7 @@ shareable JSON world and runs in the browser.
 | [NEEDS](NEEDS.md) | Energy, hunger, social, fun |
 | [RELATIONSHIPS](RELATIONSHIPS.md) | Compatibility, affinity, friends and falling out |
 | [LOVE](LOVE.md) | Dating, moving in together, homes to let |
-| [RIVER](RIVER.md) | The River Dove: water and bridges, swimming, and (coming) boats |
+| [RIVER](RIVER.md) | The River Dove: water and bridges, swimming, the moorings and boats |
 | [PLANS](PLANS.md) | Friends' days out: frisbee, picnics, catching up, working on projects together |
 | [TIME](TIME.md) | The clock, daily routines, weekends, the calendar and the sun, holidays, Live and Sandbox |
 | [VENTURES](VENTURES.md) | Side projects, pitching, and startups that get their own office |

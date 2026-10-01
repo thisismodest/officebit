@@ -60,6 +60,8 @@ const RIVER_NAME = 'River Dove';
 /** The beach on the north bank, running down to the river: where it starts across, and how wide. */
 const BEACH_X = 111;
 const BEACH_W = 9;
+/** The jetty: where it runs out into the river from the bank, and how far. */
+export const JETTY: [x: number, length: number] = [100, 3];
 
 /** The highway across the top of the map: two lanes each way, eastbound on the north side (we drive on the left). */
 const HIGHWAY: Rect = [0, 4, TOWN, 4];
@@ -257,6 +259,15 @@ export function buildTown(residents: Resident[]): LevelBuilder {
     .room('beach', 'The beach', [BEACH_X, RIVER[1] - 3, BEACH_W, 3], 'sand')
     .room('shallows', 'The shallows', [BEACH_X, RIVER[1], BEACH_W, 2], 'shallows')
     .put('lifebuoy', BEACH_X + 4, RIVER[1] - 2)
+    // The moorings, west of the footbridge: the boating club on the bank, a path along it, a jetty out into the river with
+    // two sailing boats tied up, and the club's rowing boats (kept inside, till someone takes one out).
+    .room('bank-path', 'Path', [JETTY[0] - 10, RIVER[1] - 1, 108 - (JETTY[0] - 10), 1], 'path')
+    .room('jetty', 'Jetty', [JETTY[0], RIVER[1], 1, JETTY[1]], 'jetty')
+    .put('boathouse', JETTY[0] - 8, RIVER[1] - 4)
+    .put('sailboat', JETTY[0] + 1, RIVER[1])
+    .put('sailboat', JETTY[0] + 1, RIVER[1] + 2)
+    .put('rowboat', JETTY[0] - 7, RIVER[1])
+    .put('rowboat', JETTY[0] - 4, RIVER[1])
     .put('pond', 96, 113)
     .put('pond', 122, 126)
     .row('bench', [86, 104, 116, 130], 119)

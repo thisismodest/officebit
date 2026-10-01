@@ -53,6 +53,7 @@ export const FLOORS: Record<string, FloorStyle> = {
   shallows: { kind: 'water', base: '#62a2c4' },
   bridge: { kind: 'bridge', base: '#9b7451', across: 'ns' },
   bridgeSide: { kind: 'bridge', base: '#9b7451', across: 'ew' },
+  jetty: { kind: 'bridge', base: '#8a6446', across: 'ns' },
 };
 
 export const DEFAULT_FLOOR: FloorStyle = FLOORS.carpetGrey!;
