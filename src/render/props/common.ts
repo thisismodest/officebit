@@ -18,13 +18,20 @@ export interface Painter {
   flat?: boolean;
   /** Painted this many times with `def.progress` from 0 upwards (building sites). */
   stages?: number;
-  paint(ctx: Ctx, w: number, h: number, o: number, seed: number, def: FurnitureDef): void;
+  /** `joins`: whether another of the same stands right up against it on the left or the right (a terrace in a row). */
+  paint(ctx: Ctx, w: number, h: number, o: number, seed: number, def: FurnitureDef, joins?: Joins): void;
   /** A screen that lights up while in use, in canvas pixels. */
   screen?: (w: number, h: number, o: number) => Rect;
   /** Where the spotlight goes on a billboard or poster (render/spotlights.ts), in canvas pixels: drawn live, as the spotlights take turns. */
   poster?: (w: number, h: number, o: number) => Rect;
   /** Paints lit windows on top of the day image, for nights with someone home. */
-  lit?: (ctx: Ctx, w: number, h: number, o: number, seed: number, def: FurnitureDef) => void;
+  lit?: (ctx: Ctx, w: number, h: number, o: number, seed: number, def: FurnitureDef, joins?: Joins) => void;
+}
+
+/** Whether a piece has another of the same kind joined on at either side. */
+export interface Joins {
+  left: boolean;
+  right: boolean;
 }
 
 export const WOOD = { top: '#b98452', light: '#d09b67', dark: '#8a5a35', line: '#5a3822' };

@@ -33,26 +33,29 @@ function house(): Painter {
     return slots;
   };
   return {
-    up: 20,
-    paint(ctx, w, h, o, seed, def) {
+    up: 6,
+    paint(ctx, w, h, o, seed, def, joins) {
       const back = def.faces === 'up';
       const roof = ROOFS[Math.floor(seed * ROOFS.length)]!;
       const wall = WALLS[Math.floor(hash(seed * 100, 1) * WALLS.length)]!;
       const eaves = o + h - 30;
       // Facing up, the roof sits lower so the path to the door (the row above) stays in view.
-      const ridge = back ? o + 2 : o - 20;
-      rect(ctx, 1, eaves, w - 2, o + h - eaves, OUTLINE);
-      rect(ctx, 2, eaves, w - 4, o + h - eaves - 1, wall);
-      rect(ctx, 2, o + h - 3, w - 4, 2, shade(wall, -0.2));
-      // Pitched roof: narrow at the ridge, full width at the eaves.
+      const ridge = back ? o + 2 : o - 4;
+      // Joined to the house next door (a terrace), it runs straight on: no end wall, no hip, on that side.
+      const [left, right] = [joins?.left ? 0 : 1, joins?.right ? 0 : 1];
+      rect(ctx, 1 - left, eaves, w - 2 + left + right, o + h - eaves, OUTLINE);
+      rect(ctx, 2 - left * 2, eaves, w - 4 + (left + right) * 2, o + h - eaves - 1, wall);
+      rect(ctx, 2 - left * 2, o + h - 3, w - 4 + (left + right) * 2, 2, shade(wall, -0.2));
+      // Pitched roof: narrow at the ridge, full width at the eaves (straight on where it joins next door).
       for (let y = ridge; y < eaves; y++) {
-        const inset = Math.max(0, 8 - (y - ridge));
+        const slope = Math.max(0, 8 - (y - ridge));
+        const [l, r] = [joins?.left ? 0 : slope, joins?.right ? 0 : slope];
         const band = (y - ridge) % 4 === 3 ? -0.15 : 0;
-        rect(ctx, inset, y, w - inset * 2, 1, shade(roof, band));
-        dot(ctx, inset, y, OUTLINE);
-        dot(ctx, w - inset - 1, y, OUTLINE);
+        rect(ctx, l, y, w - l - r, 1, shade(roof, band));
+        if (!joins?.left) dot(ctx, l, y, OUTLINE);
+        if (!joins?.right) dot(ctx, w - r - 1, y, OUTLINE);
       }
-      rect(ctx, 8, ridge, w - 16, 1, OUTLINE);
+      rect(ctx, joins?.left ? 0 : 8, ridge, w - (joins?.left ? 0 : 8) - (joins?.right ? 0 : 8), 1, OUTLINE);
       rect(ctx, 0, eaves, w, 1, OUTLINE);
       rect(ctx, 1, eaves + 1, w - 2, 1, shade(wall, -0.3));
       // Chimney
