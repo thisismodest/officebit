@@ -7,11 +7,12 @@ import { TICKS_PER_DAY, formatClock, formatTime, weekdayOf } from './sim/clock.t
 import { TILE } from './render/pixels.ts';
 import { exitAt, insideDoor, interiorOf, type Exit } from './sim/places.ts';
 import { Simulation, type Item } from './sim/sim.ts';
-import type { Intent } from './sim/person.ts';
+import { asleep, type Intent } from './sim/person.ts';
 import type { Tile, WorldDef } from './sim/world.ts';
 import { attachControls } from './ui/controls.ts';
 import { Directory } from './ui/directory.ts';
 import { TeamForm } from './ui/team-form.ts';
+import { Tour } from './ui/tour.ts';
 import { News } from './ui/news.ts';
 import { Overview } from './ui/overview.ts';
 import { TOWN_NAME_MOST, placeName, townName } from './ui/describe.ts';
@@ -168,7 +169,23 @@ document.addEventListener('pointerdown', (event) => {
   const target = event.target as Node;
   if (editor.active && target !== renderer.canvas && !editor.contains(target) && !editButton.contains(target)) setEditing(false);
 });
-new Welcome(stage, $('#help'));
+const tour = new Tour(stage, {
+  sim: () => sim,
+  renderer,
+  /** Someone of the team who's about (on screen if possible), followed so they stay in view. */
+  meet() {
+    const about = sim.people.filter((p) => !p.npc && sim.present(p) && !p.hidden && !p.riding && !asleep(p));
+    const p = about.find((q) => q.level === renderer.level) ?? about[0];
+    if (!p) return null;
+    setEditing(false);
+    select(null);
+    follow(p.id);
+    return p.id;
+  },
+  steering: () => !!steering,
+  editing: () => editor.active,
+});
+new Welcome(stage, $('#help'), () => tour.start());
 new ShareMenu($('#share'), {
   design: () => design,
   starter: () => ({ ...structuredClone(STARTER), seed: storySeed() }),
@@ -611,6 +628,7 @@ function frame(now: number): void {
   }
   soundscape.update(dt);
   card.update(renderer.camera, sim);
+  tour.update();
   if (now - lastPanel > 250) {
     lastPanel = now;
     profile.update(sim);

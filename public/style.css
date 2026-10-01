@@ -491,6 +491,46 @@ main {
   }
 }
 
+/* The tour (tour.ts): a light round one thing, everything else greyed out (it doesn't block clicks), and a bubble beside it. */
+.tour-hole {
+  position: fixed;
+  z-index: 20;
+  border-radius: 6px;
+  box-shadow: 0 0 0 200vmax rgba(10, 8, 20, 0.6);
+  outline: 2px solid #fff;
+  pointer-events: none;
+  transition:
+    left 0.15s,
+    top 0.15s,
+    width 0.15s,
+    height 0.15s;
+}
+
+.tour-bubble {
+  position: fixed;
+  z-index: 21;
+  width: min(18rem, calc(100vw - 2rem));
+  padding: var(--mdst-space-sm) var(--mdst-space-md);
+  background: var(--mdst-color-bg);
+  box-shadow: 0 0.25rem 0 rgba(0, 0, 0, 0.35);
+
+  & p {
+    margin: 0;
+  }
+
+  & .tour-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--mdst-space-xs);
+    margin-top: var(--mdst-space-sm);
+
+    & span {
+      margin-right: auto;
+      color: var(--mdst-color-muted);
+    }
+  }
+}
+
 /* The welcome card (welcome.ts): in the middle of the map, on a first visit and from the ? on the tool rail. */
 .welcome {
   position: absolute;
