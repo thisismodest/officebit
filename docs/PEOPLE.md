@@ -132,6 +132,9 @@ kind (employee, family, pet, and each role):
 | `relationships`, `romance` | Makes friends and enemies; can fall in love |
 | `controllable`, `customer`, `saved` | Can be steered; staff serve them; kept in the world file |
 
+A `resident` lives in town without being on anyone's books (Fen, on the
+narrowboat): their own hours, and out and about like anyone off work.
+
 A new kind of person is a new role and one entry here.
 
 ## Intents

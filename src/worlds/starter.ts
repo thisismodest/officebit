@@ -5,11 +5,11 @@
 //   First floor  — brand, design, engineering, operations, the CEO's office,
 //                  and a kitchenette round the stairs.
 import type { CompanyDef, DepartmentDef, NpcDef, PersonDef, PortalDef, Tile, WorldDef } from "../sim/world.ts";
-import { buildHome, buildToLet, type HomeStyle } from "./homes.ts";
+import { buildHome, buildNarrowboat, buildToLet, type HomeStyle } from "./homes.ts";
 import { buildSchool } from "./school.ts";
 import { buildDiner, buildShop } from "./venues.ts";
 import { LevelBuilder, portal } from "./layout.ts";
-import { DINER_DOOR, OFFICE_DOOR, PLOTS, SCHOOL_DOOR, SHOP_DOOR, SPAWN, buildTown, type Plot } from "./town.ts";
+import { DINER_DOOR, NARROWBOAT, OFFICE_DOOR, PLOTS, SCHOOL_DOOR, SHOP_DOOR, SPAWN, buildTown, type Plot } from "./town.ts";
 import { resolveTraits } from "../sim/personality.ts";
 import { VERSION } from "./upgrades.ts";
 
@@ -82,6 +82,8 @@ const NPCS: NpcDef[] = [
     works: "school",
     shift: [8, 16]
   },
+  // Fen lives on the narrowboat moored on the river, and is out on the water whenever it's fine.
+  { id: "fen", name: "Fen", species: "human", look: [3, 2, 3, 1], home: home("fen"), preset: "regular", traits: { ambition: 0.8, chaos: 0.6, social: 0.5 }, role: "resident" },
   // The diner's staff: Dot on days, Ray on nights, so it never closes.
   {
     id: "dot",
@@ -330,6 +332,11 @@ const emptyHomes = toLet.map(({ style, plot }, i) => {
   return level;
 });
 
+// The narrowboat on the river: Fen's home, its door onto the bank.
+const narrowboat = buildNarrowboat("fen", "Fen");
+town.item({ t: "narrowboat", p: NARROWBOAT, faces: "up", owner: "fen" });
+portals.push(portal("door", town.at([NARROWBOAT[0] + 1, NARROWBOAT[1] - 1]), { level: narrowboat.level.id, p: narrowboat.entry }));
+
 const homes = housed.map(({ person, style, plot }, i) => {
   const preset = NPCS.find((n) => n.id === person.id)?.preset ?? PEOPLE.find((p) => p.id === person.id)?.preset;
   const gamer = ["regular", "distractor", "magnet", "founder"].includes(preset ?? "regular");
@@ -345,7 +352,7 @@ export const STARTER: WorldDef = {
   seed: 20260929,
   companies: COMPANIES,
   departments: DEPARTMENTS,
-  levels: [town.build(), ground.build(), first.build(), diner.level, shop.level, school.level, ...homes, ...emptyHomes],
+  levels: [town.build(), ground.build(), first.build(), diner.level, shop.level, school.level, ...homes, narrowboat.level, ...emptyHomes],
   portals,
   spawn: town.at(SPAWN),
   people: PEOPLE.map((person) => ({ ...person, home: home(person.id) })),

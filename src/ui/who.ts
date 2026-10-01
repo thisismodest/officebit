@@ -15,6 +15,7 @@ export function describeRole(p: Person, sim: Simulation): string {
   const works = sim.levels.get(p.works ?? '');
   if (p.role === 'staff') return `${works?.kind === 'school' ? 'Teacher' : 'Staff'} · ${works?.name ?? 'somewhere'}`;
   if (p.role === 'child') return `${ownerOf(p, sim)}'s child · ${works?.name ?? 'school'}`;
+  if (p.role === 'resident') return `Lives in ${sim.levels.get(p.home ?? '')?.name ?? 'town'}`;
   if (p.npc) return `Lives with ${ownerOf(p, sim)}`;
   const company = sim.companies.get(p.company ?? '');
   if (!company) return 'Between jobs';

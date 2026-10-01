@@ -253,6 +253,8 @@ export const CATALOG: Record<string, FurnitureType> = {
     boating: true,
   },
   sailboat: { ...decor('Sailing boat', [3, 1], false), boat: 'sail', blocks: { foot: true, wheels: false } },
+  // Someone's home, moored on the river (its door onto the bank, like a house's: worlds/homes.ts).
+  narrowboat: { ...decor('Narrowboat', [7, 1]), solid: true },
   rowboat: { ...decor('Rowing boat', [2, 1], false), boat: 'row', blocks: { foot: true, wheels: false } },
   lifebuoy: {
     name: 'Bathing spot',

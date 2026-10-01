@@ -155,7 +155,7 @@ export interface PersonDef {
 
 export type Species = 'human' | 'cat' | 'dog';
 
-export type NpcRole = 'staff' | 'crew' | 'child' | 'courier' | 'visitor';
+export type NpcRole = 'staff' | 'crew' | 'child' | 'courier' | 'visitor' | 'resident';
 
 export interface NpcDef {
   id: string;

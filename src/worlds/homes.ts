@@ -38,6 +38,23 @@ export function buildToLet(style: HomeStyle, n: number, variant: number): Home {
   return home;
 }
 
+/** A narrowboat, moored on the river: one long cabin, a bed at the bow, the galley in the middle, a sofa and the stove at the stern. 15×5. */
+export function buildNarrowboat(owner: string, name: string): Home {
+  const b = new LevelBuilder(`home-${owner}`, `${name}'s narrowboat`, 'home', 15, 5)
+    .room(`${owner}-home`, `${name}'s narrowboat`, [0, 0, 15, 5], 'darkWood', { walled: true })
+    .door([7, 4])
+    .put('bed', 1, 1, owner)
+    .put('counter', 4, 1)
+    .put('stove', 5, 1)
+    .put('sink', 6, 1)
+    .put('fridge', 7, 1)
+    .put('smallTable', 9, 2)
+    .put('sofa', 12, 1)
+    .put('plant', 13, 3)
+    .put('petBed', 3, 3);
+  return { level: b.build(), entry: [7, 3], consoleAt: [11, 3] };
+}
+
 /** A one-bed terrace: bedroom, kitchen along the top, sofa facing the TV. 12×9. */
 function oneBed(owner: string, name: string, variant: number): Home {
   const b = new LevelBuilder(`home-${owner}`, `${name}'s house`, 'home', 12, 9)

@@ -89,6 +89,7 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   arrivals.ts     newcomers: a baby dropped off by car (it crawls in), family and new team members on foot from the edge of town
   weather.ts      clear, grey, rain or snow in spells, from the seed and the date; the wet keeps people in
   birthdays.ts    everyone's birthday: the News, a cheerier day, a party hat, a cake at work (or at home)
+  boats.ts        the river's boats: boat trips and rows from the moorings, out and back (docs/RIVER.md)
   interactions.ts pizza (rider), fire drills, taking control (ControlledBrain)
   works.ts        what a newer release adds to an older town, put up by crews (docs/UPGRADES.md)
   places.ts       buildings on the map and what's inside (for the click card); validate.ts: world checks
@@ -183,6 +184,8 @@ Working and verified in the browser:
   frisbee and picnics on the Green, catching up at the diner, working on laptops together. Birthdays (a hat,
   a cake at work), and new team members added from the People tab.
 - **Weather:** grey days, rain and winter snow that keep people in; drawn falling, with snow lying.
+- **The river:** the River Dove with a footbridge, a beach for summer swims, a boating club with sailing and rowing boats,
+  and Fen's narrowboat; water and bridges drawn in the editor.
 - **Places:** the two-floor office, the 24/7 Night Owl Diner and the Corner Shop,
   staffed in shifts (they close when nobody's minding them; customers queue),
   food trucks on weekday lunchtimes, arcades, billboards by the highway and a bus stop showing spotlights

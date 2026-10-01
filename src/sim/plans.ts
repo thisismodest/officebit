@@ -202,7 +202,7 @@ export class Plans {
 
   /** Someone who might make or join plans: a grown-up who lives in town. */
   private planner(p: Person): boolean {
-    return p.species === 'human' && !!p.home && p.role !== 'child' && !p.leaving && ['employee', 'family', 'staff'].includes(kindOf(p));
+    return p.species === 'human' && !!p.home && p.role !== 'child' && !p.leaving && ['employee', 'family', 'staff', 'resident'].includes(kindOf(p));
   }
 
   /** What they'd suggest: their project, if they have one on; otherwise something fun, outdoors only in daylight. */

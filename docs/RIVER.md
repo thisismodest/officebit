@@ -2,7 +2,8 @@
 
 The River Dove runs along the bottom of town, edge to edge (`RIVER` in
 `worlds/town.ts`), with a footbridge carrying Dover Park's path over to the
-south bank, a beach, and the moorings: the boating club, a jetty and boats.
+south bank, a beach, the moorings (the boating club, a jetty and boats), and
+Fen's narrowboat.
 
 ## Water
 
@@ -41,3 +42,13 @@ boat's gentle pace (`MOVERS.boat`).
   the boat); then ashore where they got on, and on with their day. A rowing boat
   goes back in the club. In the News: "🚣 Mo and Rowan took a rowing boat out on
   the river". Over a June fortnight, about eight trips.
+
+## The narrowboat
+
+Fen lives on a narrowboat moored along the north bank, west of the club
+(`NARROWBOAT` in `worlds/town.ts`): a `narrowboat` on the water with its door
+onto the bank path, like a house's, into one long cabin (`buildNarrowboat` in
+`worlds/homes.ts`: bed, galley, sofa). Fen is a `resident` (on no one's books;
+see [PEOPLE](PEOPLE.md#kinds)), restless and driven, so out rowing on most fine
+days; the portholes glow of an evening when Fen's in. So there's always a boat
+on the river.

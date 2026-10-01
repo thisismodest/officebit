@@ -394,6 +394,35 @@ export const OUTDOOR: Record<string, Painter> = {
     },
   },
 
+  // A narrowboat moored on the river (someone's home): a long green hull with red trim, a cabin with portholes (lit when
+  // they're home of an evening), a chimney, and a pot plant on the roof.
+  narrowboat: {
+    up: 14,
+    flat: true,
+    paint(ctx, w, h, o) {
+      // Hull, low in the water.
+      rect(ctx, 1, o + 6, w - 2, h - 7, OUTLINE);
+      rect(ctx, 2, o + 7, w - 4, h - 9, '#2f5d3a');
+      rect(ctx, 2, o + 7, w - 4, 1, '#c8453a');
+      // Cabin roof and sides.
+      rect(ctx, 6, o - 6, w - 14, 13, OUTLINE);
+      rect(ctx, 7, o - 5, w - 16, 11, '#3c7a4a');
+      rect(ctx, 7, o - 5, w - 16, 2, '#c8a14a');
+      for (let x = 12; x < w - 12; x += 12) {
+        rect(ctx, x, o, 5, 4, OUTLINE);
+        rect(ctx, x + 1, o + 1, 3, 2, '#9fc6dc');
+      }
+      // The door at the stern end, the chimney, and a plant on the roof.
+      rect(ctx, w - 12, o - 2, 4, 8, '#7a2f2a');
+      rect(ctx, 16, o - 12, 3, 6, OUTLINE);
+      rect(ctx, w / 2, o - 9, 4, 3, '#b0623d');
+      rect(ctx, w / 2, o - 12, 4, 3, '#4f8f3a');
+    },
+    lit(ctx, w, _h, o) {
+      for (let x = 12; x < w - 12; x += 12) rect(ctx, x + 1, o + 1, 3, 2, WINDOW_LIT);
+    },
+  },
+
   // A rowing boat: wooden, with a pair of oars (only out on the water while someone's rowing it).
   rowboat: {
     up: 2,

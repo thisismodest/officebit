@@ -41,7 +41,7 @@ const FANCY_A_WALK = 0.15;
 /** How long someone waits at a stop (game minutes) before giving up and walking. */
 const MOST_WAIT = 30;
 /** Who takes the bus: grown-ups and children who live in town (not crews, couriers or visitors). */
-const RIDERS = new Set(["employee", "family", "staff", "child"]);
+const RIDERS = new Set(["employee", "family", "staff", "child", "resident"]);
 /** What people go by bus for: getting somewhere (not chasing someone for a chat). */
 const JOURNEYS = new Set<Intent["kind"]>(["use", "work", "hustle", "wander", "play", "sleep"]);
 const TICKS_PER_MINUTE = TICKS_PER_HOUR / 60;

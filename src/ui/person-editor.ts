@@ -32,7 +32,7 @@ export interface PersonEditorHost {
 
 /** Who can be edited: the team, and the families and pets at home. Not venue staff, crews, riders or visitors. */
 export function editable(p: Person): boolean {
-  return ['employee', 'family', 'pet', 'child'].includes(kindOf(p));
+  return ['employee', 'family', 'pet', 'child', 'resident'].includes(kindOf(p));
 }
 
 export class PersonEditor {

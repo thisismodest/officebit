@@ -75,6 +75,8 @@ export const ROLES: Record<Kind, Role> = {
   child: { ...PERSON, routine: (_traits, seed) => schoolRoutine(seed), day: 'routine', weekends: false, goesOut: false, romance: false, customer: false },
   courier: PASSING_THROUGH,
   visitor: { ...PASSING_THROUGH, customer: true },
+  // Someone who lives in town but isn't on anyone's books (Fen on the narrowboat): their own hours, and out and about.
+  resident: { ...PERSON, routine: (_traits, seed) => homebodyRoutine(seed), day: 'homebody', weekends: false },
 };
 
 /** What kind of person someone is. */
