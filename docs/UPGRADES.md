@@ -28,12 +28,19 @@ crew**, because nothing appears out of thin air.
 
 A new town from the starter already has everything, so no crews.
 
+## The move
+
+0.5 has a new map. A town made before it moves onto it (`relocate.ts`): its people,
+families and pets, the insides of its buildings and homes (edits included) all come; each
+home goes on a plot of its size if there's one; plots left over are homes to let; new places
+(the leisure centre) come with their company and staff. Changes to the old town map itself
+don't come: that map's gone. A test moves the real 0.4 town (`test/fixtures/town-0.4.json`).
+
 ## Shipping something new
 
 When a release adds furniture to the starter town:
 
-1. Put it in the town as usual. Keep where it goes in one list, shared with the
-   upgrade (like `BILLBOARDS` and `BUS_STOPS` in `worlds/town.ts`).
+1. Put it in the town as usual (`starter.config.ts`).
 2. Add the release to `UPGRADES`: its version, and each piece's level and
    furniture.
 3. Pick spots that were clear in the last release's town (a test checks it for

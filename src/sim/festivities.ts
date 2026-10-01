@@ -249,7 +249,7 @@ export class Festivities {
   private spot(near: Tile): Tile | null {
     const { sim } = this;
     const level = sim.levels.get(this.outside());
-    const green = level?.rooms.find((r) => r.id === 'green');
+    const green = level?.rooms.find((r) => r.square) ?? level?.rooms.find((r) => r.id === 'green');
     const grid = sim.grids.get(this.outside());
     if (!level || !grid) return null;
     // A town without a Green: around the middle of the map.

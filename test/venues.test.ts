@@ -5,6 +5,7 @@ import { TICKS_PER_DAY, TICKS_PER_HOUR, hourOf } from '../src/sim/clock.ts';
 import type { Intent } from '../src/sim/person.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { STARTER } from '../src/worlds/starter.ts';
+import { doorInto } from './town.ts';
 
 const fresh = () => new Simulation(structuredClone(STARTER));
 const run = (sim: Simulation, ticks: number) => {
@@ -89,7 +90,7 @@ test('a delivery lorry comes to the Corner Shop first thing on a Monday: pulls u
   assert.ok(came, 'a lorry came');
   assert.ok(pulledUp, 'and pulled up');
   assert.equal(roads.floorAt(pulledUp!.x, pulledUp!.y), 'road', 'on the road, not on the crossing');
-  assert.ok(Math.abs(pulledUp!.x - 104) <= 8, 'outside the shop');
+  assert.ok(Math.abs(pulledUp!.x - doorInto('shop')[0]) <= 8, 'outside the shop');
   assert.ok(sim.events.some((e) => /Corner Shop's delivery is here/.test(e.text)));
   assert.ok(!sim.traffic.cars.some((c) => c.lorry), 'and off out of town again');
 });

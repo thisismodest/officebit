@@ -14,12 +14,12 @@ to be shared: small, plain data, never code.
   "departments": [{ "id": "eng", "name": "Engineering", "color": "#3f74b5", "station": "computerDesk" }],
   "levels": [ /* town, office floors, homes: see BUILDINGS */ ],
   "portals": [{ "kind": "stairs", "a": { "level": "ground", "p": [19, 12] }, "b": { "level": "first", "p": [19, 12] } }],
-  "spawn": { "level": "town", "p": [159, 49] },  // where people without a home come and go
+  "spawn": { "level": "town", "p": [159, 103] },  // where people without a home come and go
   "people": [{ "id": "dev", "name": "Dev", "dept": "eng", "look": [3, 2, 3, 0], "preset": "introvert", "home": "home-dev" }],
   "npcs": [{ "id": "miso", "name": "Miso", "species": "cat", "look": [1], "home": "home-ines" }],
   "feed": { "ids": { "U024BE7LH": "dev" } },     // optional: external ids → people
   "overrides": { "venture-1-hana-office": { "size": [14, 10], "furniture": [/* … */], "rooms": [/* … */], "doors": [/* … */] } },  // optional: places the story builds, as you arranged them
-  "version": "0.4.0",  // optional: the officebit version it was made with (docs/UPGRADES.md)
+  "version": "0.5.0",  // optional: the officebit version it was made with (docs/UPGRADES.md)
   "works": [{ "version": "0.4.0", "from": [2026, 9, 30, 22], "level": "town", "furniture": { "t": "billboard", "p": [40, 12] } }]  // optional: what newer releases add, for crews to put up
 }
 ```
@@ -38,6 +38,27 @@ to be shared: small, plain data, never code.
   them out of love stories (see [LOVE](LOVE.md)).
 - The sim edits its own copy of the world as it runs (new offices, new hires),
   so it can be saved and shared mid-story.
+
+## Town configs
+
+A world is a lot to write by hand, so the starter town is written as a config instead
+(`TownConfig` in `worlds/config.ts`; the starter's is `worlds/starter.config.ts`), and
+`buildWorld` (`worlds/build.ts`) makes the world from it. It's plain data:
+
+- **The map:** `areas` (the highway, water, parks, the town `square`, forecourts, beaches),
+  `roads` by name (pavements are worked out, bridges laid over water), `crossings`, `paths`.
+- **`buildings`:** a catalog type, where it stands and faces, which tile its door is on, and
+  what's inside: a template by name (`diner`, `shop`, `school`, `clubhouse`, `leisure`) or the
+  town's own `floors` (the head office's two, as rooms, doors and furniture; `{ desks: 'eng', at }`
+  hands a department its stations).
+- **`homes`:** rows of houses in the order they're handed out, or one with an `owner`.
+- **`lots`**, and **`things`:** furniture singly, in a `row` or `column`, along a line (`from`,
+  `to`, `step`, with `gaps`), or `scatter`ed over grass.
+- **Who's who:** `companies`, `departments`, `people`, and `npcs` (`home` is whose household
+  they're in; `own: true` gets them a home of their own).
+
+The builder runs a path from every door to its street, hands out homes (families first),
+puts a home to let behind every spare house, and joins it all up with portals.
 
 ## Validation
 

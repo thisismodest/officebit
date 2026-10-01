@@ -3,13 +3,15 @@ import assert from 'node:assert/strict';
 import { TICKS_PER_DAY } from '../src/sim/clock.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { STARTER } from '../src/worlds/starter.ts';
-import { CHARGING } from '../src/worlds/town.ts';
+import { onMap } from './town.ts';
+
+const CHARGING = onMap('chargingCanopy');
 
 const fresh = () => new Simulation(structuredClone(STARTER));
 
-test('cars keep to the left: along Main Street, east in the north lane and west in the south', () => {
+test('cars keep to the left: along the Street, east in the north lane and west in the south', () => {
   const roads = fresh().traffic.roads()!;
-  const main = 50;
+  const main = 68;
   const east = roads.route([20, main + 1], [140, main + 1], 'right')!;
   const west = roads.route([140, main], [20, main], 'left')!;
   const middle = (path: [number, number][]) => path.filter(([x]) => x > 40 && x < 120);
@@ -83,12 +85,12 @@ test('a parked car stays exactly where it is', () => {
 test('cars take a path only when there’s no other way, and back out of a bay', () => {
   const sim = fresh();
   const roads = sim.traffic.roads()!;
-  // Along Main Street, a car keeps to the road, even though the pavement beside it is shorter to reach.
-  assert.ok(roads.route([20, 51], [60, 51], 'right')!.every(([, y]) => y === 50 || y === 51), 'on the road');
+  // Along the Street, a car keeps to the road, even though the pavement beside it is shorter to reach.
+  assert.ok(roads.route([20, 69], [60, 69], 'right')!.every(([, y]) => y === 68 || y === 69), 'on the road');
   // To a spot only a path reaches (a house's front path), it goes along the path.
-  const house = sim.levels.get('town')!.furniture.find((f) => f.t === 'house' && !f.faces)!;
+  const house = sim.levels.get('town')!.furniture.find((f) => f.t === 'detached' && !f.faces)!;
   const door: [number, number] = [house.p[0] + 1, house.p[1] + 3];
-  assert.ok(roads.route([20, 51], door), 'up the front path to the door');
+  assert.ok(roads.route([20, 69], door), 'up the front path to the door');
   // Visitors back out: the first move off a bay keeps the car facing in.
   let backedOut = false;
   for (let t = 0; t < 2 * TICKS_PER_DAY && !backedOut; t++) {

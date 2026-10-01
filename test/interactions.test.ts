@@ -47,7 +47,7 @@ test('taking control: they go where they are told, then their personality takes 
   const sim = until(fresh(), 10);
   const bea = sim.person('bea')!;
   sim.interactions.control(bea, true);
-  const green: [number, number] = [53, 40];
+  const green: [number, number] = [56, 80];
   sim.interactions.command(bea, { kind: 'wander', to: { level: 'town', p: green } });
   run(sim, TICKS_PER_HOUR);
   assert.equal(bea.level, 'town');

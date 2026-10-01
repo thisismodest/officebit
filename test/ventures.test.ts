@@ -56,8 +56,9 @@ test('ventures: doing well, they hire; out of money, they close, their people lo
   assert.ok(sim.ventures.of(founder)?.founder !== founder.id, 'no new idea of their own yet');
   // The next venture to launch takes on the empty office: whoever's.
   // Someone else catches the bug: ambitious all of a sudden, with an idea ready to go, and an evening's work on it.
-  // (Not one of the team that closed: they're taking a break from ideas.)
-  const maker = sim.people.find((p) => !p.npc && p.home && !p.venture && !team.includes(p.id) && p.company && !sim.ventures.isVenture(p.company))!;
+  // (Not anyone whose venture closed: they're taking a break from ideas.)
+  const keen = (p: (typeof sim.people)[number]) => sim.ventures.wantsToHustle({ ...p, traits: { ...p.traits, ambition: 0.9 } });
+  const maker = sim.people.find((p) => !p.npc && p.home && !p.venture && !team.includes(p.id) && p.company && !sim.ventures.isVenture(p.company) && keen(p))!;
   maker.traits.ambition = 0.9;
   maker.ideas = 10;
   sim.ventures.hustled(maker);

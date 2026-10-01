@@ -32,6 +32,9 @@ export interface Painter {
 export interface Joins {
   left: boolean;
   right: boolean;
+  /** Tile-sized pieces (hedges, fences) also join above and below. */
+  up?: boolean;
+  down?: boolean;
 }
 
 export const WOOD = { top: '#b98452', light: '#d09b67', dark: '#8a5a35', line: '#5a3822' };

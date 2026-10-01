@@ -13,8 +13,8 @@ const world = (): WorldDef => structuredClone(STARTER);
 const townOf = (w: WorldDef) => w.levels.find((l) => l.kind === 'outside')!;
 const floorAt = (level: LevelDef, x: number, y: number) =>
   level.rooms.filter((r) => x >= r.rect[0] && y >= r.rect[1] && x < r.rect[0] + r.rect[2] && y < r.rect[1] + r.rect[3]).sort((a, b) => a.rect[2] * a.rect[3] - b.rect[2] * b.rect[3])[0]?.floor;
-/** Somewhere empty in the countryside, south of Cedar Crescent and north of the river. */
-const FIELD = { x: 20, y: 132 };
+/** Somewhere empty in the countryside: the hedged field by the river, south-west of town. */
+const FIELD = { x: 12, y: 132 };
 
 test('a stroke becomes one rectangle per straight run, overlapping at the corners', () => {
   const along = [0, 1, 2, 3].map((i): [number, number] => [10 + i, 5]);
@@ -45,14 +45,14 @@ test('a new road clears small things, and gets pavements that wrap round its cor
 test('paths stop at roads; rubbing out a road cuts right across it; crossings go across', () => {
   const w = world();
   const town = townOf(w);
-  const main = 50;
+  const main = 68;
   lay(town, [[30, main - 3, 1, 8]], 'path');
   assert.equal(floorAt(town, 30, main), 'road', 'the road is still road where the path met it');
   assert.equal(floorAt(town, 30, main - 3), 'path');
 
-  assert.equal(addCrossing(town, [120, main]), null);
-  assert.equal(floorAt(town, 121, main + 1), 'zebra');
-  assert.match(addCrossing(town, [120, main]) ?? '', /already/);
+  assert.equal(addCrossing(town, [130, main]), null);
+  assert.equal(floorAt(town, 131, main + 1), 'zebra');
+  assert.match(addCrossing(town, [130, main]) ?? '', /already/);
   assert.match(addCrossing(town, [30, 20]) ?? '', /across a road/);
 
   assert.ok(erase(town, [140, main]));
@@ -63,18 +63,18 @@ test('paths stop at roads; rubbing out a road cuts right across it; crossings go
   assert.equal(floorAt(town, 142, main), 'road', 'and the road carrying on beyond');
 
   // Pavement rubs out too, to grass, and stays rubbed out when the pavements are laid again; a path drawn over it brings it back.
-  assert.ok(erase(town, [100, main - 1]));
-  assert.equal(floorAt(town, 100, main - 1), 'grass');
+  assert.ok(erase(town, [92, main - 1]));
+  assert.equal(floorAt(town, 92, main - 1), 'grass');
   lay(town, [[60, 140, 3, 1]], 'road');
-  assert.equal(floorAt(town, 100, main - 1), 'grass', 'still grass after the pavements are laid again');
-  lay(town, [[100, main - 1, 1, 1]], 'path');
-  assert.equal(floorAt(town, 100, main - 1), 'path');
+  assert.equal(floorAt(town, 92, main - 1), 'grass', 'still grass after the pavements are laid again');
+  lay(town, [[92, main - 1, 1, 1]], 'path');
+  assert.equal(floorAt(town, 92, main - 1), 'path');
 });
 
 test('a house moves with its door and front path, and turns round', () => {
   const w = world();
   const town = townOf(w);
-  const house = town.furniture.find((f) => f.t === 'house' && !f.faces)!;
+  const house = town.furniture.find((f) => f.t === 'detached' && !f.faces)!;
   const doorOf = () => w.portals.flatMap((p) => [p.a, p.b]).find((e) => e.level === 'town' && e.p[1] === house.p[1] + 3 && e.p[0] === house.p[0] + 1);
   const door = doorOf()!;
   const to: [number, number] = [FIELD.x, FIELD.y - 10];
@@ -114,15 +114,15 @@ test('undo puts a map back as it was, with the same pieces', () => {
 
 test('water: nobody walks in it and nothing drives on it; a road drawn across it is a bridge, with no pavement on the water, and rubbing it out takes the bridge too', () => {
   const town = structuredClone(STARTER).levels.find((l) => l.kind === 'outside')!;
-  assert.match(groundProblem(town, [76, 100, 2, 2], 'water') ?? '', /across the water/, 'no water over a road');
+  assert.match(groundProblem(town, [40, 100, 2, 2], 'water') ?? '', /across the water/, 'no water over a road');
   lay(town, strokeRects([[60, 136], [60, 152]], 'road'), 'road');
   const bridge = town.rooms.find((r) => r.floor === 'bridge' && r.rect[0] === 60)!;
-  assert.deepEqual(bridge.rect, [60, 144, 2, 5], 'bridged just where it crosses the river');
+  assert.deepEqual(bridge.rect, [60, 142, 2, 5], 'bridged just where it crosses the river');
   const grid = new Grid(town);
   assert.ok(!grid.walkable(50, 146), 'nobody walks in the river');
   assert.ok(grid.walkable(61, 146), 'but over the bridge');
   assert.equal(new RoadMap(town, grid).route([60, 137], [61, 151])?.at(-1)?.join(), '61,151', 'and drives over it');
-  assert.ok(!town.rooms.some((r) => r.id.startsWith('pavement-') && r.rect[1] >= 144 && r.rect[1] < 149), 'no pavement on the water');
+  assert.ok(!town.rooms.some((r) => r.id.startsWith('pavement-') && r.rect[1] >= 142 && r.rect[1] < 147), 'no pavement on the water');
   erase(town, [60, 146]);
   assert.ok(!town.rooms.some((r) => r.floor === 'bridge' && r.rect[0] === 60), 'rubbed out, bridge and all');
 });

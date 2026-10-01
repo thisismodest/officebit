@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TICKS_PER_DAY } from '../src/sim/clock.ts';
-import { Simulation } from '../src/sim/sim.ts';
+import type { Simulation } from '../src/sim/sim.ts';
 import { fresh, run, until, kindOf } from './town.ts';
 
 test('children go to school on weekdays, have lunch there, and are in bed early', () => {

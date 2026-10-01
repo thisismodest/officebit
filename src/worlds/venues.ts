@@ -43,6 +43,27 @@ export function buildClubhouse(id: string, name: string): Venue {
   return { level: b.build(), entry: [6, 6] };
 }
 
+/** The leisure centre, 22×14: a pool hall, a gym with treadmills and weights, and a foyer with the reception desk and a drinks cooler. */
+export function buildLeisure(id: string, name: string): Venue {
+  const b = new LevelBuilder(id, name, 'venue', 22, 14)
+    .room(id, name, [0, 0, 22, 14], 'stone', { walled: true })
+    .room(`${id}-pool`, 'Pool hall', [0, 0, 14, 9], 'tiles', { walled: true })
+    .room(`${id}-gym`, 'Gym', [13, 0, 9, 9], 'carpetBlue', { walled: true })
+    .door([7, 8], [17, 8], [11, 13])
+    .put('pool', 2, 2)
+    .put('plant', 1, 7)
+    .put('plant', 12, 1)
+    .row('treadmill', [15, 17, 19], 1)
+    .put('weightBench', 15, 5)
+    .put('weightBench', 18, 5)
+    .put('reception', 9, 10)
+    .put('cooler', 2, 10)
+    .put('sofa', 15, 11)
+    .put('plant', 1, 12)
+    .put('plant', 20, 12);
+  return { level: b.build(), entry: [11, 12] };
+}
+
 /** A small supermarket, 16×12: three aisles, fruit and veg, chillers, three checkouts. Also a workplace. */
 export function buildShop(id: string, name: string, staff: string[]): Venue {
   const b = new LevelBuilder(id, name, 'venue', 16, 12)

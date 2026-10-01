@@ -53,24 +53,24 @@ on both sides.
 
 ## The starter town
 
-A 160×160 square laid out by hand in districts (`worlds/town.ts`), with room
-to grow and countryside all round:
+A 160×160 village with countryside all round, all of it data: `worlds/starter.config.ts`
+(see [WORLD](WORLD.md#town-configs)).
 
-- **The highway:** across the top, behind hedges, with a slip road down to
-  High Street (see [TRAFFIC](TRAFFIC.md)).
-- **High Street:** a row of empty lots, with Mill Lane running down past the woods.
-- **Main Street:** the one road right across town, which the food trucks use.
-  It has the Green with its pond, the head office, the diner, the Corner Shop,
-  the charging station (`chargingStation`), more lots, and a row of terraces facing them.
-- **The Avenue:** south to Acacia Road (terraces and semis) and Birch Close
-  (detached family homes round a turning circle), then Acacia Primary on
-  School Lane and Dover Park. Cedar Crescent is still waiting for its houses.
+- **The highway:** across the top, hedged both sides, with Hill Road coming down into the
+  village (see [TRAFFIC](TRAFFIC.md)).
+- **Kiln Lane:** off Hill Road, four empty lots for new companies.
+- **The Street:** terraces, the food trucks' pitches, the head office, the diner, the Corner
+  Shop, a lot, the charging station and the leisure centre. Back Lane and Ferry Lane run
+  round its ends, so the roads go in loops.
+- **The Green:** a park between Green Lane and Pond Lane, with its ponds; Orchard Close's
+  terraces and semis to the west, Acacia Primary (and its fenced playing field) and more
+  semis on its south side.
+- **Mill Road:** east over the river to detached cottages, and the edge of town.
 
-House plots (`PLOTS`) come in the three sizes, with spares for people moving
-and newcomers. Bigger households choose first: families with children get a
-detached house near the school, couples and the CEO a semi, ambitious people a
-semi if one's free, everyone else a terrace. The twelve empty lots are dotted
-round town.
+Homes come in three sizes (and a narrowboat), with spares for people moving and newcomers.
+Bigger households choose first: families with children get a detached house, couples and
+the CEO a semi, ambitious people a semi if one's free, everyone else a terrace. Seven
+empty lots, most on Kiln Lane.
 
 Pavements are worked out from the roads (`layPavements` in `worlds/ground.ts`:
 every tile touching a road that isn't one, except along the highway), so they
@@ -83,17 +83,23 @@ the town is the same every time.
 ## Venues
 
 A `venue` level is open to everyone who's awake, at work or at home. The
-starter town has **The Night Owl Diner** on Main Street (`worlds/venues.ts`):
+starter town has **The Night Owl Diner** on the Street (`worlds/venues.ts`):
 a counter with stools, booths, a jukebox and a till. Two `staff` NPCs share
 it in shifts (Dot 06:00–18:00, Ray 18:00–06:00), so the neon never goes off.
 
-**The Corner Shop**, on Main Street past the diner, is a venue *and* a workplace. It's
+**The Corner Shop**, on the Street past the diner, is a venue *and* a workplace. It's
 the `shop` company's floor, with checkouts as its desks. Shoppers restock their
 home pantry at its shelves (see [NEEDS](NEEDS.md#groceries)); Wes and Juno work
 there in shifts that cover its hours (07:00–15:00 and 12:00–22:00, every day),
 with a spare checkout for anyone who needs a job (see [CAREERS](CAREERS.md)).
 
-A venue with staff of its own (the shop, the diner) is only open while one of
+**Greenside Leisure Centre**, on the Street, has a pool hall, a gym (treadmills, weight
+benches) and reception, open 07:00–21:00, with Sol (07:00–15:00) and Bex (14:00–22:00) on
+the desk. A swim or a workout (`exercise` in the catalog) is an outing the driven make time
+for: the pool draws the sociable, the gym the diligent (`EXERCISE_PULL` in `brain.ts`).
+Swimmers in the `pool` are drawn in the water.
+
+A venue with staff of its own (the shop, the diner, the leisure centre) is only open while one of
 them is in and on shift (`sim.venueOpen`); when the last goes, it shuts and
 customers leave (in the News, if it's during its hours). Someone who needs the food shop while
 it should be open (its hours, with staff due in) waits outside, lined up on
@@ -110,7 +116,7 @@ if they're there too. Constants are at the top of `brain.ts`.
 
 A `school` level is only for its pupils (`"role": "child"`) and teachers
 (`staff` who work there), and keeps office weeks. **Acacia Primary**
-(`worlds/school.ts`), on School Lane, has a classroom with a
+(`worlds/school.ts`), on Green Lane facing the Green, has a classroom with a
 desk per pupil, a canteen and a playground with swings and hopscotch. Maggie
 teaches 08:00–16:00. Lunch is 12:00–13:15 (`SCHOOL_LUNCH` in `brain.ts`):
 pupils leave their desks and eat at the canteen tables.
@@ -136,4 +142,5 @@ new LevelBuilder('ground', 'Ground floor', 'building', 40, 26)
   .build();
 ```
 
-`worlds/starter.ts` builds the whole starter town this way.
+The templates (homes, the diner, the shop, the school, the clubhouse, the leisure centre,
+startup offices) are built this way; the starter town itself is a config (`build.ts` makes it).

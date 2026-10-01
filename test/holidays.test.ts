@@ -84,7 +84,8 @@ test('Halloween: children go trick-or-treating', () => {
 
 test('New Year: people go out on the Green to see the fireworks, and homes put their trees up', () => {
   const sim = until(townFrom([2026, 12, 28]), 4, 0.1);
-  const green = sim.people.filter((p) => p.level === sim.traffic.level && p.x >= 40 && p.x < 68 && p.y >= 33 && p.y < 47);
+  const [gx, gy, gw, gh] = sim.levels.get('town')!.rooms.find((r) => r.square)!.rect;
+  const green = sim.people.filter((p) => p.level === sim.traffic.level && p.x >= gx && p.x < gx + gw && p.y >= gy && p.y < gy + gh);
   assert.ok(green.length >= 5, `a crowd on the Green at midnight (${green.length})`);
   const homes = sim.housing.homes().filter((h) => sim.housing.residents(h).length > 0);
   const trees = homes.filter((h) => sim.activeItems().some((i) => i.def.t === 'homeTree' && sim.baseOf(i.level) === h.level.id));

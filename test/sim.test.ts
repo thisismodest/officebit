@@ -130,7 +130,7 @@ test('food trucks drive in on the roads before lunch, pull onto their pitch, ser
   until(sim, 11.1);
   assert.ok(vehicleAt(sim, truck!)?.moving, 'on its way in before noon');
   assert.ok(!sim.isOpen(truck!), 'and not serving yet');
-  // On the road (or the highway) all the way, until it pulls off onto the pitch.
+  // On the road (or the highway) all the way, its middle in a lane, until it pulls off onto the pitch.
   const [px, py] = truck!.def.p;
   let offRoad = 0;
   while (vehicleAt(sim, truck!)?.moving) {
@@ -138,7 +138,7 @@ test('food trucks drive in on the roads before lunch, pull onto their pitch, ser
     const pose = vehicleAt(sim, truck!);
     // Pulling up onto the pitch: just over the pavement, straight off the road in front.
     const near = pose && Math.abs(pose.x - px) <= 2 && pose.y >= py && pose.y <= py + 3;
-    if (pose && !near && !['road', 'highway', 'zebra', 'zebraSide', undefined].includes(floor(pose.x, pose.y))) offRoad++;
+    if (pose && !near && !['road', 'highway', 'zebra', 'zebraSide', 'bridge', 'bridgeSide', undefined].includes(floor(pose.x + pose.middle[0], pose.y + pose.middle[1]))) offRoad++;
   }
   assert.equal(offRoad, 0, 'never off the road on the way');
   until(sim, 12.5);

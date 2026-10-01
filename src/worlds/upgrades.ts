@@ -1,4 +1,4 @@
-// Upgrades (docs/UPGRADES.md): what each release adds to towns made before it.
+// Upgrades (docs/UPGRADES.md): what each release adds to towns made before it, and moving older towns onto the new map.
 // A saved town (or a shared link) is your design, so a new release's additions
 // to the starter town wouldn't otherwise reach it. When an older town opens,
 // each newer release's pieces become works (sim/works.ts): a crew comes to put
@@ -7,10 +7,13 @@ import type { CalendarDate } from '../sim/calendar.ts';
 import { CATALOG } from '../sim/catalog.ts';
 import { footprint, overlap } from '../sim/geometry.ts';
 import type { FurnitureDef, Rect, WorldDef } from '../sim/world.ts';
-import { BILLBOARDS, BUS_STOPS } from './town.ts';
 
-/** This release: package.json's version (a test keeps them the same). */
-export const VERSION = '0.4.0';
+import { relocate } from './relocate.ts';
+import { VERSION } from './version.ts';
+
+export { VERSION };
+/** Towns made before this moved onto the new map (relocate.ts). */
+const MOVED = '0.5.0';
 /** Towns saved before versions were recorded. */
 const UNVERSIONED = '0.3.0';
 /** The crew's works: a fenced patch this size where each piece goes. */
@@ -22,21 +25,25 @@ interface Upgrade {
   add: { level: string; furniture: FurnitureDef }[];
 }
 
-/** Oldest first. Anything new in the starter town goes here too. */
-export const UPGRADES: Upgrade[] = [{ version: '0.4.0', add: [...BILLBOARDS, ...BUS_STOPS].map((furniture) => ({ level: 'town', furniture })) }];
+/** Oldest first, since the move (older towns get the new map, and everything on it). Anything new in the starter town goes here too. */
+export const UPGRADES: Upgrade[] = [];
 
 /**
- * Bring a town made before this release up to date, in place: each newer
- * release's pieces become works from `now` (a date and hour), where there's
- * room for them. Returns how many pieces are coming.
+ * Bring a town made before this release up to date, in place: one from before the move goes onto the new map; then each
+ * newer release's pieces become works from `now` (a date and hour), where there's room for them. Returns how many
+ * changes are coming (the move counts as one).
  */
-export function upgrade(world: WorldDef, now: CalendarDate & { hour: number }): number {
+export function upgrade(world: WorldDef, now: CalendarDate & { hour: number }, releases = UPGRADES, version = VERSION): number {
   const made = world.version ?? UNVERSIONED;
-  if (!newer(VERSION, made)) return 0;
+  if (!newer(version, made)) return 0;
+  if (newer(MOVED, made)) {
+    relocate(world);
+    return 1;
+  }
   let coming = 0;
   world.works ??= [];
   const works = world.works;
-  for (const release of UPGRADES) {
+  for (const release of releases) {
     if (!newer(release.version, made)) continue;
     for (const { level, furniture } of release.add) {
       const target = world.levels.find((l) => l.id === level);
@@ -45,7 +52,7 @@ export function upgrade(world: WorldDef, now: CalendarDate & { hour: number }): 
       coming++;
     }
   }
-  world.version = VERSION;
+  world.version = version;
   return coming;
 }
 

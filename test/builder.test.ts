@@ -7,7 +7,11 @@ import { checkWorld, decodeWorld, encodeWorld } from '../src/ui/world-io.ts';
 import { addHouse, addPerson, eraseAt, moveFurniture, parseTeamList, placeFurniture, removePerson, updatePerson } from '../src/worlds/edit.ts';
 import { placementProblem } from '../src/worlds/placement.ts';
 import { STARTER } from '../src/worlds/starter.ts';
-import { OFFICE, OFFICE_DOOR, SHOP } from '../src/worlds/town.ts';
+import { doorInto, onMap } from './town.ts';
+
+const OFFICE = onMap('Head office');
+const OFFICE_DOOR = doorInto('ground');
+const SHOP = onMap('Corner Shop');
 
 const world = (): WorldDef => structuredClone(STARTER);
 
@@ -58,7 +62,7 @@ test('furniture fits or explains why not; erasing takes it away, but not buildin
 test('a new house on the town map comes with a home inside, to let', () => {
   const w = world();
   const before = w.levels.length;
-  // On the grass across Main Street from the shop.
+  // On the Green, across the Street from the shop.
   assert.equal(addHouse(w, 'town', 'house', [SHOP[0], SHOP[1] + 18]), null);
   assert.equal(w.levels.length, before + 1);
   assert.equal(w.levels.at(-1)!.name, 'To let');
@@ -82,7 +86,7 @@ test('safe zones: off walls, clear of doorways and stairs, inside one room, and 
   const ways = [{ kind: 'door' as const, a: { level: 'corridor', p: [1, 1] as [number, number] }, b: { level: 'town', p: [0, 0] as [number, number] } }, { kind: 'stairs' as const, a: { level: 'corridor', p: [5, 1] as [number, number] }, b: { level: 'x', p: [0, 0] as [number, number] } }];
   assert.equal(placementProblem(corridor, ways, 'plant', [3, 1]), 'That would block the way.');
   const town = w.levels.find((l) => l.id === 'town')!;
-  assert.equal(placementProblem(town, w.portals, 'bench', [OFFICE_DOOR[0] - 20, OFFICE_DOOR[1] + 2]), 'Outdoors, things go on the grass (or the beach).', 'in Main Street');
+  assert.equal(placementProblem(town, w.portals, 'bench', [OFFICE_DOOR[0] - 4, OFFICE_DOOR[1] + 3]), 'Outdoors, things go on the grass (or the beach).', 'on the Street');
   // The charging station's things go on hard ground: the canopy can be moved and put back on the forecourt, but not the grass.
   const canopy = town.furniture.find((f) => f.t === 'chargingCanopy')!;
   assert.equal(placementProblem(town, w.portals, 'chargingCanopy', canopy.p, canopy), null, 'back where it was');

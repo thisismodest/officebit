@@ -7,7 +7,7 @@ shareable JSON world and runs in the browser.
 |---|---|
 | [DEVELOPING](DEVELOPING.md) | Setup, scripts, conventions, testing |
 | [ARCHITECTURE](ARCHITECTURE.md) | How the pieces fit, and the rules that keep them apart |
-| [WORLD](WORLD.md) | The world JSON format and validation |
+| [WORLD](WORLD.md) | The world JSON format, town configs, and validation |
 | [BUILDINGS](BUILDINGS.md) | Levels, rooms, walls, doors, stairs, homes |
 | [FURNITURE](FURNITURE.md) | The catalog, affordances, food trucks, parking, adding a type |
 | [PEOPLE](PEOPLE.md) | People, companies, departments, looks, family and pets |

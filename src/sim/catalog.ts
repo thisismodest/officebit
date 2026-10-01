@@ -76,6 +76,10 @@ export interface FurnitureType {
   hardStanding?: boolean;
   /** A parking bay: somewhere to leave a car, or to charge it (see traffic.ts). */
   parking?: 'park' | 'charge';
+  /** A swimming pool: those using it are in the water (drawn swimming). */
+  pool?: boolean;
+  /** A swim or a workout (the leisure centre): an outing the diligent and the driven make time for. */
+  exercise?: boolean;
 }
 
 const workstation = (name: string, size: [number, number] = [2, 1], spot: Tile = [0, 1]): FurnitureType => ({
@@ -204,6 +208,23 @@ export const CATALOG: Record<string, FurnitureType> = {
   },
 
   // Venues
+  // The leisure centre (worlds/venues.ts): a pool to swim in, a gym, and a reception desk for whoever's on.
+  pool: {
+    name: 'Swimming pool',
+    size: [10, 4],
+    solid: true,
+    // In the water along both long sides: swimmers get in from the poolside.
+    spots: [1, 3, 5, 7, 9].flatMap((x): Tile[] => [[x, 0], [x - 1, 3]]),
+    offers: { fun: 0.4, social: 0.15, energy: 0.05 },
+    duration: [150, 300],
+    hours: [7, 21],
+    hangout: true,
+    pool: true,
+    exercise: true,
+  },
+  treadmill: { name: 'Treadmill', size: [1, 2], solid: true, spots: [[0, 1]], offers: { fun: 0.25 }, duration: [100, 200], hours: [7, 21], standing: true, exercise: true },
+  weightBench: { name: 'Weight bench', size: [2, 1], solid: true, spots: [[0, 1]], offers: { fun: 0.2, social: 0.05 }, duration: [80, 160], hours: [7, 21], exercise: true },
+  reception: { name: 'Reception', size: [3, 1], solid: true, spots: [[1, 1]], staff: true, duration: [200, 500] },
   dinerCounter: {
     name: 'Diner counter',
     size: [4, 1],
@@ -303,6 +324,7 @@ export const CATALOG: Record<string, FurnitureType> = {
   officeBuilding: decor('Office', [12, 6]),
   diner: decor('Diner', [9, 6]),
   supermarket: decor('Corner shop', [9, 6]),
+  leisureCentre: decor('Leisure centre', [12, 6]),
   school: decor('School', [11, 7]),
   startupSmall: decor('Small office', [5, 4]),
   startupLarge: decor('Office', [9, 6]),
@@ -333,6 +355,9 @@ export const CATALOG: Record<string, FurnitureType> = {
   },
   tree: decor('Tree', [2, 2]),
   bush: decor('Bush', [1, 1]),
+  // Field boundaries and gardens: a tile of hedge or fence, joining up with its neighbours.
+  hedge: decor('Hedge', [1, 1]),
+  fence: decor('Fence', [1, 1]),
   flowers: decor('Flowers', [1, 1], false),
   // A park bench: sit, rest, or open a laptop (it's only in town, so it's for days out: docs/PLANS.md).
   bench: { ...decor('Bench', [2, 1]), spots: [[0, 0], [1, 0]], seat: true, worktop: true, offers: { energy: 0.1, social: 0.05 }, duration: [60, 120] },

@@ -95,10 +95,12 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   works.ts        what a newer release adds to an older town, put up by crews (docs/UPGRADES.md)
   snapshot.ts     a running town saved and restored whole, as cloneable data (docs/TIME.md#snapshots)
   places.ts       buildings on the map and what's inside (for the click card); validate.ts: world checks
-src/worlds/   starter.ts (people, 2-floor office, venues, homes), town.ts (the 160×160 town, house plots, lots),
+src/worlds/   starter.config.ts (the starter town as data: the map, buildings, homes, the office floors, everyone),
+              config.ts (its types), build.ts (a config made into a world), starter.ts (STARTER, built from the config),
               ground.ts (roads, paths, crossings, generated pavements), layout.ts (LevelBuilder),
-              homes.ts (terrace/house/detached interiors), offices.ts (startup tier 1/2), venues.ts (diner, shop),
-              school.ts, upgrades.ts (VERSION, and what each release adds to older towns), edit.ts (world edits: moving buildings, turning houses, floors, team), placement.ts (safe zones),
+              homes.ts (terrace/house/detached interiors), offices.ts (startup tier 1/2), venues.ts (diner, shop, clubhouse, leisure centre),
+              school.ts, version.ts (VERSION), upgrades.ts (what each release adds to older towns), relocate.ts (moving pre-0.5 towns
+              onto the new map), edit.ts (world edits: moving buildings, turning houses, floors, team), placement.ts (safe zones),
               rooms.ts (walled rooms and doorways)
 src/render/   renderer.ts (one level through a camera; y-sorted props+people; night lighting),
               camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, vehicles.ts (every vehicle from its look in VEHICLES: cars, food trucks, the bus),
@@ -157,6 +159,9 @@ Dijkstra over portal anchors between levels); driving in `docs/TRAFFIC.md`.
   new classes go in `CLASSES` in `sim/snapshot.ts`, caches in a class's `static readonly unsaved`.
 - **Tunable numbers are named constants** at the top of their module, with units.
 - **Every catalog type needs a painter** in `render/props/` with the same id.
+- **The starter town is data** (`starter.config.ts`): change the town there, not in code. The sim finds places by
+  what they are (a `square` area, the `highway` floor, a catalog flag), never by coordinates; tests look places up by
+  label (`onMap`, `doorInto` in `test/town.ts`).
 - The starter world must `validate()` clean (tested). Run validate on any world
   you author; it catches unreachable beds, furniture in walls, and so on.
 - `[hidden]` needs `display: none !important` (it's in `style.css`), because

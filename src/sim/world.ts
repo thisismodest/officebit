@@ -86,6 +86,8 @@ export interface RoomDef {
   dept?: string;
   /** A park: open grass where friends play catch or have a picnic (docs/PLANS.md). */
   park?: boolean;
+  /** The town square (the Green): where the town gets together, round the Christmas tree or the bonfire. */
+  square?: boolean;
 }
 
 export interface FurnitureDef {

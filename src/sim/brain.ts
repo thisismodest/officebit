@@ -71,6 +71,8 @@ const CELEBRATION_PULL = 0.35;
 const SWIM_PULL = 0.9;
 /** Taking a rowing boat out from the club (days off and fine evenings, April to October). */
 const ROW_PULL = 1.2;
+/** A swim at the pool or a workout at the gym: the day's outing, for the driven; the pool more for the sociable, the gym for the diligent. */
+const EXERCISE_PULL = 1.2;
 
 export interface Option {
   intent: Intent;
@@ -153,6 +155,7 @@ export class PersonalityBrain implements Brain {
         if (sim.boats.wentOutToday(p)) continue;
         score += ROW_PULL * (0.4 + t.ambition * 0.4 + t.chaos * 0.4);
       }
+      if (type.exercise) score += EXERCISE_PULL * (0.2 + t.ambition * 0.2 + (type.pool ? t.social * 0.5 : t.diligence * 0.6));
       if (outing(item.level) && sim.festivities.nightOut()) score += NIGHT_OUT;
       if (type.game) score += ARCADE_PULL * (gamer ? 1 : ARCADE_SHARE) * (0.5 + t.chaos) * (1.3 - p.needs.fun);
       // Swings and hopscotch: a go on them, if they're feeling playful and it's just there.

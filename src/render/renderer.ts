@@ -569,8 +569,9 @@ export class Renderer {
     });
   }
 
-  /** Is someone standing in water (the shallows, for a swim)? */
+  /** Is someone standing in water (the shallows, for a swim), or in a pool? */
   private inWater(p: Person, pos: { x: number; y: number }): boolean {
+    if (p.phase === 'doing' && p.intent?.kind === 'use' && this.sim.items[p.intent.item]?.type.pool) return true;
     const level = this.sim.levels.get(p.level);
     const grid = this.sim.grids.get(p.level);
     if (level?.kind !== 'outside' || !grid) return false;

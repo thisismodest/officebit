@@ -61,7 +61,7 @@ const today = new Date();
 const now = { year: today.getFullYear(), month: today.getMonth() + 1, day: today.getDate(), hour: today.getHours() };
 if (upgrade(design, now) > 0 && !loaded.fromLink) saveLocal(design);
 // The Live town as it was last time, so it only catches up from then (docs/TIME.md#snapshots).
-let lastSaved = time.mode === 'live' && !loaded.fromLink ? await loadSnapshot() : null;
+let lastSaved = time.mode === 'live' ? await loadSnapshot(design) : null;
 let sim = newSim();
 
 async function loadDesign(): Promise<{ world: WorldDef; note: string; fromLink: boolean }> {
@@ -112,7 +112,7 @@ const SNAPSHOT_EVERY_MS = 10 * 60 * 1000;
 function saveTown(): void {
   if (time.mode !== 'live' || time.catchingUp || !time.since) return;
   lastSaved = saved(snapshot(sim), design, time.since);
-  void saveSnapshot(lastSaved);
+  void saveSnapshot(lastSaved, design);
 }
 setInterval(saveTown, SNAPSHOT_EVERY_MS);
 

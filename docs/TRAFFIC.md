@@ -108,11 +108,11 @@ Corner Shop's delivery is here".
 
 ## In the starter town
 
-The highway runs across the top of the map, with a slip road down to High
-Street. Eight bus stops, placed where people go most: Main Street West and Acacia Road among the
-west's homes, Main Street (the office) and Corner Shop (the shop and the diner), The Avenue,
-Birch Close, Cedar Crescent and Acacia Primary. The charging station (`chargingStation` in `worlds/town.ts`) is a
-forecourt on Main Street, just past the shop,
+The highway runs across the top of the map, with Hill Road down into the village, and
+Mill Road leaves by the east edge. Eight bus stops, where people go most: Head office,
+The Street West, Corner Shop, Leisure centre, Orchard Close, Acacia Primary, Pond Lane
+and Mill Road; the Street runs in loops (Back Lane, Ferry Lane), so the bus never turns
+round in the road. The charging station is a forecourt on the Street, past the shop,
 under a canopy signed with a car and a lightning bolt (lit at night), with
 two plain bays and two with chargers, right by the road. Cars pull in nose
 first and back out. Bays are furniture (`parkingBay`,

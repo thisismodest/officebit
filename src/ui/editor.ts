@@ -19,6 +19,7 @@ import { HOME } from '../render/props/home.ts';
 import { OFFICE } from '../render/props/office.ts';
 import { PAINTERS } from '../render/props/index.ts';
 import { SCHOOL } from '../render/props/school.ts';
+import { LEISURE } from '../render/props/leisure.ts';
 import { VENUE } from '../render/props/venue.ts';
 import { buildingMoveProblem, flipHouse, isBuilding, moveBuilding, moveFurniture, placeFurniture, removeFurniture, snapshot, type Floor, type Snapshot } from '../worlds/edit.ts';
 import { CLEARABLE, addCrossing, brush, crossingAt, eraseAll, groundProblem, joinsUp, lay, strokeRects, type Surface } from '../worlds/ground.ts';
@@ -36,13 +37,14 @@ const INDOOR_TOOLS = new Set<Tool>(['room', 'area', 'door', 'stairs']);
 const HOUSES = new Set(['terrace', 'house', 'detached']);
 
 /** What the picker offers indoors and out. Buildings, houses, lots and building sites are placed some other way. */
-const OUTSIDE_ONLY = ['tree', 'bush', 'flowers', 'bench', 'lamppost', 'pond', 'busStop', 'billboard', 'sailboat', 'lifebuoy'];
-const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse']);
+const OUTSIDE_ONLY = ['tree', 'bush', 'hedge', 'fence', 'flowers', 'bench', 'lamppost', 'pond', 'busStop', 'billboard', 'sailboat', 'lifebuoy'];
+const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse', 'leisureCentre']);
 const INDOOR_GROUPS: [string, string[]][] = [
   ['Office', Object.keys(OFFICE)],
   ['Home', Object.keys(HOME)],
   ['Venues', Object.keys(VENUE)],
   ['School', Object.keys(SCHOOL)],
+  ['Leisure', Object.keys(LEISURE)],
 ];
 /** What the ground button lays (the kinds of ground, and zebra crossings on the roads), as its label says each. */
 type GroundTool = Surface | 'crossing' | 'grass';

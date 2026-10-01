@@ -5,12 +5,13 @@ import { hash } from '../palette.ts';
 import { TILE, canvas } from '../pixels.ts';
 import type { Painter, Rect } from './common.ts';
 import { HOME } from './home.ts';
+import { LEISURE } from './leisure.ts';
 import { OFFICE } from './office.ts';
 import { OUTDOOR } from './outdoor.ts';
 import { SCHOOL } from './school.ts';
 import { VENUE } from './venue.ts';
 
-export const PAINTERS: Record<string, Painter> = { ...OFFICE, ...HOME, ...OUTDOOR, ...VENUE, ...SCHOOL };
+export const PAINTERS: Record<string, Painter> = { ...OFFICE, ...HOME, ...OUTDOOR, ...VENUE, ...SCHOOL, ...LEISURE };
 
 export interface Prop {
   item: Item;
@@ -32,6 +33,8 @@ export interface Prop {
 
 /** Pieces that join up with their neighbours in a row (terraces): drawn as one where they meet. */
 const JOINING = new Set(['terrace']);
+/** Tile-sized pieces that join up with their own kind on every side (a hedge, a fence), whichever way they run. */
+const TILED = new Set(['hedge', 'fence']);
 
 export function buildProps(items: readonly Item[]): Prop[] {
   // Which joining pieces have another of their kind right up against them, either side (same row, same way round).
@@ -45,13 +48,19 @@ export function buildProps(items: readonly Item[]): Prop[] {
         (o.def.faces ?? '') === (item.def.faces ?? '') &&
         (side < 0 ? o.def.p[0] + o.type.size[0] === item.def.p[0] : item.def.p[0] + item.type.size[0] === o.def.p[0]),
     );
+  const tiled = new Set(items.filter((i) => TILED.has(i.def.t) && !i.gone).map((i) => `${i.def.t}:${i.def.p[0]},${i.def.p[1]}`));
+  const tiledAt = (item: Item, dx: number, dy: number) => tiled.has(`${item.def.t}:${item.def.p[0] + dx},${item.def.p[1] + dy}`);
   return items.flatMap((item): Prop[] => {
     const painter = PAINTERS[item.def.t];
     if (!painter) return [];
     const w = item.type.size[0] * TILE;
     const h = item.type.size[1] * TILE;
     const seed = hash(item.def.p[0], item.def.p[1], item.index);
-    const joins = JOINING.has(item.def.t) ? { left: touching(item, -1), right: touching(item, 1) } : undefined;
+    const joins = JOINING.has(item.def.t)
+      ? { left: touching(item, -1), right: touching(item, 1) }
+      : TILED.has(item.def.t)
+        ? { left: tiledAt(item, -1, 0), right: tiledAt(item, 1, 0), up: tiledAt(item, 0, -1), down: tiledAt(item, 0, 1) }
+        : undefined;
     const paint = (lit: boolean, def = item.def) => {
       const { canvas: img, ctx } = canvas(w, painter.up + h + (painter.down ?? 0));
       painter.paint(ctx, w, h, painter.up, seed, def, joins);

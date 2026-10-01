@@ -76,9 +76,9 @@ test('waiting too long, they walk instead', () => {
 test('a bus stop goes beside a road, and the route follows one put up or taken away', () => {
   const sim = new Simulation(structuredClone(STARTER));
   const town = sim.levels.get('town')!;
-  assert.match(placementProblem(town, sim.world.portals, 'busStop', [97, 57]) ?? '', /beside a road/, 'out in a field');
-  assert.equal(placementProblem(town, sim.world.portals, 'busStop', [97, 53]), null, 'by Main Street');
-  const stop = sim.addItem('town', { t: 'busStop', p: [97, 53], label: 'Main Street East' })!;
+  assert.match(placementProblem(town, sim.world.portals, 'busStop', [126, 58]) ?? '', /beside a road/, 'out in a field');
+  assert.equal(placementProblem(town, sim.world.portals, 'busStop', [126, 66]), null, 'by the Street');
+  const stop = sim.addItem('town', { t: 'busStop', p: [126, 66], label: 'The Street East' })!;
   const { runs } = sim.buses.plan()!;
   assert.ok(runs.every((run) => run.stops.includes(stop)), 'called at both ways round');
   assert.ok(runs.every((run) => run.legs.every((leg) => leg.length > 0)), 'a way to every stop');

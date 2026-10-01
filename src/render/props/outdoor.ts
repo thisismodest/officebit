@@ -309,6 +309,54 @@ export const OUTDOOR: Record<string, Painter> = {
     },
   },
 
+  // A hedge: a tile of clipped green with a bumpy top, running on into its neighbours (no edge where they meet).
+  hedge: {
+    up: 6,
+    paint(ctx, w, h, o, seed, _def, joins) {
+      const green = '#4f8a3c';
+      const [l, r] = [joins?.left ? 0 : 1, joins?.right ? 0 : 1];
+      const top = o - 5;
+      const bottom = o + h - 1;
+      rect(ctx, l, top + 2, w - l - r, bottom - top - 2, green);
+      for (let x = l; x < w - r; x += 4) pill(ctx, Math.min(x, w - r - 5), top, 5, 5, shade(green, 0.12));
+      for (let i = 0; i < 5; i++) dot(ctx, 2 + Math.floor(hash(i, 1, seed * 50) * (w - 4)), top + 5 + Math.floor(hash(i, 2, seed * 50) * (bottom - top - 7)), shade(green, -0.22));
+      if (!joins?.left) rect(ctx, 0, top + 2, 1, bottom - top - 1, OUTLINE);
+      if (!joins?.right) rect(ctx, w - 1, top + 2, 1, bottom - top - 1, OUTLINE);
+      rect(ctx, l, bottom, w - l - r, 1, joins?.down ? shade(green, -0.1) : OUTLINE);
+      if (!joins?.down) rect(ctx, l, bottom - 1, w - l - r, 1, shade(green, -0.3));
+    },
+  },
+
+  // A wooden fence: posts and rails, along whichever way its neighbours run (on its own, a post).
+  fence: {
+    up: 6,
+    paint(ctx, w, h, o, _seed, _def, joins) {
+      const post = '#8a6446';
+      const mid = w / 2;
+      const across = joins?.left || joins?.right;
+      const along = joins?.up || joins?.down;
+      if (across || !along) {
+        // Rails across the tile (to the sides it joins), at two heights.
+        const from = joins?.left ? 0 : mid;
+        const to = joins?.right ? w : mid + 1;
+        for (const y of [o + 2, o + 7]) {
+          rect(ctx, from, y - 1, to - from, 3, OUTLINE);
+          rect(ctx, from, y, to - from, 1, '#c79a6a');
+        }
+      }
+      if (along) {
+        // Rails down the tile, seen side on.
+        const from = joins?.up ? o - 6 : o + 4;
+        const to = joins?.down ? o + h : o + h - 4;
+        rect(ctx, mid - 2, from, 4, to - from, OUTLINE);
+        rect(ctx, mid - 1, from, 2, to - from, '#c79a6a');
+      }
+      rect(ctx, mid - 2, o - 4, 4, 14, OUTLINE);
+      rect(ctx, mid - 1, o - 3, 2, 12, post);
+      dot(ctx, mid - 1, o - 3, shade(post, 0.25));
+    },
+  },
+
   flowers: {
     up: 0,
     flat: true,
