@@ -120,3 +120,15 @@ for the date (NOAA's approximation), with 45 minutes of dawn and dusk either
 side, and an hour's shift when the clocks change. In London that's dark by
 16:00 in December and light until after 21:00 in June. The renderer darkens each level at night, and cuts light out around lampposts,
 lit windows (someone's home and awake) and screens in use.
+
+## Weather
+
+`sim/weather.ts`: clear, grey, rain or snow, in four-hour spells, from the
+world's seed and the date alone (the same weather for everyone, and looking
+never changes the story). About a quarter of June's spells are wet and over a
+third of winter's, and in December to February some of them snow; snow lies on
+the grass for half a day after it stops. Wet weather keeps people in: anything
+outdoors (the park, a bench on the Green, a food truck, a stroll) appeals less
+the harder it's coming down, and something fun indoors a little more; plans for
+the park are mostly off (one in seven goes ahead anyway). The World tab's Today
+says when it's grey, raining or snowing.

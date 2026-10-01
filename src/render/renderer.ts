@@ -18,6 +18,7 @@ import { buildProps, type Prop } from './props/index.ts';
 import { vehicleAt } from '../sim/food-trucks.ts';
 import { paintStaticLayer } from './tiles.ts';
 import { paintSeasonal } from './seasonal.ts';
+import { paintSky, snowLayer } from './weather.ts';
 import { paintGames, paintLaptop } from './play.ts';
 import { Spotlights, type Spotlight } from './spotlights.ts';
 
@@ -64,6 +65,8 @@ export class Renderer {
   private readonly ctx: Ctx;
   private sim!: Simulation;
   private layers = new Map<string, HTMLCanvasElement>();
+  /** Each level's grass under snow, for the days it's lying. */
+  private snow = new Map<string, HTMLCanvasElement>();
   private props = new Map<string, Prop[]>();
   private looks = new Map<string, Look>();
   /** Pets only have side-on sprites: remember which way they last faced. */
@@ -94,6 +97,7 @@ export class Renderer {
     const view = { x: this.camera.x, y: this.camera.y, level: this.level };
     this.sim = sim;
     this.layers.clear();
+    this.snow.clear();
     this.props.clear();
     this.looks.clear();
     this.level = '';
@@ -103,6 +107,7 @@ export class Renderer {
       this.looks.clear();
       for (const id of levels) {
         this.layers.delete(id);
+        this.snow.delete(id);
         this.props.delete(id);
       }
       this.onWorldChange();
@@ -163,6 +168,14 @@ export class Renderer {
     ctx.setTransform(scale, 0, 0, scale, Math.round(-camera.x * scale), Math.round(-camera.y * scale));
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(this.layerOf(this.level), 0, 0);
+    const outside = sim.levels.get(this.level)?.kind === 'outside';
+    // Snow lying on the grass, thawing away over half a day.
+    const lying = outside ? sim.weather.snowLying() : 0;
+    if (lying > 0) {
+      ctx.globalAlpha = lying;
+      ctx.drawImage(this.snowOf(this.level), 0, 0);
+      ctx.globalAlpha = 1;
+    }
 
     const night = 1 - sim.daylight();
     const props = this.propsOf(this.level);
@@ -218,6 +231,8 @@ export class Renderer {
 
     // Fairy lights, pumpkins and fireworks, as the date has them.
     if (this.level === sim.traffic.level) paintSeasonal(ctx, sim, props, night, this.time, sim.tick + alpha);
+    // Rain or snow falling, and the gloom under the cloud, out of doors.
+    if (outside) paintSky(ctx, sim.weather.at(), this.time, camera.scale * this.dpr);
 
     // Speech bubbles and labels float above everything.
     for (const p of visible) this.paintBubble(p, at(p));
@@ -257,6 +272,15 @@ export class Renderer {
 
   private visible(): Person[] {
     return this.sim.people.filter((p) => p.level === this.level && this.sim.present(p));
+  }
+
+  private snowOf(id: string): HTMLCanvasElement {
+    let layer = this.snow.get(id);
+    if (!layer) {
+      layer = snowLayer(this.sim.levels.get(id)!, this.sim.grids.get(id)!);
+      this.snow.set(id, layer);
+    }
+    return layer;
   }
 
   private layerOf(id: string): HTMLCanvasElement {

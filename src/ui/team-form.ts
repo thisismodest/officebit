@@ -87,7 +87,8 @@ export class TeamForm {
     const { id, notes } = addPerson(design, { name, dept: this.field<HTMLInputElement>('dept').value, preset: this.field<HTMLSelectElement>('preset').value, company: company.id });
     if (sim.person(id)) {
       removePerson(design, id);
-      return this.say(`There’s someone called ${name} in town already: try another name.`);
+      this.say(`There’s someone called ${name} in town already: try another name.`);
+      return;
     }
     const def = structuredClone(design.people.find((p) => p.id === id)!);
     // A department new to the design is new to the town too.

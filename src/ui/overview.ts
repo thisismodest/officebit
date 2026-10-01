@@ -96,7 +96,7 @@ export class Overview {
 
     const html = `
       <section><h3>Today</h3>
-        <p class="today mdst-p--sm">${stat(sim.dayOff() ? 'weekend' : 'workday', sim.holiday()?.name ?? (isWeekend(sim.tick) ? 'The weekend' : 'A working day'))}${stat('awake', `${humans.length - sleeping} up and about`)}${stat('asleep', `${sleeping} asleep`)}</p>
+        <p class="today mdst-p--sm">${stat(sim.dayOff() ? 'weekend' : 'workday', sim.holiday()?.name ?? (isWeekend(sim.tick) ? 'The weekend' : 'A working day'))}${weather(sim)}${stat('awake', `${humans.length - sleeping} up and about`)}${stat('asleep', `${sleeping} asleep`)}</p>
         ${town ? place('town', placeName(sim.world, town), `${count([town])} out and about`, town.id) : ''}</section>
       <section><h3>Workplaces</h3>${workplaces.join('')}</section>
       ${schools.length ? `<section><h3>Schools</h3>${schools.join('')}</section>` : ''}
@@ -126,6 +126,15 @@ function place(symbol: string, name: string, detail: string, level?: string, ext
 }
 
 /** One fact about today, after its icon. */
+/** The weather, if it's anything but fine: cloud, rain or snow (sim/weather.ts). */
+function weather(sim: Simulation): string {
+  const { sky, wet } = sim.weather.at();
+  if (sky === 'clear') return '';
+  if (sky === 'grey') return stat('cloud', 'Grey skies');
+  if (sky === 'snow') return stat('snow', wet > 0.7 ? 'Heavy snow' : 'Snowing');
+  return stat('rain', wet > 0.7 ? 'Pouring' : 'Raining');
+}
+
 function stat(symbol: IconName, text: string): string {
   return `<span class="stat">${icon(symbol)}${esc(text)}</span>`;
 }

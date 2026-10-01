@@ -27,6 +27,7 @@ import { Social } from './social.ts';
 import { Traffic } from './traffic.ts';
 import { Visitors } from './visitors.ts';
 import { Arrivals } from './arrivals.ts';
+import { Skies } from './weather.ts';
 import { Festivities } from './festivities.ts';
 import { FoodTrucks } from './food-trucks.ts';
 import { Plans } from './plans.ts';
@@ -116,6 +117,7 @@ export class Simulation {
   readonly visitors: Visitors;
   readonly arrivals: Arrivals;
   readonly festivities: Festivities;
+  readonly weather: Skies;
   readonly foodTrucks: FoodTrucks;
   readonly plans: Plans;
   readonly works: Works;
@@ -180,6 +182,7 @@ export class Simulation {
     this.visitors = new Visitors(this);
     this.arrivals = new Arrivals(this);
     this.festivities = new Festivities(this);
+    this.weather = new Skies(this);
     this.foodTrucks = new FoodTrucks(this);
     this.plans = new Plans(this);
     this.works = new Works(this);

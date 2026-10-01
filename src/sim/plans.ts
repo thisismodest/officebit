@@ -56,6 +56,8 @@ const FRIENDLY = 0.1;
 const ACCEPT = { base: 0.3, social: 0.4, affinity: 0.3 };
 /** How early before the start (game hours) they set off, and how near (tiles) the place counts as there. */
 const SET_OFF = 0.75;
+/** The chance someone suggests the park anyway when it'll be raining or snowing. */
+const WET_PARK = 0.15;
 const THERE = 3;
 /** Bonding while together: a share of a chat's, so days out help without running away. */
 const BOND = 0.25;
@@ -204,9 +206,11 @@ export class Plans {
     const { sim } = this;
     if (maker && sim.rng.next() < 0.5) return 'cowork';
     const light = (id: ActivityId) => sim.daylight(start) > 0.6 && sim.daylight(start + ACTIVITIES[id].hours * TICKS_PER_HOUR) > 0.6;
+    // In the wet, the park's mostly off: now and then someone suggests it anyway.
+    const dry = (id: ActivityId) => ACTIVITIES[id].where !== 'park' || sim.weather.wet(start) === 0 || sim.rng.next() < WET_PARK;
     // On a day off, a picnic's the likeliest thing to suggest; on an evening, something to eat.
     const likely: ActivityId[] = dayOff ? ['catch', 'picnic', 'picnic', 'picnic', 'meetup', 'meal'] : ['catch', 'meetup', 'meal', 'meal'];
-    const options = likely.filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (ACTIVITIES[id].where !== 'park' || light(id)));
+    const options = likely.filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (ACTIVITIES[id].where !== 'park' || light(id)) && dry(id));
     return options[sim.rng.int(0, options.length - 1)];
   }
 

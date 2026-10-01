@@ -110,13 +110,16 @@ export class Tour {
   update(): void {
     const step = this.steps[this.step];
     if (!step) return;
-    if (step.done?.()) return this.go(this.step + 1);
-    this.place(step.target());
+    if (step.done?.()) this.go(this.step + 1);
+    else this.place(step.target());
   }
 
   private go(i: number): void {
     const step = this.steps[i];
-    if (!step) return this.stop();
+    if (!step) {
+      this.stop();
+      return;
+    }
     this.step = i;
     const name = esc((this.who && this.host.sim().person(this.who)?.name) || 'them');
     const last = i === this.steps.length - 1;

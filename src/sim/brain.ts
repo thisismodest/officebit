@@ -62,6 +62,9 @@ const TREAT_BONUS = 0.12;
 /** The pull of something to play on for a grown-up, at its most playful (chaotic, and short of fun), and how near (tiles) it has to be to tempt them. */
 const PLAYFUL = 1;
 const PLAY_NEAR = 12;
+/** In the wet (at its heaviest): how much less anything outdoors appeals, and how much more something fun indoors. */
+const WET_OUTSIDE = 0.35;
+const WET_INSIDE = 0.06;
 
 export interface Option {
   intent: Intent;
@@ -246,6 +249,9 @@ export class PersonalityBrain implements Brain {
       const quiet = quietest(p, sim);
       if (quiet) options.push({ intent: { kind: 'retreat', to: quiet }, score: (1 - t.social) * 0.2 * crowd + noise() });
     }
+    // Rain or snow keeps people in: anything outdoors appeals less (not not at all), and something fun indoors a little more.
+    const wet = sim.weather.wet();
+    if (wet > 0) for (const option of options) option.score += wet * weatherPull(sim, option.intent);
     return options;
   }
 }
@@ -369,4 +375,13 @@ function quietest(p: Person, sim: Simulation): Place | null {
     if (crowd < topCrowd) [top, topCrowd] = [place, crowd];
   }
   return top;
+}
+
+/** How the weather sways an option, at its wettest: outdoors less, indoor fun more, anything else no different. */
+function weatherPull(sim: Simulation, intent: Intent): number {
+  const item = intent.kind === 'use' || intent.kind === 'hustle' ? sim.items[intent.item] : undefined;
+  const level = item?.level ?? (intent.kind === 'wander' || intent.kind === 'retreat' ? intent.to.level : intent.kind === 'play' ? sim.traffic.level : undefined);
+  if (!level) return 0;
+  if (sim.levels.get(level)?.kind === 'outside') return -WET_OUTSIDE;
+  return (item?.type.offers?.fun ?? 0) > 0 ? WET_INSIDE : 0;
 }

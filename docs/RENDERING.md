@@ -16,7 +16,7 @@ in code; the only image file is the favicon (`public/favicon.svg`).
 
 ## A frame
 
-1. Draw the cached static layer.
+1. Draw the cached static layer (and out of doors, snow lying on the grass, fading as it thaws: `weather.ts`).
 2. Y-sort furniture, people and cars by their feet, so people walk behind desks and
    in front of sofas. `sortOffset` and `flat` tweak furniture order. Vehicles
    are clipped to the map, so they drive on from its edge rather than out of the dark.
@@ -30,6 +30,8 @@ in code; the only image file is the favicon (`public/favicon.svg`).
    after dark in December, pumpkins on doorsteps in the week of Halloween, and
    fireworks over the Green on Bonfire Night and at New Year (worked out from the
    clock alone, so the soundscape hears the same bursts it shows).
+   **Weather** (`weather.ts`, out of doors): a grey light under cloud, and rain or
+   snow falling across the screen, heavier the wetter it is.
 4. Speech bubbles, the selected person's name and the editor's outline (white
    where it'll go, red where it won't, amber on what it'll clear), on top of everything.
 
