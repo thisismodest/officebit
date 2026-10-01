@@ -102,6 +102,8 @@ export interface Person {
   hidden: boolean;
   /** Ticks left passing through a door or up the stairs. */
   transit: number;
+  /** Catching up out of sight (sim.brisk): steps till they're at the end of this leg of their walk. */
+  walkLeft?: number;
   /** Ticks left of being knocked off-task by someone. */
   distracted: number;
   talkingTo: string | null;

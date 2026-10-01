@@ -24,6 +24,14 @@ interface Anchor {
 export class Navigator {
   private readonly grids: ReadonlyMap<string, Grid>;
   private readonly anchors: Anchor[] = [];
+  /**
+   * The cheapest way from each anchor (about to go through it) to each other
+   * anchor (about to go through that), across any number of levels: worked
+   * out once, so a distance estimate is a few lookups, not a search.
+   */
+  private between: Float64Array | null = null;
+  /** Anchors on each level. */
+  private readonly onLevel = new Map<string, number[]>();
 
   constructor(grids: ReadonlyMap<string, Grid>, portals: readonly PortalDef[]) {
     this.grids = grids;
@@ -31,11 +39,57 @@ export class Navigator {
       const i = this.anchors.length;
       this.anchors.push({ place: portal.a, partner: i + 1 }, { place: portal.b, partner: i });
     }
+    for (const [i, anchor] of this.anchors.entries()) this.onLevel.set(anchor.place.level, [...(this.onLevel.get(anchor.place.level) ?? []), i]);
   }
 
-  /** Cheap distance estimate in tiles (Manhattan within levels, via portals between them). */
+  /**
+   * Cheap distance estimate in tiles (Manhattan within levels, via portals
+   * between them): the same as the route's cost would be, from the table of
+   * the ways between portals.
+   */
   estimate(from: Place, to: Place): number {
-    return this.plan(from, to)?.cost ?? Infinity;
+    if (from.level === to.level) return manhattan(from.p, to.p);
+    const between = this.table();
+    const n = this.anchors.length;
+    let best = Infinity;
+    for (const i of this.onLevel.get(from.level) ?? []) {
+      const start = manhattan(from.p, this.anchors[i]!.place.p);
+      if (start >= best) continue;
+      for (let j = 0; j < n; j++) {
+        const arrive = this.anchors[this.anchors[j]!.partner]!.place;
+        if (arrive.level !== to.level) continue;
+        const cost = start + between[i * n + j]! + PORTAL_COST + manhattan(arrive.p, to.p);
+        if (cost < best) best = cost;
+      }
+    }
+    return best;
+  }
+
+  /** The table of cheapest ways between anchors (Floyd–Warshall over going through one and walking to the next on the far side). */
+  private table(): Float64Array {
+    if (this.between) return this.between;
+    const n = this.anchors.length;
+    const d = new Float64Array(n * n).fill(Infinity);
+    for (let i = 0; i < n; i++) {
+      d[i * n + i] = 0;
+      const arrive = this.anchors[this.anchors[i]!.partner]!.place;
+      for (const k of this.onLevel.get(arrive.level) ?? []) {
+        if (k === this.anchors[i]!.partner) continue;
+        const c = PORTAL_COST + manhattan(arrive.p, this.anchors[k]!.place.p);
+        if (c < d[i * n + k]!) d[i * n + k] = c;
+      }
+    }
+    for (let k = 0; k < n; k++)
+      for (let i = 0; i < n; i++) {
+        const ik = d[i * n + k]!;
+        if (ik === Infinity) continue;
+        for (let j = 0; j < n; j++) {
+          const c = ik + d[k * n + j]!;
+          if (c < d[i * n + j]!) d[i * n + j] = c;
+        }
+      }
+    this.between = d;
+    return d;
   }
 
   /** Full walkable route, or null if there's no way there. */

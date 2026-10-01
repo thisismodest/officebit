@@ -32,7 +32,10 @@ reads the wall clock; the timekeeper does.
   come back tomorrow and it's carried on: friendships made, ventures built.
   Opening the page fast-forwards to now before anything is drawn (up to a day
   at once; longer, a slice a frame behind the loading screen, which says how
-  far it's got: about 5 seconds a month). Whenever it falls behind (the tab was
+  far it's got: about 5 seconds a week). Catching up is brisk (`sim.brisk`):
+  people get where they're going in the time the walk would take without
+  walking it, and there's no traffic, buses or boats; the last two game hours
+  run in full, so you arrive to people mid-walk and cars on the roads. Whenever it falls behind (the tab was
   hidden, or paused) it catches up out of sight, showing "Catching up with the
   clock…". The clock counts the days since it began (Day 1 is the day it
   started, whatever the weekday). The ▸▸ menu says when it started, with **Start afresh today**,

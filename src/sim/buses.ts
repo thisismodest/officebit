@@ -148,7 +148,7 @@ export class Buses {
    */
   consider(p: Person, intent: Intent, route: readonly Leg[]): Intent | null {
     const { sim } = this;
-    if (!JOURNEYS.has(intent.kind) || p.species !== "human" || !RIDERS.has(kindOf(p))) return null;
+    if (sim.brisk || !JOURNEYS.has(intent.kind) || p.species !== "human" || !RIDERS.has(kindOf(p))) return null;
     const leg = route.find((l) => l.level === sim.traffic.level);
     if (!leg || leg.tiles.length < RIDE_FROM) return null;
     if ((hashOf(`walker:${p.id}`, sim.world.seed) >>> 0) % 100 < WALKERS * 100) return null;

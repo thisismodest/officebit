@@ -40,9 +40,9 @@ test('live mode fast-forwards after the tab has been hidden', () => {
   const time = new Timekeeper('live', () => now);
   const sim = fresh();
   time.start(sim);
-  now += 12 * 60 * 60 * 1000;
+  now += 4 * 24 * 60 * 60 * 1000;
   time.advance(sim, 16);
-  assert.ok(time.catchingUp, "catching up, so there's nothing to draw yet");
+  assert.ok(time.catchingUp, "days behind: catching up, so there's nothing to draw yet");
   for (let i = 0; i < 2000 && time.catchingUp; i++) time.advance(sim, 16);
   assert.ok(liveTick(time.origin!, now) - sim.tick < 2);
 });

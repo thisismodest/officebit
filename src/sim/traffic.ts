@@ -160,17 +160,18 @@ export class Traffic {
     const roads = this.roads();
     if (!roads) return;
     const chance = between(hourOf(this.sim.tick), ...QUIET_HOURS) ? THROUGH_QUIET : THROUGH_BUSY;
-    for (const lane of this.lanes()) {
+    // Catching up out of sight, nobody's watching the highway: no through-traffic, and nothing to keep clear of.
+    for (const lane of this.sim.brisk ? [] : this.lanes()) {
       if (this.rng.next() >= chance || this.cars.some((c) => c.y === lane.y && Math.abs(c.x - lane.on[0]) < MOVERS.car.manners.stop * 2)) continue;
       const car = this.add(this.rng.next(), lane.on, [lane.off], true);
       car.facing = lane.heading;
     }
     const level = this.level!;
-    this.sim.space.fill('wheels', this.cars.map((car) => this.bodyOf(car)));
+    if (!this.sim.brisk) this.sim.space.fill('wheels', this.cars.map((car) => this.bodyOf(car)));
     this.markParked(level);
     for (const car of [...this.cars]) {
       // Parked, or held up: it stays exactly where it is (nothing to draw moving between steps).
-      if (car.parked || this.blocked(car)) {
+      if (car.parked || (!this.sim.brisk && this.blocked(car))) {
         [car.px, car.py] = [car.x, car.y];
         if (!car.parked) this.waited.set(car, (this.waited.get(car) ?? 0) + 1);
         continue;

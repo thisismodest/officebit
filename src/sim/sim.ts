@@ -137,6 +137,13 @@ export class Simulation {
   tick = 0;
   /** Steps taken. Walking and decisions go per step; everything else per game time. */
   steps = 0;
+  /**
+   * Catching up out of sight (the loading screen): the story goes on just the
+   * same, but people skip their walks (arriving after as long as the walk would
+   * take) and there's no traffic to see (no through-traffic, drives, buses,
+   * boats or deliveries; the food trucks still come). Several times quicker.
+   */
+  brisk = false;
   /** How much game time the current step covers, in ticks: 1 normally, much less in live mode. */
   dt = 1;
   /** The day (as `dayOf` counts them) the story began on, so its days are numbered from 1: a live town started on a Saturday is on Day 1 that Saturday. */
@@ -541,15 +548,19 @@ export class Simulation {
     this.construction.step();
     this.interactions.step();
     this.foodTrucks.step();
-    this.space.fill('foot', this.people.map((p) => this.bodyOf(p)));
+    if (!this.brisk) this.space.fill('foot', this.people.map((p) => this.bodyOf(p)));
     this.traffic.step();
-    this.visitors.step();
-    this.buses.step();
+    if (!this.brisk) {
+      this.visitors.step();
+      this.buses.step();
+    }
     this.arrivals.step();
     this.plans.step();
     this.birthdays.step();
-    this.boats.step();
-    this.deliveries.step();
+    if (!this.brisk) {
+      this.boats.step();
+      this.deliveries.step();
+    }
     const gone: Person[] = [];
     for (const [i, p] of this.people.entries()) {
       p.px = p.x;
@@ -1283,6 +1294,20 @@ export class Simulation {
       this.arrive(p);
       return;
     }
+    // Catching up out of sight: no step-by-step walk, just there once it would have taken them.
+    if (this.brisk) {
+      p.walkLeft ??= Math.ceil(leg.tiles.length / speedOn(p.crawling ? MOVERS.crawler : MOVERS.walker, this.floorUnder(p)));
+      if (--p.walkLeft > 0) return;
+      p.walkLeft = undefined;
+      [p.x, p.y] = leg.tiles.at(-1) ?? [p.x, p.y];
+      leg.tiles.length = 0;
+      p.route.shift();
+      const next = p.route[0];
+      if (next) this.traverse(p, next.level);
+      else this.arrive(p);
+      return;
+    }
+    p.walkLeft = undefined;
     // A step along the way, at their pace for the floor underfoot (movement.ts), minding whoever's just in front (collision.ts).
     const target = p.intent?.kind === 'chat' ? this.byId.get(p.intent.with) : undefined;
     // Out in the rain without an umbrella, they hurry to get out of it.

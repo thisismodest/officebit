@@ -20,6 +20,10 @@ const LIVE_DT = STEP_MS / TICK_MS;
 const BEHIND = 2;
 /** Fast-forwarding may use this much of each frame, in ms, leaving enough to keep the page responsive. */
 const FAST_BUDGET_MS = 40;
+/** Catching up out of sight (the loading screen; nothing's drawn), it takes bigger bites: the page only has the note to update. */
+const CATCH_UP_BUDGET_MS = 250;
+/** Catching up, everything but the last stretch is brisk (sim.brisk: no walking, no traffic), so you arrive to the town as it would be: this many ticks (two game hours). */
+const FULL_TICKS = 1200;
 /** A long jump ahead (one the sim can't keep pace with) takes more of each frame: fewer frames drawn, more of the time spent getting there. */
 const LONG_JUMP_BUDGET_MS = 150;
 /** A jump ahead aims to play out over this long (real ms), so you can watch it; but never slower than 60×. */
@@ -100,7 +104,7 @@ export class Timekeeper {
     // Up to a day behind: straight to now, before anything is drawn (a fraction of a second).
     // Further: a slice now, and the rest a frame at a time (out of sight), so the page stays responsive.
     const target = liveTick(this.origin, this.now());
-    this.catchingUp = !this.fastForward(sim, target, target - sim.tick <= TICKS_PER_DAY ? Infinity : FAST_BUDGET_MS);
+    this.catchingUp = !this.fastForward(sim, target, target - sim.tick <= TICKS_PER_DAY ? Infinity : CATCH_UP_BUDGET_MS);
   }
 
   /** Jump ahead to a later tick at full speed. Live mode can't be ahead of the clock, so this switches to sandbox. */
@@ -142,7 +146,7 @@ export class Timekeeper {
     if (this.mode === 'live' && this.origin) {
       const target = liveTick(this.origin, this.now());
       if (target - sim.tick > BEHIND) {
-        this.catchingUp = !this.fastForward(sim, target, FAST_BUDGET_MS);
+        this.catchingUp = !this.fastForward(sim, target, CATCH_UP_BUDGET_MS);
         this.carry = 0;
         return 1;
       }
@@ -164,10 +168,14 @@ export class Timekeeper {
     return this.carry / STEP_MS;
   }
 
-  /** Whole-tick steps towards `to`, for up to `budget` ms. True once there. */
+  /** Whole-tick steps towards `to`, for up to `budget` ms: brisk (out of sight) till the last stretch. True once there. */
   private fastForward(sim: Simulation, to: number, budget: number): boolean {
     const until = performance.now() + budget;
-    while (sim.tick + 1 <= to && performance.now() < until) sim.step();
+    while (sim.tick + 1 <= to && performance.now() < until) {
+      sim.brisk = to - sim.tick > FULL_TICKS;
+      sim.step();
+    }
+    sim.brisk = false;
     return sim.tick + 1 > to;
   }
 }
