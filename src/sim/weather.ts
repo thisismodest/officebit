@@ -31,6 +31,8 @@ const WEATHER_SEED = 0x5e7a1d;
 
 export class Skies {
   private readonly sim: Simulation;
+  /** The last spell worked out (asked about for everyone walking, every step). */
+  private last: { spell: number; seed: number; start: string; weather: Weather } | null = null;
 
   constructor(sim: Simulation) {
     this.sim = sim;
@@ -39,6 +41,15 @@ export class Skies {
   /** The weather at a tick (now, if not given). */
   at(tick = this.sim.tick): Weather {
     const spell = Math.floor(tick / (SPELL_HOURS * TICKS_PER_HOUR));
+    const { seed } = this.sim.world;
+    const start = `${this.sim.calendar.start.join()}|${this.sim.firstDay}`;
+    if (this.last?.spell === spell && this.last.seed === seed && this.last.start === start) return this.last.weather;
+    const weather = this.work(spell);
+    this.last = { spell, seed, start, weather };
+    return weather;
+  }
+
+  private work(spell: number): Weather {
     // Each spell's own dice (mixed well: neighbouring spells' names hash alike).
     const roll = (what: string) => new Rng(hashOf(`${what}:${spell}`, this.sim.world.seed ^ WEATHER_SEED)).next();
     const { month } = this.sim.dateOf(spell * SPELL_HOURS * TICKS_PER_HOUR);

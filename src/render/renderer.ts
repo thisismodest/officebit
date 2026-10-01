@@ -1,7 +1,7 @@
 // Draws one level of the sim through a camera (docs/RENDERING.md). The canvas
 // is device resolution; the world is scaled by an integer zoom with smoothing
 // off, so pixel art stays crisp while text and emoji render sharp.
-import { asleep, atDesk, seatedAtDesk, type Person } from '../sim/person.ts';
+import { asleep, atDesk, seatedAtDesk, type Person, hasUmbrella } from '../sim/person.ts';
 import { interiorOf, occupants } from '../sim/places.ts';
 import type { Item, Simulation } from '../sim/sim.ts';
 import { asideOffset } from '../sim/collision.ts';
@@ -544,6 +544,10 @@ export class Renderer {
     }
     const sprite = characterSprite(this.lookOf(p), facing, pose, p.status.activity === 'focus');
     ctx.drawImage(sprite, x, feet - SPRITE_H + 1);
+    // Out in the rain: an umbrella up, for those who carry one.
+    if (this.sim.weather.wet() > 0 && hasUmbrella(p, this.sim.world.seed) && this.sim.levels.get(p.level)?.kind === 'outside') {
+      paintUmbrella(ctx, x + 6, feet - SPRITE_H + 1 + headTop(sprite), hashString(p.id));
+    }
     // Their birthday: a party hat, all day.
     if (this.sim.birthdays.is(p)) paintPartyHat(ctx, x + 6, feet - SPRITE_H + 1 + headTop(sprite));
     // Working on a project away from a desk (a booth, a bench): a laptop out (docs/PLANS.md).
@@ -725,3 +729,19 @@ function paintPartyHat(ctx: Ctx, x: number, y: number): void {
   rect(ctx, x - 1, y - 7, 2, 2, '#c8453a');
 }
 
+/** The dark edge round an umbrella. */
+const OUTLINE_DARK = '#2a2433';
+/** Umbrella canopies, one picked for each person. */
+const UMBRELLA_COLOURS = ['#c8453a', '#3f74b5', '#2f2b36', '#e7aa2e', '#379463', '#7f4aa6'];
+
+/** An umbrella held up over someone, its handle at (x, y) (the top of their head): a canopy with ribs, and the shaft. */
+function paintUmbrella(ctx: Ctx, x: number, y: number, seed: number): void {
+  const colour = UMBRELLA_COLOURS[(seed >>> 0) % UMBRELLA_COLOURS.length]!;
+  rect(ctx, x, y - 6, 1, 6, OUTLINE_DARK);
+  for (let row = 0; row < 4; row++) {
+    const half = 3 + row * 2;
+    rect(ctx, x - half, y - 10 + row, half * 2 + 1, 1, row === 0 ? OUTLINE_DARK : colour);
+  }
+  rect(ctx, x - 9, y - 6, 19, 1, OUTLINE_DARK);
+  for (const dx of [-6, 0, 6]) rect(ctx, x + dx, y - 9, 1, 3, 'rgba(255,255,255,0.25)');
+}

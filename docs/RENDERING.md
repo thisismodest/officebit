@@ -31,7 +31,8 @@ in code; the only image file is the favicon (`public/favicon.svg`).
    fireworks over the Green on Bonfire Night and at New Year (worked out from the
    clock alone, so the soundscape hears the same bursts it shows).
    **Weather** (`weather.ts`, out of doors): a grey light under cloud, and rain or
-   snow falling across the screen, heavier the wetter it is.
+   snow falling, heavier the wetter it is, sized to the town (so zoomed in, fewer and
+   finer, not a wall of it); umbrellas up over those who carry one.
 4. Speech bubbles, the selected person's name and the editor's outline (white
    where it'll go, red where it won't, amber on what it'll clear), on top of everything.
 

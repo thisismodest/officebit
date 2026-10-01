@@ -131,4 +131,6 @@ the grass for half a day after it stops. Wet weather keeps people in: anything
 outdoors (the park, a bench on the Green, a food truck, a stroll) appeals less
 the harder it's coming down, and something fun indoors a little more; plans for
 the park are mostly off (one in seven goes ahead anyway). The World tab's Today
-says when it's grey, raining or snowing.
+says when it's grey, raining or snowing. In the rain about two in three carry an
+umbrella (`hasUmbrella`, the same for them every time, drawn up over them out of
+doors); the rest hurry to get out of it.

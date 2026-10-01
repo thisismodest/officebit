@@ -6,9 +6,11 @@ import type { Weather } from '../sim/weather.ts';
 import type { LevelDef } from '../sim/world.ts';
 import { TILE, type Ctx } from './pixels.ts';
 
-/** Drops (or flakes) per 100×100 screen pixels at the heaviest, and how fast they fall (screen px a second). */
-const DENSITY = { rain: 16, snow: 5 };
-const FALL = { rain: 900, snow: 70 };
+/** Drops (or flakes) per tile of town in view at the heaviest, and how fast they fall (world pixels a second): sized to the world, so zooming in shows fewer, not more. */
+const DENSITY = { rain: 0.28, snow: 0.12 };
+const FALL = { rain: 240, snow: 20 };
+/** How long a raindrop's streak is, in world pixels. */
+const STREAK = 5;
 /** Under cloud: the grey laid over the town, at its greyest (wet), and a grey sky without rain. */
 const GLOOM = 'rgb(55, 62, 78)';
 const GLOOM_WET = 0.32;
@@ -27,21 +29,23 @@ export function paintSky(ctx: Ctx, weather: Weather, time: number, scale: number
   }
   if (weather.sky === 'rain' || weather.sky === 'snow') {
     const kind = weather.sky;
-    const count = Math.round(((width * height) / 10000) * DENSITY[kind] * weather.wet);
+    // As many as fall on the bit of town in view (`scale` device pixels to a world pixel).
+    const tiles = (width / scale / TILE) * (height / scale / TILE);
+    const count = Math.round(tiles * DENSITY[kind] * weather.wet);
     const t = time / 1000;
-    ctx.globalAlpha = kind === 'rain' ? 0.6 : 0.9;
+    ctx.globalAlpha = kind === 'rain' ? 0.45 : 0.9;
     ctx.fillStyle = kind === 'rain' ? '#dde8f6' : '#ffffff';
-    const size = Math.max(1, Math.round(scale));
+    const px = Math.max(1, Math.round(scale));
     for (let i = 0; i < count; i++) {
       // Each drop has its own place across, speed and start, and falls down the screen round and round.
       const [a, b, c] = [hash(i, 1), hash(i, 2), hash(i, 3)];
-      const speed = FALL[kind] * (0.75 + 0.5 * c) * Math.max(1, scale / 2);
-      const y = (b * height + t * speed) % (height + 20);
-      // Rain slants; snow drifts from side to side.
-      const drift = kind === 'rain' ? y * 0.25 : Math.sin(t * (0.6 + c) + i) * 12 * size;
+      const speed = FALL[kind] * (0.75 + 0.5 * c) * scale;
+      const y = (b * height + t * speed) % (height + STREAK * scale);
+      // Rain slants a touch; snow drifts from side to side.
+      const drift = kind === 'rain' ? y * 0.15 : Math.sin(t * (0.6 + c) + i) * 6 * scale;
       const x = (((a * width + drift) % width) + width) % width;
-      if (kind === 'rain') ctx.fillRect(Math.round(x), Math.round(y), size, size * 9);
-      else ctx.fillRect(Math.round(x), Math.round(y), size * 2, size * 2);
+      if (kind === 'rain') ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(px / 2)), Math.round(STREAK * scale));
+      else ctx.fillRect(Math.round(x), Math.round(y), px * 2, px * 2);
     }
   }
   ctx.restore();

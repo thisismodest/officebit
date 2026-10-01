@@ -14,7 +14,7 @@ import { Emitter } from './emitter.ts';
 import { MOVERS, advance, headingOf, speedOn } from './movement.ts';
 import { rulesFor } from './intents.ts';
 import { NEEDS, PANTRY_FULL, drain, restore, type Need } from './needs.ts';
-import { asleep, atDesk, catchingUp, seatedAtDesk, walkingAway, type Intent, type Person } from './person.ts';
+import { asleep, atDesk, catchingUp, seatedAtDesk, walkingAway, type Intent, type Person, hasUmbrella } from './person.ts';
 import { resolveTraits, type Traits } from './personality.ts';
 import { Housing } from './housing.ts';
 import { Interactions } from './interactions.ts';
@@ -1268,7 +1268,9 @@ export class Simulation {
     }
     // A step along the way, at their pace for the floor underfoot (movement.ts), minding whoever's just in front (collision.ts).
     const target = p.intent?.kind === 'chat' ? this.byId.get(p.intent.with) : undefined;
-    const mover = p.crawling ? MOVERS.crawler : target && catchingUp(p, target) ? MOVERS.hurrying : MOVERS.walker;
+    // Out in the rain without an umbrella, they hurry to get out of it.
+    const rushing = !p.crawling && p.species === 'human' && this.weather.wet() > 0 && !hasUmbrella(p, this.world.seed) && this.levels.get(p.level)?.kind === 'outside';
+    const mover = p.crawling ? MOVERS.crawler : (target && catchingUp(p, target)) || rushing ? MOVERS.hurrying : MOVERS.walker;
     const step = this.mind(p, leg.tiles[0], mover.manners);
     if (!advance(p, leg.tiles, speedOn(mover, this.floorUnder(p)) * step)) return;
 

@@ -4,6 +4,7 @@ import type { Leg } from './navigation.ts';
 import type { Needs } from './needs.ts';
 import type { Traits } from './personality.ts';
 import type { Routine } from './schedule.ts';
+import { hashOf } from './rng.ts';
 import type { NpcRole, Place, Species } from './world.ts';
 
 /** Ways to use a sofa at home: with a takeaway, or with a games controller. */
@@ -145,6 +146,14 @@ export function walkingAway(p: Person, q: Person): boolean {
 }
 
 /** Is `p` hurrying to catch `q` up for a chat: `q` on the move, and not yet within earshot? */
+/** The share of people who carry an umbrella in the rain (the rest hurry to get out of it). */
+const UMBRELLAS = 0.65;
+
+/** Does someone carry an umbrella? The same for them every time it rains. */
+export function hasUmbrella(p: Pick<Person, 'id' | 'species'>, seed: number): boolean {
+  return p.species === 'human' && ((hashOf(`umbrella:${p.id}`, seed) >>> 0) % 1000) / 1000 < UMBRELLAS;
+}
+
 export function catchingUp(p: Person, q: Person): boolean {
   return q.phase === 'moving' && q.level === p.level && Math.hypot(q.x - p.x, q.y - p.y) > HAIL;
 }
