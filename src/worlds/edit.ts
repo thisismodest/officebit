@@ -402,7 +402,10 @@ function buildingOf(world: WorldDef, map: string, item: FurnitureDef): Building 
   const level = world.levels.find((l) => l.id === map);
   if (!level?.furniture.includes(item)) return null;
   const doors = endsOn(world.portals, map).filter((end) => atDoorOf(item, end.p));
-  const paths = level.rooms.filter((r) => r.floor === 'path' && !r.id.startsWith('pavement-') && doors.some((d) => inRect(r.rect, ...d.p)));
+  // Its front path: a strip a tile wide, straight out from the door (not a path running past it, like a riverside walk).
+  const paths = level.rooms.filter(
+    (r) => r.floor === 'path' && !r.id.startsWith('pavement-') && doors.some((d) => inRect(r.rect, ...d.p) && r.rect[2] === 1 && r.rect[0] === d.p[0]),
+  );
   return { level, item, doors, paths };
 }
 
@@ -410,9 +413,11 @@ function buildingOf(world: WorldDef, map: string, item: FurnitureDef): Building 
 function landingProblem(world: WorldDef, b: Building, placed: FurnitureDef, doors: Tile[], paths: Rect[]): Problem {
   const footprint = footprintOf(placed);
   const others = b.level.furniture.filter((f) => f !== b.item && !(CLEARABLE.has(f.t) && [footprint, ...paths].some((r) => overlap(footprintOf(f), r))));
-  const without: LevelDef = { ...b.level, furniture: others };
-  const own = new Set(b.doors);
-  const portals = world.portals.filter((p) => !own.has(p.a) && !own.has(p.b));
+  // The building, its doors and its own paths move together: where they are now is never in their way.
+  const own = new Set(b.paths);
+  const without: LevelDef = { ...b.level, furniture: others, rooms: b.level.rooms.filter((r) => !own.has(r)) };
+  const ownDoors = new Set(b.doors);
+  const portals = world.portals.filter((p) => !ownDoors.has(p.a) && !ownDoors.has(p.b));
   // Nothing but grass underfoot: not even a lot or a parking bay, which furniture can stand on.
   const problem = placementProblem(without, portals, placed.t, placed.p) ?? groundProblem(without, footprint);
   if (problem) return problem;

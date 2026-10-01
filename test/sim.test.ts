@@ -71,9 +71,14 @@ test('people use the stairs', () => {
 
 test('family and pets stay home', () => {
   const sim = fresh();
+  // (Unless they're out with friends, or on their way back: a plan takes anyone along.)
+  const planned = new Set<string>();
   for (let h = 0; h < 24; h++) {
-    run(sim, TICKS_PER_HOUR);
-    for (const p of sim.people.filter((q) => q.npc && !q.role)) assert.equal(p.level, p.home, `${p.name} left home`);
+    for (let t = 0; t < TICKS_PER_HOUR; t++) {
+      sim.step();
+      for (const p of sim.people) if (p.plan !== undefined) planned.add(p.id);
+    }
+    for (const p of sim.people.filter((q) => q.npc && !q.role && !planned.has(q.id))) assert.equal(p.level, p.home, `${p.name} left home`);
   }
 });
 
@@ -362,7 +367,10 @@ test("relationships: people keep away from someone they can't stand", async () =
   const sim = until(fresh(), 12);
   const [a, b] = ['bea', 'cal'].map((id) => sim.person(id)!);
   const chatWith = () => new PersonalityBrain().options(a!, sim).find((o) => o.intent.kind === 'chat' && o.intent.with === b!.id)?.score ?? -Infinity;
+  // Somewhere they're both about (a chat's an option at all).
+  for (let t = 0; t < TICKS_PER_DAY && chatWith() === -Infinity; t++) sim.step();
   const liked = chatWith();
+  assert.ok(liked > -Infinity, 'a chat was on the cards');
   for (let i = 0; i < 40; i++) sim.relationships.interrupted(b!, a!);
   assert.ok(sim.affinity(a!, b!) <= -0.3);
   assert.ok(chatWith() < liked - 0.5, 'far less keen to chat');

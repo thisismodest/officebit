@@ -147,6 +147,7 @@ export class PersonalityBrain implements Brain {
       if (type.summer || type.boating) {
         // Once a day: an outing somewhere else first (not into the club itself, to get to the boats) rules it out.
         if (wentOutToday && p.level !== item.level && !(p.intent?.kind === 'use' && p.intent.item === item.index)) continue;
+        if (type.boating && sim.boats.wentOutToday(p)) continue;
         score += type.summer ? SWIM_PULL * (0.6 + t.social * 0.4 + t.chaos * 0.3) : ROW_PULL * (0.4 + t.ambition * 0.4 + t.chaos * 0.4);
       }
       if (outing(item.level) && sim.festivities.nightOut()) score += NIGHT_OUT;

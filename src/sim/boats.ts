@@ -2,20 +2,25 @@
 // boating club's rowing boats, taken out on the river by friends on a boat
 // trip (plans.ts). A sailing boat for three or more, a rowing boat for two;
 // out from the moorings, downriver or up, and back, the friends aboard (shown
-// in the boat, and following one follows the boat). A rowing boat is only seen
-// while it's out: the rest of the time it's in the club.
+// in the boat, and following one follows the boat). A rowing boat comes out of
+// the club's doors onto the water while it's out, and goes back in after.
+import { dayOf } from './clock.ts';
 import { MOVERS, advance, type Heading, type Moving } from './movement.ts';
 import type { VehiclePose } from './food-trucks.ts';
 import type { Grid } from './grid.ts';
 import type { Person } from './person.ts';
 import { RoadMap, WATERWAYS } from './roads.ts';
 import type { Item, Simulation } from './sim.ts';
+import { doorOf, footprint, inRect, manhattan } from './geometry.ts';
 import type { Place, Tile } from './world.ts';
 
 /** How far (tiles) a trip goes along the river before turning back. */
 const TRIP_TILES: [number, number] = [20, 40];
-/** Aboard a rowing boat, at most; anyone more takes a sailing boat. */
+/** Aboard a rowing boat, at most; anyone more takes a sailing boat. And how many rowing boats the club has. */
 const ROWERS = 2;
+const ROWING_BOATS = 2;
+/** How far (tiles) from the club's door the water can be, for its rowing boats to go in. */
+const SLIPWAY = 6;
 
 interface Trip {
   item: Item;
@@ -23,6 +28,8 @@ interface Trip {
   riders: string[];
   /** Where they get off again: where they got on. */
   ashore: Place;
+  /** A rowing boat out of the club: it goes back in after. */
+  borrowed?: boolean;
 }
 
 export class Boats {
@@ -30,22 +37,25 @@ export class Boats {
   private readonly trips: Trip[] = [];
   /** Boat-trip plans already afloat (or that found no boat). */
   private readonly launched = new Set<number>();
+  /** Who's been out on the river today, and which day that is: once a day's enough. */
+  private rowed = { day: -1, who: new Set<string>() };
   private map: { grid: Grid; water: RoadMap } | null = null;
 
   constructor(sim: Simulation) {
     this.sim = sim;
   }
 
-  /**
-   * Where a boat is: on the river (where it's got to), in its place (undefined:
-   * a sailing boat on its mooring, drawn as it stands), or nowhere to be seen
-   * (null: a rowing boat put away in the club).
-   */
-  poseOf(item: Item): VehiclePose | null | undefined {
+  /** Where a boat is out on the river (where it's got to), or undefined in its place (a sailing boat on its mooring, drawn as it stands). */
+  poseOf(item: Item): VehiclePose | undefined {
     const trip = this.trips.find((t) => t.item === item);
-    if (!trip) return item.type.boat === 'row' ? null : undefined;
+    if (!trip) return undefined;
     const { x, y, px, py, facing } = trip.boat;
     return { x, y, px, py, facing, moving: false, middle: [0, 0] };
+  }
+
+  /** Have they been out on the river today? */
+  wentOutToday(p: Person): boolean {
+    return this.rowed.day === dayOf(this.sim.tick) && this.rowed.who.has(p.id);
   }
 
   /** Who's aboard a boat out on the river (for drawing them in it). */
@@ -80,6 +90,8 @@ export class Boats {
         if (p) sim.alight(p, trip.ashore, { kind: 'wander', to: trip.ashore });
       }
       this.trips.splice(this.trips.indexOf(trip), 1);
+      // A rowing boat goes back in the club.
+      if (trip.borrowed && !trip.item.gone) sim.removeItem(trip.item);
     }
   }
 
@@ -88,8 +100,15 @@ export class Boats {
     const { sim } = this;
     const water = this.water();
     if (!water || riders.length === 0) return false;
-    const free = (kind: 'sail' | 'row') => sim.activeItems().find((i) => i.type.boat === kind && !this.trips.some((t) => t.item === i));
-    const item = (riders.length > ROWERS ? free('sail') : free('row')) ?? free('sail');
+    // More than two: a sailing boat, if one's free. Otherwise one of the club's rowing boats, out of its doors (and a sailing boat after all, if they're all out).
+    const sailing = () => sim.activeItems().find((i) => i.type.boat === 'sail' && !this.trips.some((t) => t.item === i));
+    const rowing = () => {
+      if (this.trips.filter((t) => t.borrowed).length >= ROWING_BOATS) return undefined;
+      const slip = this.slipway(water);
+      return slip ? sim.addItem(sim.traffic.level!, { t: 'rowboat', p: slip }) : undefined;
+    };
+    const borrowed = !(riders.length > ROWERS && sailing());
+    const item = (borrowed ? rowing() : sailing()) ?? sailing();
     if (!item) return false;
     const home = item.def.p;
     // Downriver or up, a fair way, to the nearest open water there.
@@ -100,14 +119,35 @@ export class Boats {
     const heading: Heading = turn[0] < home[0] ? 'left' : 'right';
     const out = water.route(home, turn, heading, { mover: MOVERS.boat });
     const back = out && water.route(turn, home, undefined, { mover: MOVERS.boat });
-    if (!out || !back) return false;
+    if (!out || !back) {
+      if (item.type.boat === 'row') sim.removeItem(item);
+      return false;
+    }
+    const today = dayOf(sim.tick);
+    if (this.rowed.day !== today) this.rowed = { day: today, who: new Set() };
+    for (const p of riders) this.rowed.who.add(p.id);
     const crew = riders.map((p) => p.name);
     const names = crew.length > 1 ? `${crew.slice(0, -1).join(', ')} and ${crew.at(-1)}` : crew[0];
     const sail = item.type.boat === 'sail';
     const news = `${sail ? '⛵' : '🚣'} ${names} took a ${sail ? 'sailing boat' : 'rowing boat'} out on the river`;
     for (const [i, p] of riders.entries()) sim.board(p, `boat-${item.index}`, i === 0 ? news : null);
-    this.trips.push({ item, boat: { x: home[0], y: home[1], px: home[0], py: home[1], facing: heading, path: [...out, ...back] }, riders: riders.map((p) => p.id), ashore });
+    this.trips.push({ item, boat: { x: home[0], y: home[1], px: home[0], py: home[1], facing: heading, path: [...out, ...back] }, riders: riders.map((p) => p.id), ashore, borrowed: item.type.boat === 'row' });
     return true;
+  }
+
+  /** Where the club's rowing boats go in: open water, room for a boat, nearest its door. */
+  private slipway(water: RoadMap): Tile | null {
+    const { sim } = this;
+    const club = sim.activeItems().find((i) => i.def.t === 'boathouse' && i.level === sim.traffic.level);
+    if (!club) return null;
+    const [dx, dy] = doorOf(club.def);
+    const afloat = sim.activeItems().filter((i) => i.type.afloat && i.level === club.level);
+    const free = (x: number, y: number) => water.drivable(x, y) && !afloat.some((i) => inRect(footprint(i.def), x, y));
+    let best: Tile | null = null;
+    for (let y = dy - SLIPWAY; y <= dy + SLIPWAY; y++)
+      for (let x = dx - SLIPWAY; x <= dx + SLIPWAY; x++)
+        if (free(x, y) && free(x + 1, y) && (!best || manhattan([x, y], [dx, dy]) < manhattan(best, [dx, dy]))) best = [x, y];
+    return best;
   }
 
   /** The nearest tile of open water to a point (in the same column), if there's any. */

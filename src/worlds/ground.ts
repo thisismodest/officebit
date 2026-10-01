@@ -8,14 +8,16 @@ import { footprint, freeRoomId, inRect, intersection, overlap } from '../sim/geo
 import type { FurnitureDef, LevelDef, Rect, RoomDef, Tile } from '../sim/world.ts';
 import { aOrAn, type Problem } from './placement.ts';
 
-export type Surface = 'road' | 'path' | 'forecourt' | 'water';
+export type Surface = 'road' | 'path' | 'forecourt' | 'water' | 'sand' | 'shallows';
 
 /** How wide each surface is drawn, in tiles. */
-const WIDTH: Record<Surface, number> = { road: 2, path: 1, forecourt: 1, water: 2 };
+const WIDTH: Record<Surface, number> = { road: 2, path: 1, forecourt: 1, water: 2, sand: 2, shallows: 2 };
 /** What each surface is called on the map. */
-const NAMES: Record<Surface, string> = { road: 'Road', path: 'Path', forecourt: 'Forecourt', water: 'River' };
+const NAMES: Record<Surface, string> = { road: 'Road', path: 'Path', forecourt: 'Forecourt', water: 'River', sand: 'Beach', shallows: 'Shallows' };
 /** Floors that are water: drawn across, a road or path becomes a bridge. */
 const WATER = new Set(['water', 'shallows']);
+/** Ground that isn't for walking or driving on as laid (water, the shallows, a beach): no road or path goes under it, and a road or path over it is bridged (over water) or laid on it. */
+const SOFT = new Set(['water', 'shallows', 'sand']);
 /** Small things a new road or path clears out of its way. Anything else (buildings, ponds, lots) stops it. */
 export const CLEARABLE = new Set(['tree', 'bush', 'flowers', 'bench', 'lamppost']);
 /** Floors nothing can be drawn over. */
@@ -35,7 +37,7 @@ const VERGE = 'verge-';
  */
 export function layPavements(level: LevelDef): void {
   const roads = level.rooms.filter((r) => r.floor === 'road').map((r) => r.rect);
-  const keepOff = level.rooms.filter((r) => r.floor === 'highway' || WATER.has(r.floor) || isBridge(r)).map((r) => r.rect);
+  const keepOff = level.rooms.filter((r) => r.floor === 'highway' || SOFT.has(r.floor) || isBridge(r)).map((r) => r.rect);
   const [w, h] = level.size;
   const isRoad = (x: number, y: number) => inAny(roads, x, y);
   const verges = level.rooms.filter((r) => r.id.startsWith(VERGE)).map((r) => r.rect);
@@ -66,8 +68,8 @@ export function groundProblem(level: LevelDef, rect: Rect, surface?: Surface): P
   const [x, y, w, h] = rect;
   if (x < 0 || y < 0 || x + w > level.size[0] || y + h > level.size[1]) return 'That runs off the map.';
   if (level.rooms.some((r) => KEEP.has(r.floor) && overlap(r.rect, rect))) return 'Leave the highway as it is.';
-  if (surface === 'water' && level.rooms.some((r) => (r.floor === 'road' || isDrawnPath(r) || isCrossing(r) || isBridge(r)) && overlap(r.rect, rect))) {
-    return 'Water doesn’t go over a road or path: draw the road or path across the water instead, and it’s bridged.';
+  if (surface && SOFT.has(surface) && level.rooms.some((r) => (r.floor === 'road' || isDrawnPath(r) || isCrossing(r) || isBridge(r)) && overlap(r.rect, rect))) {
+    return surface === 'sand' ? 'A beach doesn’t go over a road or path.' : 'Water doesn’t go over a road or path: draw the road or path across the water instead, and it’s bridged.';
   }
   const inWay = level.furniture.find((f) => !CLEARABLE.has(f.t) && overlap(footprint(f), rect));
   return inWay ? `There's ${aOrAn(CATALOG[inWay.t]?.name.toLowerCase() ?? 'thing')} in the way.` : null;
@@ -109,7 +111,7 @@ export function lay(level: LevelDef, rects: readonly Rect[], surface: Surface, n
   const waters = level.rooms.filter((r) => WATER.has(r.floor)).map((r) => r.rect);
   for (const rect of pieces) {
     level.rooms.push({ id: freeRoomId(level, surface), name, rect, floor: surface });
-    if (surface === 'water') continue;
+    if (SOFT.has(surface)) continue;
     // Over water, a bridge: crossing the way the stroke runs.
     for (const water of waters) {
       if (!overlap(rect, water)) continue;
@@ -131,8 +133,8 @@ export function erase(level: LevelDef, tile: Tile): boolean {
 }
 
 /**
- * Turn ground back to grass, a stroke at a time: a path, forecourt, water or
- * pavement tile, or a road's full width where you rub it out. Crossings and
+ * Turn ground back to grass, a stroke at a time: a path, forecourt, water,
+ * beach or pavement tile, or a road's full width where you rub it out. Crossings and
  * bridges on it go too. Neighbouring tiles come out as one piece (so the river
  * isn't left in a hundred bits), and pavements are laid again once, at the
  * end. Rubbed-out pavement leaves verge it won't be laid over. Whether anything changed.
@@ -141,7 +143,7 @@ export function eraseAll(level: LevelDef, tiles: readonly Tile[]): boolean {
   const cuts: Rect[] = [];
   const verges: Tile[] = [];
   for (const [x, y] of tiles) {
-    const hit = level.rooms.filter((r) => (r.floor === 'road' || isDrawnPath(r) || isCrossing(r) || isBridge(r) || WATER.has(r.floor)) && inRect(r.rect, x, y));
+    const hit = level.rooms.filter((r) => (r.floor === 'road' || isDrawnPath(r) || isCrossing(r) || isBridge(r) || SOFT.has(r.floor)) && inRect(r.rect, x, y));
     if (hit.length > 0) cuts.push(...hit.map((r): Rect => (r.floor === 'road' ? acrossRoad(r.rect, x, y, 1) : [x, y, 1, 1])));
     // Pavement is laid from the roads, so rubbing it out leaves a patch of verge it won't be laid over.
     else if (level.rooms.some((r) => r.id.startsWith(PAVEMENT) && inRect(r.rect, x, y))) verges.push([x, y]);
@@ -150,7 +152,7 @@ export function eraseAll(level: LevelDef, tiles: readonly Tile[]): boolean {
   const pieces = runs(cuts);
   level.rooms = level.rooms.flatMap((room) => {
     if ((isCrossing(room) || isBridge(room)) && pieces.some((c) => overlap(c, room.rect))) return [];
-    if (room.floor !== 'road' && !isDrawnPath(room) && !WATER.has(room.floor)) return [room];
+    if (room.floor !== 'road' && !isDrawnPath(room) && !SOFT.has(room.floor)) return [room];
     if (!pieces.some((c) => overlap(c, room.rect))) return [room];
     return pieces.reduce<RoomDef[]>((kept, c) => kept.flatMap((r) => without(r, c)), [room]);
   });

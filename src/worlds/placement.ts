@@ -38,12 +38,16 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
     // Rugs are part of the floor: they can go right up to (and across) a doorway.
     if (!isCovering(t) && keepClear.has(key([x, y]))) return 'Keep doorways and stairs clear.';
     const here = grid.roomAt(x, y);
-    if (room !== undefined && here !== room) return 'It has to sit inside one room.';
+    // Indoors, within one room's walls; out of doors, grass is grass (a park, a field), however it's marked out.
+    if (level.kind !== 'outside' && room !== undefined && here !== room) return 'It has to sit inside one room.';
     room = here;
     if (level.kind === 'outside') {
       const floor = level.rooms[here]?.floor;
-      if (type.hardStanding && floor !== 'forecourt' && floor !== 'path') return 'That goes on a forecourt or paving.';
-      if (!type.hardStanding && floor !== 'grass') return 'Outdoors, things go on the grass.';
+      if (type.afloat) {
+        if (floor !== 'water' && floor !== 'shallows') return 'Boats go on the water.';
+      } else if (type.hardStanding) {
+        if (floor !== 'forecourt' && floor !== 'path') return 'That goes on a forecourt or paving.';
+      } else if (floor !== 'grass' && floor !== 'sand') return 'Outdoors, things go on the grass (or the beach).';
     }
   }
   // Rugs and the like lie on the floor: other things can stand on them, and they can slide under other things.

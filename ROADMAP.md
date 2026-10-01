@@ -116,7 +116,7 @@ towns made before it, put up by crews.
 - A much quicker test suite (about 5 minutes locally, 8 on CI, mostly a few long runs of the town: ventures, plans, the diner, groceries, construction). Share one run between tests that watch the same weeks, shorten runs to what each check needs, set up the moment under test directly instead of waiting weeks for it; then put the tests back in CI (`pages.yml`).
 - Single-width roads (one lane, for both ways): cars meeting head-on wait at the end, or in a passing place, for the other to clear. Then they're another choice under Ground.
 - Bus stops: something to mark where the bus the other way pulls up, across the road from a shelter (a flag on a pole was tried; placing it clear of paths and the road needs care).
-- Editor: anything you can move, you can add and delete too (the picker offering every placeable thing, outside and in, with its rules: a bus stop beside a road, a food truck's pitch by one).
+- Editor: anything you can move, you can add and delete too (now a rule in AGENTS.md). Still to do: buildings with interiors from the picker (houses, the boating club, a narrowboat, venues and lots).
 - Co-founders and couples visiting each other's homes.
 - Feed transports (WebSocket, SSE, polled JSON) and bridges (Slack, agents).
 - Residents' cars: people who live far from work drive in, parking on the street

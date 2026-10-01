@@ -271,8 +271,6 @@ export function buildTown(residents: Resident[]): LevelBuilder {
     .named('boathouse', ...BOATHOUSE, 'Boating club')
     .put('sailboat', JETTY[0] + 1, RIVER[1])
     .put('sailboat', JETTY[0] + 1, RIVER[1] + 2)
-    .put('rowboat', JETTY[0] - 7, RIVER[1])
-    .put('rowboat', JETTY[0] - 4, RIVER[1])
     .put('pond', 96, 113)
     .put('pond', 122, 126)
     .row('bench', [86, 104, 116, 130], 119)

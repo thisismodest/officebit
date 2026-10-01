@@ -20,8 +20,8 @@ indoors.
 |---|---|
 | **Move** | Drag a piece of furniture, or outside a building, somewhere else. Click it to select it. It keeps its owner, so a desk stays someone's. |
 | **Add** | Pick from the thumbnails (indoor things indoors, outdoor things outside), then click the map. Click again to add another. A bus stop goes beside a road (it's named after it), and the buses call there from the next one ([TRAFFIC](TRAFFIC.md#buses)). On a phone the thumbnails are a strip at the top, beside the toolbar, that shrinks to what you picked (Change opens it out again), so there's map to tap. |
-| **Ground** | Outside: road, path, forecourt, water or zebra crossing, whichever you used last. Hover over it, or press and hold it, for the others beside it (its corner mark says there are more); the one you pick takes its place. Drag to draw road, path or forecourt (see below); a tap lays one dab. A forecourt is paving cars can drive and park on, with no lanes (like the charging station's). A crossing: click a road, and it goes in two tiles wide, straight across it. |
-| **Rub out** | Drag over roads, paths, pavements and crossings to turn them back to grass. Pavement never runs across the end of a road, so a gap you rub out goes to grass (a one-tile gap keeps the pavements either side joined). Rubbed-out pavement leaves a patch of verge that pavement isn't laid over again (until you draw a path or road there). |
+| **Ground** | Outside: road, path, forecourt, water, shallows, beach, zebra crossing or grass, whichever you used last. Hover over it, or press and hold it, for the others beside it (its corner mark says there are more); the one you pick takes its place. Drag to draw road, path or forecourt (see below); a tap lays one dab. A forecourt is paving cars can drive and park on, with no lanes (like the charging station's). A crossing: click a road, and it goes in two tiles wide, straight across it. |
+| **Grass** (under Ground) | Drag over roads, paths, forecourts, water, beach, pavements, crossings and bridges to lay grass over them. Pavement never runs across the end of a road, so a gap goes to grass (a one-tile gap keeps the pavements either side joined). Grass laid over pavement is verge, which pavement isn't laid over again (until you draw a path or road there). A whole stroke at once. |
 | **Turn round** | Turns the selected house to face the other way. |
 | **Room** | Indoors: drag a box to build a walled room; click a room to rename it, change its floor or delete it; drag a selected room's wall to move it (see below). |
 | **Area** | Indoors: drag a box to mark out a floor of its own with no walls, like a dining area; click one to change or delete it. |
@@ -65,6 +65,8 @@ it runs.
   themselves. Never on water.
 - **Water** (two tiles wide, for rivers, canals and ponds): nobody walks in it
   (the `shallows`, for wading, are walkable but slow) and nothing drives on it.
+  A **beach** (`sand`) is drawn the same way, any shape. Boats (`afloat`) go only on the water;
+  outdoor things go on grass or the beach.
   It can't go over a road or path; draw the road or path across the water
   instead, and the part over the water is a **bridge** (`bridge` crossed
   north–south, `bridgeSide` east–west): walked and driven like pavement and

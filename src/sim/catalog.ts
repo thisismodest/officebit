@@ -62,6 +62,8 @@ export interface FurnitureType {
   summer?: boolean;
   /** A boat (boats.ts): moored (a sailboat) or kept in the clubhouse (a rowing boat) till someone takes it out on the river. */
   boat?: 'sail' | 'row';
+  /** Floats: it goes on the water (a boat), and nowhere else. */
+  afloat?: boolean;
   /** Where to take a boat out from (the boating club): open on fine days in the boating season (April to October, by day, dry). */
   boating?: boolean;
   /** A workstation you work standing up (the diner's grill), not sat at. */
@@ -254,10 +256,11 @@ export const CATALOG: Record<string, FurnitureType> = {
     duration: [10, 20],
     boating: true,
   },
-  sailboat: { ...decor('Sailing boat', [3, 1], false), boat: 'sail', blocks: { foot: true, wheels: false } },
+  sailboat: { ...decor('Sailing boat', [3, 1], false), boat: 'sail', afloat: true, blocks: { foot: true, wheels: false } },
   // Someone's home, moored on the river (its door onto the bank, like a house's: worlds/homes.ts).
-  narrowboat: { ...decor('Narrowboat', [7, 1]), solid: true },
-  rowboat: { ...decor('Rowing boat', [2, 1], false), boat: 'row', blocks: { foot: true, wheels: false } },
+  narrowboat: { ...decor('Narrowboat', [7, 1]), solid: true, afloat: true },
+  // Out of the boating club and onto the water while someone's rowing it (boats.ts); back in the club after.
+  rowboat: { ...decor('Rowing boat', [2, 1], false), boat: 'row', afloat: true, blocks: { foot: true, wheels: false } },
   lifebuoy: {
     name: 'Bathing spot',
     size: [1, 1],

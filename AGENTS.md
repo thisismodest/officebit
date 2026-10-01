@@ -134,6 +134,9 @@ Dijkstra over portal anchors between levels); driving in `docs/TRAFFIC.md`.
   `sim.activeItems()`, not `sim.items`, in behaviour code.
 - **The sim edits its own copy of the world** (new offices, hires). Always pass
   `structuredClone(STARTER)` to `new Simulation`.
+- **Anything that exists can be edited.** If it's in a town, you can make it, move it and take it away in the
+  editor: a beach is ground you can draw, a boat is in the picker. Something that can't be added yet is on the
+  roadmap (buildings with interiors, from the picker).
 - **Nothing appears or disappears out of thin air.** Buildings are built by crews,
   trucks and visitors drive in, new people walk in from the edge of town. Keep it that way.
 - **World changes go through sim methods** (`addLevel`, `replaceLevel`, `addItem`,

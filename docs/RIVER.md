@@ -9,7 +9,7 @@ Fen's narrowboat.
 
 `water` is ground nobody walks or drives on; `shallows` can be waded (slowly);
 a `bridge` (or `bridgeSide`) is walked like pavement and driven like road. Draw
-water in the editor, and a road or path drawn across it is bridged
+water, shallows and beaches in the editor, and a road or path drawn across water is bridged
 ([BUILDER](BUILDER.md#roads-and-paths)). Pavements are never laid on water.
 
 ## Swimming
@@ -32,10 +32,11 @@ boat's gentle pace (`MOVERS.boat`).
   bank, a building like any other (its door onto the bank path, into the
   clubhouse, a venue: boat racks, a corner for a cup of tea; `buildClubhouse`
   in `worlds/venues.ts`), a path along it, a `jetty` out into the river, two sailing boats
-  (`sailboat`) tied up beside it, and the club's two rowing boats (`rowboat`),
-  kept inside: they're only seen while they're out.
+  (`sailboat`, in the editor's picker: they go on the water) tied up beside it, and
+  the club's two rowing boats, kept inside (on the racks): one comes out of the
+  club's doors onto the water while someone's rowing it (`rowboat`), and goes back in after.
 - **A boat trip** ([PLANS](PLANS.md)): friends meet at the jetty and set off, two
-  in a rowing boat, three or four in a sailing boat.
+  in a rowing boat, three or four in a sailing boat. Once a day on the river is enough for anyone.
 - **A row on your own**: on a fine day (April to October, by day, dry:
   `sim.boatingDay()`), the restless and the driven may walk down to the club in
   their own time, take a boat off the rack (`boatRack`) and row out from the
@@ -45,7 +46,7 @@ boat's gentle pace (`MOVERS.boat`).
   back, with whoever's aboard drawn sitting in the boat (following them follows
   the boat); then ashore where they got on, and on with their day. A rowing boat
   goes back in the club. In the News: "🚣 Mo and Rowan took a rowing boat out on
-  the river". Over a June fortnight, about eight trips.
+  the river". Over a June fortnight, about two dozen trips, Fen's most days.
 
 ## The narrowboat
 
