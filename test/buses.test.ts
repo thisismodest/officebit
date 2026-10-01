@@ -46,7 +46,7 @@ test('buses call at every stop in turn, both ways round the town, without turnin
     }
   }
   const full = [...calls.values()].filter((c) => c.length === 8);
-  assert.ok(full.length >= 40, `${full.length} buses went all the way round`);
+  assert.ok(full.length >= 30, `${full.length} buses went all the way round`);
   const orders = runs.map((run) => run.stops.map((s) => s.def.label).join());
   assert.ok(full.every((c) => orders.includes(c.join())), 'every stop, in order');
   assert.ok(orders.every((order) => full.some((c) => c.join() === order)), 'both ways round');

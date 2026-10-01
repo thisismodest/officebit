@@ -86,7 +86,9 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   roads.ts        the road map for vehicles and routes along it; traffic.ts: highway through-traffic, cars, the ways in and out of town
   visitors.ts     cars that turn off the highway to eat or charge, and cars out for a drive round town
   buses.ts        the bus route (stops in the shortest order, timetable, night bus), and who rides instead of walking
-  arrivals.ts     new family members coming home: a baby dropped off by car (it crawls in), others on foot
+  arrivals.ts     newcomers: a baby dropped off by car (it crawls in), family and new team members on foot from the edge of town
+  weather.ts      clear, grey, rain or snow in spells, from the seed and the date; the wet keeps people in
+  birthdays.ts    everyone's birthday: the News, a cheerier day, a party hat, a cake at work (or at home)
   interactions.ts pizza (rider), fire drills, taking control (ControlledBrain)
   works.ts        what a newer release adds to an older town, put up by crews (docs/UPGRADES.md)
   places.ts       buildings on the map and what's inside (for the click card); validate.ts: world checks
@@ -98,11 +100,13 @@ src/worlds/   starter.ts (people, 2-floor office, venues, homes), town.ts (the 1
 src/render/   renderer.ts (one level through a camera; y-sorted props+people; night lighting),
               camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, vehicles.ts (every vehicle from its look in VEHICLES: cars, food trucks, the bus),
               palette.ts, pixels.ts, seasonal.ts (fairy lights, pumpkins, fireworks), play.ts (frisbees, laptops),
-              spotlights.ts (the spotlights on billboards and posters: which, when, pixelated), props/* (one painter per catalog type)
+              spotlights.ts (the spotlights on billboards and posters: which, when, pixelated), weather.ts (rain, snow, gloom, snow lying),
+              props/* (one painter per catalog type)
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
-              editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (save, share links, files),
+              editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (the cog: your town's name, save, share links, townfiles),
               timekeeper.ts (live/sandbox), time-jump.ts (jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
-              place-card.ts, fullscreen.ts, welcome.ts (the first-visit card and ?), describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
+              place-card.ts, fullscreen.ts, welcome.ts (the first-visit card and ?), tour.ts (the tour, from the welcome card), team-form.ts (adding someone
+              to the team), describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects), noise.ts;
               ui/soundscape.ts decides which effects play, ui/audio-menu.ts the switches and volumes
 src/feeds/    protocol.ts (validated data-only messages), local.ts (console + postMessage)
@@ -176,7 +180,9 @@ Working and verified in the browser:
   looks, names, personalities, where they work, a new baby by car, leaving town),
   children at Acacia Primary, relationships, love and moving house, careers,
   ventures whose offices are built by crews, and visitors who stop to eat or charge. Friends make plans:
-  frisbee and picnics on the Green, catching up at the diner, working on laptops together.
+  frisbee and picnics on the Green, catching up at the diner, working on laptops together. Birthdays (a hat,
+  a cake at work), and new team members added from the People tab.
+- **Weather:** grey days, rain and winter snow that keep people in; drawn falling, with snow lying.
 - **Places:** the two-floor office, the 24/7 Night Owl Diner and the Corner Shop,
   staffed in shifts (they close when nobody's minding them; customers queue),
   food trucks on weekday lunchtimes, arcades, billboards by the highway and a bus stop showing spotlights
@@ -192,7 +198,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), an About page and a welcome card, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-167 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+170 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);
