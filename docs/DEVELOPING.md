@@ -76,8 +76,8 @@ unreachable beds); the starter world must always validate clean.
 ## Deploying
 
 Pushing to `main` publishes the site to GitHub Pages
-(`.github/workflows/pages.yml`): it typechecks, runs the tests, builds
-`dist/` and deploys it. Paths are all relative, so it works at a domain's
+(`.github/workflows/pages.yml`): it typechecks, builds `dist/` and deploys
+it. It doesn't run the tests (they took eight minutes there): run `npm test` before you push. Paths are all relative, so it works at a domain's
 root or under a path. In the repo's settings, Pages' source must be **GitHub
 Actions**, and the custom domain is `officebit.town` (DNS at Porkbun: the four
 GitHub `A` and `AAAA` records, `www` a `CNAME` to `thisismodest.github.io`, and the

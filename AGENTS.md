@@ -37,7 +37,7 @@ kitchenette.
 - **Verify in the browser**, not just tests, before saying something works
   (see Verifying, below). Report honestly what was and wasn't checked.
 - **Don't commit** unless asked (and no co-author line when you do). Pushing to
-  `main` deploys to GitHub Pages (`.github/workflows/pages.yml`).
+  `main` deploys to GitHub Pages (`.github/workflows/pages.yml`), which only typechecks: run `npm test` before pushing.
 
 ## Commands
 

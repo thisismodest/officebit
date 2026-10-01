@@ -111,6 +111,7 @@ Done (see `docs/UPGRADES.md`): versions, and what a release adds to the starter 
 towns made before it, put up by crews.
 
 ### Also on the list
+- A much quicker test suite (about 5 minutes locally, 8 on CI, mostly a few long runs of the town: ventures, plans, the diner, groceries, construction). Share one run between tests that watch the same weeks, shorten runs to what each check needs, set up the moment under test directly instead of waiting weeks for it; then put the tests back in CI (`pages.yml`).
 - Editor: one Ground button for laying road, path and forecourt, showing the one you last used; a corner mark opens its alternatives beside it, and the one you pick takes its place (like Photoshop's tools). Zebra crossings and rub out stay their own buttons.
 - Single-width roads (one lane, for both ways): cars meeting head-on wait at the end, or in a passing place, for the other to clear. Then they're another choice under Ground.
 - Editor: one Ground button for laying road, path and forecourt, showing the one you last used; a corner mark opens its alternatives beside it, and the one you pick takes its place (like Photoshop's tools). Zebra crossings and rub out stay their own buttons.
