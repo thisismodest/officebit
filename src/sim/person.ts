@@ -23,8 +23,8 @@ export type Intent =
   | { kind: 'leave' }
   /** A game in the park with friends (catch, frisbee): at their place in the ring, for a plan (plans.ts). */
   | { kind: 'play'; plan: number; spot: Place }
-  /** By bus (buses.ts): to the stop `from` (an item), wait, ride to `to`, then carry on with `then`. */
-  | { kind: 'bus'; from: number; to: number; after: Intent };
+  /** By bus (buses.ts): to the stop `from` (an item), wait for the bus going round `run` (0 or 1: which way), ride to `to`, then carry on with `after`. */
+  | { kind: 'bus'; from: number; to: number; run: number; after: Intent };
 
 export interface Person {
   readonly id: string;

@@ -41,7 +41,7 @@ test('walking manners: slow behind someone, wait right behind them, pass someone
   assert.equal(inTheWay(a, 'right', [body('x', 0.4, 0, 'up')], walking).step, 0);
 });
 
-test('driving manners: keep the gap to the car in front, wait behind one stopped in the lane, and never mind other lanes or junctions', () => {
+test('driving manners: keep the gap to the car in front, wait behind one stopped in the lane, give way at junctions, and never mind other lanes', () => {
   const me = body('m', 0, 0, 'left');
   assert.equal(inTheWay(me, 'left', [body('q', -1.2, 0, 'left')], driving).step, 0, 'too close');
   assert.equal(inTheWay(me, 'left', [body('q', -2, 0, 'left')], driving).step, 1, 'far enough');
@@ -50,7 +50,9 @@ test('driving manners: keep the gap to the car in front, wait behind one stopped
   assert.equal(inTheWay(body('van', 0, 0, 'left', true, { reach: 1 }), 'left', [body('q', -2, 0, 'left')], driving).step, 0, 'a van keeps its front clear too');
   assert.equal(inTheWay(me, 'left', [body('q', -1, 0, 'right', false)], driving).step, 0, 'stopped in the lane, whichever way it faces');
   assert.equal(inTheWay(me, 'left', [body('q', -1, 0, 'right')], driving).step, 1, 'oncoming, in its own lane');
-  assert.equal(inTheWay(me, 'left', [body('q', -1, 0, 'up')], driving).step, 1, 'crossing at a junction');
+  assert.equal(inTheWay(me, 'left', [body('q', -1, 0, 'up')], driving).step, 0, 'crossing just in front: it got there first');
+  assert.equal(inTheWay(me, 'left', [body('q', -1, 2, 'up')], driving).step, 1, 'crossing, but further off: I go first');
+  assert.equal(inTheWay(me, 'left', [body('q', -1, -2, 'up')], driving).step, 1, 'already across');
   assert.equal(inTheWay(me, 'left', [body('q', -1, 1, 'left')], driving).step, 1, 'the next lane over');
 });
 

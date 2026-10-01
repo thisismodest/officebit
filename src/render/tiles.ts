@@ -139,12 +139,14 @@ function paintFloor(ctx: Ctx, tx: number, ty: number, style: FloorStyle, room: R
     case 'road': {
       rect(ctx, x0, y0, TILE, TILE, style.base);
       speckle(style.base, 0.07, 0.04, 9);
-      // Dashed centre line down the middle of the road, stopping short of a bend or a junction (road carrying on past its edges).
+      // Dashed centre line down the middle of the road. It carries on past a side road joining it, and stops short
+      // where the road itself ends in a bend or a junction (road carrying on past its edges, within its last few tiles).
       if (!room) break;
       const [rx, ry, rw, rh] = room.rect;
       const horizontal = rw >= rh;
       const edge = horizontal ? ry + rh / 2 : rx + rw / 2;
-      const junction = horizontal ? road(tx, ry - 1) || road(tx, ry + rh) : road(rx - 1, ty) || road(rx + rw, ty);
+      const atEnd = horizontal ? tx < rx + rh || tx > rx + rw - 1 - rh : ty < ry + rw || ty > ry + rh - 1 - rw;
+      const junction = atEnd && (horizontal ? road(tx, ry - 1) || road(tx, ry + rh) : road(rx - 1, ty) || road(rx + rw, ty));
       if (horizontal && ty === edge && tx % 2 === 0 && !junction) rect(ctx, x0 + 2, y0 - 1, 10, 2, '#e8dfae');
       if (!horizontal && tx === edge && ty % 2 === 0 && !junction) rect(ctx, x0 - 1, y0 + 2, 2, 10, '#e8dfae');
       break;

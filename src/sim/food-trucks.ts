@@ -124,7 +124,7 @@ export class FoodTrucks {
   /** A route by road that keeps the truck's whole body clear of things (or, if there's none, one like a car's). */
   private byRoad(from: Tile, to: Tile, heading?: Heading): Tile[] | null {
     const roads = this.sim.traffic.roads();
-    return roads?.route(from, to, heading, { reach: MOVERS.truck.reach }) ?? roads?.route(from, to, heading) ?? null;
+    return roads?.route(from, to, heading, { mover: MOVERS.truck }) ?? roads?.route(from, to, heading) ?? null;
   }
 
   /** Today's pick of the ways in or out, for this truck: the same every time for a given day, with no story dice rolled. */
@@ -168,7 +168,7 @@ export function pitchRoute(roads: RoadMap, def: FurnitureDef, kerb: Tile, way: '
   const [w] = CATALOG[def.t]!.size;
   const stop = stopOf(def);
   const front = (tx: number, ty: number) => tx >= x && tx < x + w && ty >= y && ty <= kerb[1];
-  const fit = { reach: MOVERS.truck.reach, offRoad: front };
+  const fit = { mover: MOVERS.truck, offRoad: front };
   return way === 'onto' ? roads.route(kerb, stop, undefined, fit) : roads.route(stop, kerb, undefined, fit);
 }
 

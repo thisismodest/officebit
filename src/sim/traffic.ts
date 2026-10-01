@@ -22,6 +22,8 @@ const OFFSTAGE = 3;
 /** Floors where cars give way to people on foot, and how far across the road (tiles) they look. */
 const ZEBRAS = new Set(['zebra', 'zebraSide']);
 const CROSSING_REACH = 2.5;
+/** How long (steps) a vehicle waits at a junction before going anyway (so a ring of cars each waiting for the next can't jam for good). */
+const JUNCTION_PATIENCE = 40;
 /** Mixing the world's seed for traffic's own random stream. */
 const TRAFFIC_SEED = 0x7ea0c0de;
 
@@ -65,6 +67,8 @@ export class Traffic {
   readonly cars: Car[] = [];
   private readonly sim: Simulation;
   private readonly rng: Rng;
+  /** How long (steps) each held-up vehicle has been waiting. */
+  private readonly waited = new Map<Car, number>();
   private map: { grid: Grid; roads: RoadMap; lanes: Lane[] } | null = null;
   private count = 0;
   /** Each car as a body in the sim's space: live views, so always where the car is. */
@@ -140,6 +144,7 @@ export class Traffic {
 
   remove(car: Car): void {
     car.removed = true;
+    this.waited.delete(car);
     this.cars.splice(this.cars.indexOf(car), 1);
   }
 
@@ -165,8 +170,10 @@ export class Traffic {
       // Parked, or held up: it stays exactly where it is (nothing to draw moving between steps).
       if (car.parked || this.blocked(car)) {
         [car.px, car.py] = [car.x, car.y];
+        if (!car.parked) this.waited.set(car, (this.waited.get(car) ?? 0) + 1);
         continue;
       }
+      this.waited.delete(car);
       const done = advance(car, car.path, speedOn(moverOf(car), roads.surfaceAt(car.x, car.y)));
       if (done && car.through) this.remove(car);
     }
@@ -227,7 +234,8 @@ export class Traffic {
     const facing = car.reversing ? OPPOSITE[car.facing] : car.facing;
     const [dx, dy] = AHEAD[facing];
     if (this.crossingAhead(car, dx, dy)) return true;
-    const manners = MOVERS.car.manners;
+    const patient = (this.waited.get(car) ?? 0) < JUNCTION_PATIENCE;
+    const manners = patient ? MOVERS.car.manners : { ...MOVERS.car.manners, crossing: 'ignore' as const };
     // Far enough to see past a long vehicle's middle to its back.
     const others = this.sim.space.near(this.level!, 'wheels', car.x, car.y, manners.slow + 3);
     return inTheWay(this.bodyOf(car), facing, others, manners).step === 0;

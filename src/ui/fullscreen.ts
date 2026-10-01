@@ -37,5 +37,6 @@ export function installed(): boolean {
 /** Make officebit installable, and open offline: the service worker lives at the site's root, so it looks after every page. */
 export function registerApp(): void {
   if (!('serviceWorker' in navigator)) return;
-  addEventListener('load', () => void navigator.serviceWorker.register(new URL('./sw.js', location.href)).catch(() => {}));
+  // The worker's own script is always fetched fresh, so a new release's worker takes over straight away.
+  addEventListener('load', () => void navigator.serviceWorker.register(new URL('./sw.js', location.href), { updateViaCache: 'none' }).catch(() => {}));
 }

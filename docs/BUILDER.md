@@ -19,8 +19,8 @@ indoors.
 | Tool | Does |
 |---|---|
 | **Move** | Drag a piece of furniture, or outside a building, somewhere else. Click it to select it. It keeps its owner, so a desk stays someone's. |
-| **Add** | Pick from the thumbnails (indoor things indoors, outdoor things outside), then click the map. Click again to add another. On a phone the thumbnails are a strip at the top, beside the toolbar, that shrinks to what you picked (Change opens it out again), so there's map to tap. |
-| **Road**, **Path** | Outside: drag to draw one (see below). A tap lays one dab. |
+| **Add** | Pick from the thumbnails (indoor things indoors, outdoor things outside), then click the map. Click again to add another. A bus stop goes beside a road (it's named after it), and the buses call there from the next one ([TRAFFIC](TRAFFIC.md#buses)). On a phone the thumbnails are a strip at the top, beside the toolbar, that shrinks to what you picked (Change opens it out again), so there's map to tap. |
+| **Road**, **Path**, **Forecourt** | Outside: drag to draw one (see below). A tap lays one dab. A forecourt is paving cars can drive and park on, with no lanes (like the charging station's). |
 | **Crossing** | Click a road to put in a zebra crossing, two tiles wide, straight across it. |
 | **Rub out** | Drag over roads, paths, pavements and crossings to turn them back to grass. Pavement never runs across the end of a road, so a gap you rub out goes to grass (a one-tile gap keeps the pavements either side joined). Rubbed-out pavement leaves a patch of verge that pavement isn't laid over again (until you draw a path or road there). |
 | **Turn round** | Turns the selected house to face the other way. |

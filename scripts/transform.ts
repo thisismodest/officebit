@@ -30,10 +30,12 @@ export interface Site {
   url: string;
   /** The code: `https://github.com/owner/officebit`. */
   repo: string;
+  /** The release (package.json's `version`), for the app's cache. */
+  version?: string;
 }
 
-/** Pages that mention the site's address (`%SITE_URL%`, `%REPO_URL%`), filled in as they're served or built. */
-export const SITE_PAGES = new Set(['.html', '.txt', '.xml', '.webmanifest']);
+/** Files in public/ that mention the site's address or release (`%SITE_URL%`, `%REPO_URL%`, `%VERSION%`), filled in as they're served or built: the pages, and the service worker. */
+export const SITE_PAGES = new Set(['.html', '.txt', '.xml', '.webmanifest', '.js']);
 
 /**
  * Where it'll be published: `homepage` in package.json (SITE_URL overrides it,
@@ -48,16 +50,17 @@ export function publishedSite(): Site {
     // Not a git checkout: no repo address to give.
   }
   const [, owner, repo] = remote.match(/github\.com[:/]([^/]+)\/(.+?)(?:\.git)?$/) ?? [];
-  const { homepage } = JSON.parse(readFileSync('package.json', 'utf8')) as { homepage?: string };
+  const { homepage, version } = JSON.parse(readFileSync('package.json', 'utf8')) as { homepage?: string; version?: string };
   const url = process.env.SITE_URL ?? homepage ?? 'http://localhost:6060/';
   return {
     url: url.endsWith('/') ? url : `${url}/`,
     repo: process.env.REPO_URL ?? (owner && repo ? `https://github.com/${owner}/${repo}` : 'https://github.com/'),
+    version: version ?? '0.0.0',
   };
 }
 
 export function withSite(text: string, site: Site): string {
-  return text.replaceAll('%SITE_URL%', site.url).replaceAll('%REPO_URL%', site.repo);
+  return text.replaceAll('%SITE_URL%', site.url).replaceAll('%REPO_URL%', site.repo).replaceAll('%VERSION%', site.version ?? '0.0.0');
 }
 
 // Vendored CSS: URL prefix → directory on disk. Mirrored into dist by build.ts.

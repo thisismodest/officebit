@@ -1,4 +1,4 @@
-// The town's ground (docs/BUILDER.md#roads-and-paths): roads, paths, zebra
+// The town's ground (docs/BUILDER.md#roads-and-paths): roads, paths, forecourts, zebra
 // crossings, and the pavements worked out from the roads. The town is built
 // with these, and the map editor draws with them. Roads are stored as
 // rectangles, so each knows which way it runs (for its centre line); a stroke
@@ -8,14 +8,16 @@ import { footprint, freeRoomId, inRect, overlap } from '../sim/geometry.ts';
 import type { FurnitureDef, LevelDef, Rect, RoomDef, Tile } from '../sim/world.ts';
 import { aOrAn, type Problem } from './placement.ts';
 
-export type Surface = 'road' | 'path';
+export type Surface = 'road' | 'path' | 'forecourt';
 
 /** How wide each surface is drawn, in tiles. */
-const WIDTH: Record<Surface, number> = { road: 2, path: 1 };
+const WIDTH: Record<Surface, number> = { road: 2, path: 1, forecourt: 1 };
+/** What each surface is called on the map. */
+const NAMES: Record<Surface, string> = { road: 'Road', path: 'Path', forecourt: 'Forecourt' };
 /** Small things a new road or path clears out of its way. Anything else (buildings, ponds, lots) stops it. */
 export const CLEARABLE = new Set(['tree', 'bush', 'flowers', 'bench', 'lamppost']);
 /** Floors nothing can be drawn over. */
-const KEEP = new Set(['highway', 'forecourt']);
+const KEEP = new Set(['highway']);
 /** How far along a path (tiles) to look for where it joins up. */
 const MOST_PATH = 400;
 /** Generated pavements carry this id prefix, so they can be laid again. */
@@ -25,23 +27,20 @@ const VERGE = 'verge-';
 
 /**
  * Pavements, worked out from the roads: every tile beside a road (diagonals
- * too, so they wrap round corners) that isn't road itself, except along the
- * highway, and except straight on past a dead end (that's grass: where a
- * road stops, or was rubbed out). Stored as runs along each row, replacing
- * any laid before.
+ * too, so they wrap round corners, and round the end of a dead end, like a
+ * kerb) that isn't road itself, except along the highway. Stored as runs along
+ * each row, replacing any laid before.
  */
 export function layPavements(level: LevelDef): void {
   const roads = level.rooms.filter((r) => r.floor === 'road').map((r) => r.rect);
   const keepOff = level.rooms.filter((r) => r.floor === 'highway').map((r) => r.rect);
   const [w, h] = level.size;
   const isRoad = (x: number, y: number) => inAny(roads, x, y);
-  const pastEnd = deadEnds(roads, isRoad);
   const verges = level.rooms.filter((r) => r.id.startsWith(VERGE)).map((r) => r.rect);
   const kerb = (x: number, y: number) =>
     !isRoad(x, y) &&
     !inAny(keepOff, x, y) &&
     !inAny(verges, x, y) &&
-    !pastEnd.has(`${x},${y}`) &&
     [-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => isRoad(x + dx, y + dy)));
   level.rooms = level.rooms.filter((r) => !r.id.startsWith(PAVEMENT));
   for (let y = 0; y < h; y++) {
@@ -64,7 +63,7 @@ export function brush([x, y]: Tile, surface: Surface): Rect {
 export function groundProblem(level: LevelDef, rect: Rect): Problem {
   const [x, y, w, h] = rect;
   if (x < 0 || y < 0 || x + w > level.size[0] || y + h > level.size[1]) return 'That runs off the map.';
-  if (level.rooms.some((r) => KEEP.has(r.floor) && overlap(r.rect, rect))) return 'Leave the highway and the forecourt as they are.';
+  if (level.rooms.some((r) => KEEP.has(r.floor) && overlap(r.rect, rect))) return 'Leave the highway as it is.';
   const inWay = level.furniture.find((f) => !CLEARABLE.has(f.t) && overlap(footprint(f), rect));
   return inWay ? `There's ${aOrAn(CATALOG[inWay.t]?.name.toLowerCase() ?? 'thing')} in the way.` : null;
 }
@@ -86,18 +85,19 @@ export function strokeRects(stroke: readonly Tile[], surface: Surface): Rect[] {
 }
 
 /**
- * Lay a stroke of road or path. Small things in the way (and on the new
- * pavements beside a road) are cleared, and returned; paths stop where they
- * meet a road and carry on the other side; a road replaces any path it
- * crosses. Pavements are laid again.
+ * Lay a stroke of road, path or forecourt (hard standing cars can drive on,
+ * with no lanes). Small things in the way (and on the new pavements beside a
+ * road) are cleared, and returned; paths and forecourts stop where they meet a
+ * road and carry on the other side, and replace the other where they cross it;
+ * a road replaces either. Pavements are laid again.
  */
-export function lay(level: LevelDef, rects: readonly Rect[], surface: Surface, name = surface === 'road' ? 'Road' : 'Path'): FurnitureDef[] {
+export function lay(level: LevelDef, rects: readonly Rect[], surface: Surface, name = NAMES[surface]): FurnitureDef[] {
   const roads = level.rooms.filter((r) => r.floor === 'road' || r.floor === 'zebra' || r.floor === 'zebraSide');
   const onRoad = (x: number, y: number) => roads.some((r) => inRect(r.rect, x, y));
   const pieces = surface === 'road' ? rects : rects.flatMap((rect) => cut(rect, onRoad));
-  if (surface === 'road') {
-    level.rooms = level.rooms.flatMap((room) => (isDrawnPath(room) ? rects.reduce<RoomDef[]>((kept, rect) => kept.flatMap((r) => without(r, rect)), [room]) : [room]));
-  }
+  level.rooms = level.rooms.flatMap((room) =>
+    isDrawnPath(room) && room.floor !== surface ? pieces.reduce<RoomDef[]>((kept, rect) => kept.flatMap((r) => without(r, rect)), [room]) : [room],
+  );
   // Drawing over rubbed-out pavement takes the grass back up.
   level.rooms = level.rooms.filter((r) => !(r.id.startsWith(VERGE) && pieces.some((p) => overlap(p, r.rect))));
   for (const rect of pieces) level.rooms.push({ id: freeRoomId(level, surface), name, rect, floor: surface });
@@ -109,7 +109,7 @@ export function lay(level: LevelDef, rects: readonly Rect[], surface: Surface, n
   return cleared;
 }
 
-/** Turn ground back to grass: a path or pavement tile, or a road's full width where you rub it out. Crossings on it go too. */
+/** Turn ground back to grass: a path, forecourt or pavement tile, or a road's full width where you rub it out. Crossings on it go too. */
 export function erase(level: LevelDef, [x, y]: Tile): boolean {
   const hit = level.rooms.filter((r) => (r.floor === 'road' || isDrawnPath(r) || isCrossing(r)) && inRect(r.rect, x, y));
   if (hit.length === 0) {
@@ -171,36 +171,10 @@ export function joinsUp(level: LevelDef, [x, y]: Tile): boolean {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-/**
- * The tiles straight on past each end of a road that doesn't meet another
- * road there: its end, and nothing round it but pavement or grass.
- */
-function deadEnds(roads: readonly Rect[], isRoad: (x: number, y: number) => boolean): Set<string> {
-  const past = new Set<string>();
-  for (const road of roads) {
-    const [x, y, w, h] = road;
-    const along = w >= h;
-    // Each end: the road's last row or column of tiles, and the one straight on from it.
-    const ends: [end: Tile[], beyond: Tile[]][] = along
-      ? [x, x + w - 1].map((ex, i) => {
-          const rows = Array.from({ length: h }, (_, j) => y + j);
-          return [rows.map((ry): Tile => [ex, ry]), rows.map((ry): Tile => [ex + (i ? 1 : -1), ry])];
-        })
-      : [y, y + h - 1].map((ey, i) => {
-          const cols = Array.from({ length: w }, (_, j) => x + j);
-          return [cols.map((cx): Tile => [cx, ey]), cols.map((cx): Tile => [cx, ey + (i ? 1 : -1)])];
-        });
-    for (const [end, beyond] of ends) {
-      const joined = end.some(([ex, ey]) => [-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => isRoad(ex + dx, ey + dy) && !inRect(road, ex + dx, ey + dy))));
-      if (!joined) for (const [bx, by] of beyond) past.add(`${bx},${by}`);
-    }
-  }
-  return past;
-}
-
 /** Paths drawn on the map (front paths, park paths, ones you drew), as opposed to generated pavements. */
+/** A path or forecourt that was drawn (not a pavement laid from the roads). */
 function isDrawnPath(room: RoomDef): boolean {
-  return room.floor === 'path' && !room.id.startsWith(PAVEMENT);
+  return (room.floor === 'path' || room.floor === 'forecourt') && !room.id.startsWith(PAVEMENT);
 }
 
 function isCrossing(room: RoomDef): boolean {

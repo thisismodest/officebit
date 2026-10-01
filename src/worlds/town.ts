@@ -44,12 +44,14 @@ export const BILLBOARDS: FurnitureDef[] = [
   { t: 'billboard', p: [102, 12] },
 ];
 export const BUS_STOPS: FurnitureDef[] = [
-  { t: 'busStop', p: [65, 26], label: 'High Street' },
-  { t: 'busStop', p: [48, 53], label: 'Main Street West' },
-  { t: 'busStop', p: [88, 53], label: 'Main Street' },
+  { t: 'busStop', p: [28, 48], label: 'Main Street West' },
+  { t: 'busStop', p: [38, 66], label: 'Acacia Road' },
+  { t: 'busStop', p: [80, 48], label: 'Main Street' },
+  { t: 'busStop', p: [99, 48], label: 'Corner Shop' },
   { t: 'busStop', p: [79, 73], label: 'The Avenue' },
-  { t: 'busStop', p: [79, 94], label: 'Birch Close' },
+  { t: 'busStop', p: [98, 84], label: 'Birch Close' },
   { t: 'busStop', p: [55, 96], label: 'Cedar Crescent' },
+  { t: 'busStop', p: [89, 104], label: 'Acacia Primary' },
 ];
 
 /** The highway across the top of the map: two lanes each way, eastbound on the north side (we drive on the left). */

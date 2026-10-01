@@ -7,7 +7,7 @@ import { Simulation } from '../src/sim/sim.ts';
 import { validate } from '../src/sim/validate.ts';
 import { STARTER } from '../src/worlds/starter.ts';
 
-/** Three weeks of a town, watching its plans. */
+/** Four weeks of a town, watching its plans (long enough for every kind, whichever way the dice fall). */
 const watch = () => {
   const sim = new Simulation(structuredClone(STARTER));
   sim.calendar = { ...DEFAULT_CALENDAR, start: [2026, 6, 1] };
@@ -16,7 +16,7 @@ const watch = () => {
   let laptops = false;
   let games = false;
   let doubleBooked = 0;
-  for (let t = 0; t < 21 * TICKS_PER_DAY; t++) {
+  for (let t = 0; t < 28 * TICKS_PER_DAY; t++) {
     sim.step();
     for (const plan of sim.plans.list) seen.set(plan.id, { activity: plan.activity, begun: !!plan.begun, members: plan.members, level: plan.level });
     const members = sim.plans.list.flatMap((plan) => plan.members);

@@ -73,9 +73,8 @@ semi if one's free, everyone else a terrace. The twelve empty lots are dotted
 round town.
 
 Pavements are worked out from the roads (`layPavements` in `worlds/ground.ts`:
-every tile touching a road that isn't one, except along the highway and
-straight on past a dead end), so they wrap round corners and never cross the
-tarmac. Zebra
+every tile touching a road that isn't one, except along the highway), so they
+wrap round corners and the ends of dead ends, and never cross the tarmac. Zebra
 crossings (`zebra`, `zebraSide` floors) continue the pavement over side roads
 and sit at busy spots; walking costs rank path and crossings (1) over roads
 (3) and grass (4). Trees are scattered from a fixed seed over grass only, so

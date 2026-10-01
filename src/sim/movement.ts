@@ -36,8 +36,8 @@ const CREEP = 0.2;
 
 /** On foot: slow for someone just ahead, wait right behind them, step aside for someone coming the other way, give way to someone crossing, and after a second or so squeeze past. */
 const WALKING: Manners = { slow: 0.9, stop: 0.55, width: 0.5, oncoming: "pass", crossing: "yield", patience: 12 };
-/** On wheels: keep this far (tiles) behind the vehicle in front, each in its own lane, and wait as long as it takes. */
-const DRIVING: Manners = { slow: 1.6, stop: 1.6, width: 0.5, oncoming: "ignore", crossing: "ignore", patience: Infinity };
+/** On wheels: keep this far (tiles) behind the vehicle in front, each in its own lane, give way at junctions, and wait as long as it takes. */
+const DRIVING: Manners = { slow: 1.6, stop: 1.6, width: 0.5, oncoming: "ignore", crossing: "junction", patience: Infinity };
 
 export const MOVERS = {
   walker: { on: "foot", speed: WALK, manners: WALKING },

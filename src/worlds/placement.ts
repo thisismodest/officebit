@@ -68,6 +68,8 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
   if (ownSpots.length > 0 && !ownSpots.some((s) => reached.has(key(s)))) return 'Nobody could get to it there.';
   // A food truck's pitch needs a clear way on from the road in front, for all of the truck.
   if (type.street && !pitchReachable(new RoadMap(after, new Grid(after)), placed)) return 'A food truck needs a clear way up from the road in front, with nothing in the way.';
+  // A bus stop faces a road, for its bus to pull up beside.
+  if (t === 'busStop' && !new RoadMap(after, new Grid(after)).stopBay(placed)) return 'A bus stop goes beside a road, for the bus to pull up at.';
   return null;
 }
 

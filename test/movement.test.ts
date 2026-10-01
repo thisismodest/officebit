@@ -60,7 +60,7 @@ test('size-aware routes: a truck keeps its whole body clear of a lamppost by the
   const roads = new RoadMap(level, new Grid(level));
   const car = roads.route([0, 2], [19, 2], 'right')!;
   assert.ok(car.some(([x, y]) => x === 10 && y === 2), 'a car drives right past it');
-  const truck = roads.route([0, 3], [19, 3], 'right', { reach: MOVERS.truck.reach })!;
+  const truck = roads.route([0, 3], [19, 3], 'right', { mover: MOVERS.truck })!;
   assert.ok(truck, 'a truck finds a way');
   for (const [x, y] of truck) assert.ok(Math.abs(x - 10) > 1 || Math.abs(y - 1) > 1, `and never has the lamppost within reach (${x},${y})`);
 });

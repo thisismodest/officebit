@@ -225,13 +225,12 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
     fits: () => true,
   },
 
-  // Waiting for the bus (buses.ts): on the stop's bench if there's room, otherwise by it; given up on after a while.
+  // Waiting for the bus (buses.ts): on the stop's bench if there's room, otherwise by it (or across the road, for the bus the other way); given up on after a while.
   bus: {
-    to: (sim, p, intent) => sim.claim(p, intent.from) ?? { level: sim.items[intent.from]!.level, p: sim.buses.waitAt(sim.items[intent.from]!) },
+    to: (sim, p, intent) => sim.buses.waitingPlace(p, intent),
     start: (sim, p, intent) => {
       p.timer = sim.buses.patience;
-      const [x, y] = sim.buses.waitAt(sim.items[intent.from]!);
-      faceTowards(p, x, y + 1);
+      sim.buses.lookOut(p, intent);
     },
     doing: (sim, p, intent) => {
       if (p.timer <= sim.dt) sim.walkOn(p, intent.after);

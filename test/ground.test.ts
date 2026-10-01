@@ -54,8 +54,9 @@ test('paths stop at roads; rubbing out a road cuts right across it; crossings go
   assert.match(addCrossing(town, [30, 20]) ?? '', /across a road/);
 
   assert.ok(erase(town, [140, main]));
-  assert.equal(floorAt(town, 140, main), 'grass', 'the road is gone at both lanes, back to grass');
-  assert.equal(floorAt(town, 140, main + 1), 'grass');
+  // The road's gone at both lanes: the two ends it leaves are dead ends now, with the kerb round them.
+  assert.equal(floorAt(town, 140, main), 'path', 'the road is gone at both lanes, kerbed where it ends');
+  assert.equal(floorAt(town, 140, main + 1), 'path');
   assert.equal(floorAt(town, 140, main - 1), 'path', 'with the pavement still running past');
   assert.equal(floorAt(town, 142, main), 'road', 'and the road carrying on beyond');
 

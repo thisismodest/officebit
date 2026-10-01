@@ -42,8 +42,14 @@ export interface Manners {
   width: number;
   /** Someone coming the other way: step aside to pass them (walkers), or no concern (vehicles, each in their own lane). */
   oncoming: 'pass' | 'ignore';
-  /** Someone on the move crossing your way: give way (walkers; when each is in the other's way, the earlier id goes first), or no concern (vehicles). */
-  crossing: 'yield' | 'ignore';
+  /**
+   * Someone on the move crossing your way: give way once they're in it
+   * (walkers; when each is in the other's way, the earlier id goes first);
+   * give way at a junction, before either is in it, to whoever's nearer where
+   * their ways cross (vehicles; the earlier id first when it's close); or no
+   * concern (a vehicle that's waited long enough, going anyway).
+   */
+  crossing: 'yield' | 'junction' | 'ignore';
   /** How long (steps) to wait before squeezing past anyway; Infinity to wait as long as it takes. */
   patience: number;
 }
@@ -123,6 +129,10 @@ export function inTheWay(me: Body, facing: Heading, others: readonly Body[], man
   let passing = false;
   for (const q of others) {
     if (q.id === me.id || q.settled) continue;
+    if (manners.crossing === 'junction' && q.moving && q.facing !== facing && q.facing !== OPPOSITE[facing]) {
+      if (givesWay(me, facing, q, manners)) step = 0;
+      continue;
+    }
     const { ahead: middles, aside } = relative(me, facing, q);
     // The gap between them: from my front to their back (a long vehicle reaches past its middle).
     const ahead = middles - (me.reach ?? 0) - (q.reach ?? 0);
@@ -142,6 +152,24 @@ export function inTheWay(me: Body, facing: Heading, others: readonly Body[], man
     else if (ahead < manners.slow) step = Math.min(step, 0.5);
   }
   return { step, passing };
+}
+
+/** How close (tiles) two vehicles' distances to where their ways cross can be and still count as a tie (the earlier id goes). */
+const TIE = 0.3;
+
+/**
+ * Two vehicles at right angles, each about to reach where their ways cross
+ * (or in it): does `me` wait? Whoever's nearer the crossing point goes first,
+ * the other waits short of it; once one's through, the other goes.
+ */
+function givesWay(me: Body, facing: Heading, q: Body, manners: Manners): boolean {
+  // How far each is from where their ways cross, and how far past it still counts as in it (their bodies' length).
+  const mine = relative(me, facing, q).ahead;
+  const theirs = relative(q, q.facing, me).ahead;
+  const clear = 1 + (me.reach ?? 0) + (q.reach ?? 0);
+  const near = clear + manners.stop;
+  if (mine <= -clear || theirs <= -clear || mine >= near || theirs >= near) return false;
+  return theirs < mine - TIE || (Math.abs(theirs - mine) <= TIE && q.id < me.id);
 }
 
 function cellKey(x: number, y: number): number {

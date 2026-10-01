@@ -26,6 +26,8 @@ test('ventures: doing well, they hire; out of money, they close, their people lo
   assert.ok(venture, 'a venture has its office');
   const staff = () => sim.people.filter((p) => p.company === venture.id);
 
+  // Kept in its first office for the test, week by week (not growing into a bigger one while it's watched: no trading while the builders are in).
+  venture.progress = 0;
   const before = staff().length;
   venture.funds = 3;
   pastFriday(sim);
@@ -36,7 +38,9 @@ test('ventures: doing well, they hire; out of money, they close, their people lo
   assert.ok(dayJob && sim.companies.has(dayJob), 'the founder walked out of a job they might get back');
   const site = venture.site!;
   const office = `${venture.stem}-office`;
+  venture.progress = 0;
   venture.funds = -10;
+  const team = [...venture.members];
   pastFriday(sim);
   assert.ok(!sim.ventures.list.includes(venture), 'it closed');
   assert.ok(!sim.companies.has(venture.id), 'nobody works there any more');
@@ -51,11 +55,13 @@ test('ventures: doing well, they hire; out of money, they close, their people lo
   run(sim, 7 * TICKS_PER_DAY);
   assert.ok(sim.ventures.of(founder)?.founder !== founder.id, 'no new idea of their own yet');
   // The next venture to launch takes on the empty office: whoever's.
-  // Someone else catches the bug: ambitious all of a sudden, with an idea ready to go.
-  const maker = sim.people.find((p) => !p.npc && p.home && !p.venture && p !== founder && p.company && !sim.ventures.isVenture(p.company))!;
+  // Someone else catches the bug: ambitious all of a sudden, with an idea ready to go, and an evening's work on it.
+  // (Not one of the team that closed: they're taking a break from ideas.)
+  const maker = sim.people.find((p) => !p.npc && p.home && !p.venture && !team.includes(p.id) && p.company && !sim.ventures.isVenture(p.company))!;
   maker.traits.ambition = 0.9;
   maker.ideas = 10;
-  assert.ok(runUntil(sim, 7, () => sim.ventures.of(maker)?.founder === maker.id), `${maker.name} started something`);
+  sim.ventures.hustled(maker);
+  assert.equal(sim.ventures.of(maker)?.founder, maker.id, `${maker.name} started something`);
   sim.ventures.of(maker)!.progress = 60;
   const tenant = () => sim.ventures.list.find((v) => sim.companies.get(v.id)?.levels.includes(office));
   assert.ok(runUntil(sim, 7, () => !!tenant()), 'someone moved into the empty office');

@@ -22,7 +22,7 @@ import { SCHOOL } from '../render/props/school.ts';
 import { VENUE } from '../render/props/venue.ts';
 import { buildingMoveProblem, flipHouse, isBuilding, moveBuilding, moveFurniture, placeFurniture, removeFurniture, snapshot, type Floor, type Snapshot } from '../worlds/edit.ts';
 import { CLEARABLE, addCrossing, brush, crossingAt, erase, groundProblem, joinsUp, lay, strokeRects, type Surface } from '../worlds/ground.ts';
-import { isCovering, placementProblem } from '../worlds/placement.ts';
+import { aOrAn, isCovering, placementProblem } from '../worlds/placement.ts';
 import type { Grab } from './controls.ts';
 import { esc, narrow } from './html.ts';
 import { iconButton } from './icons.ts';
@@ -30,13 +30,13 @@ import { ROOM_HINTS, RoomTools, type RoomTool } from './room-tools.ts';
 
 type Tool = 'move' | 'add' | Surface | 'crossing' | 'erase' | RoomTool;
 /** Tools for the ground outside: they only work on the town map. */
-const GROUND_TOOLS = new Set<Tool>(['road', 'path', 'crossing', 'erase']);
+const GROUND_TOOLS = new Set<Tool>(['road', 'path', 'forecourt', 'crossing', 'erase']);
 /** Tools for walls, doorways and floors: they only work indoors (room-tools.ts). */
 const INDOOR_TOOLS = new Set<Tool>(['room', 'area', 'door', 'stairs']);
 const HOUSES = new Set(['terrace', 'house', 'detached']);
 
 /** What the picker offers indoors and out. Buildings, houses, lots and building sites are placed some other way. */
-const OUTSIDE_ONLY = ['tree', 'bush', 'flowers', 'bench', 'lamppost', 'pond'];
+const OUTSIDE_ONLY = ['tree', 'bush', 'flowers', 'bench', 'lamppost', 'pond', 'busStop', 'billboard'];
 const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza']);
 const INDOOR_GROUPS: [string, string[]][] = [
   ['Office', Object.keys(OFFICE)],
@@ -98,6 +98,7 @@ export class Editor {
         <span class="divider"></span>
         ${iconButton('road', 'Road: drag to draw one', 'data-tool="road"')}
         ${iconButton('path', 'Path: drag to draw one', 'data-tool="path"')}
+        ${iconButton('forecourt', 'Forecourt: drag to draw hard standing cars can drive on', 'data-tool="forecourt"')}
         ${iconButton('crossing', 'Zebra crossing: click a road', 'data-tool="crossing"')}
         ${iconButton('erase', 'Rub out roads, paths, pavements and crossings', 'data-tool="erase"')}
       </span>
@@ -269,7 +270,7 @@ export class Editor {
 
   /** Press on a piece of furniture with the move tool: drag it somewhere else. */
   grab(x: number, y: number): Grab | null {
-    if (this.tool === 'road' || this.tool === 'path' || this.tool === 'erase') return this.stroke(this.host.tileAt(x, y));
+    if (this.drawing() || this.tool === 'erase') return this.stroke(this.host.tileAt(x, y));
     if (this.tool === 'room' || this.tool === 'area') return this.rooms.grab(this.tool, this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
     if (this.tool === 'door') return this.rooms.grabDoor(this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
     if (this.tool !== 'move') return null;
@@ -369,9 +370,24 @@ export class Editor {
       this.say(problem, true);
       return;
     }
-    this.host.sim().addItem(level, { t, p: tile });
-    this.remember({ kind: 'add', level, def: { t, p: tile } });
-    this.say(`Added a ${CATALOG[t]!.name.toLowerCase()}. Click again to add another.`);
+    const label = t === 'busStop' ? this.stopName(tile) : undefined;
+    const def: FurnitureDef = label ? { t, p: tile, label } : { t, p: tile };
+    this.host.sim().addItem(level, def);
+    this.remember({ kind: 'add', level, def });
+    this.say(label ? `Added a bus stop: ${label}. The buses call there from the next one.` : `Added a ${CATALOG[t]!.name.toLowerCase()}. Click again to add another.`);
+  }
+
+  /** A new bus stop's name: the road it's on (and a number, if that road has one already). */
+  private stopName(at: Tile): string {
+    const sim = this.host.sim();
+    const level = sim.levels.get(this.host.renderer.level);
+    const bay = sim.traffic.roads()?.stopBay({ t: 'busStop', p: at });
+    const grid = sim.grids.get(this.host.renderer.level);
+    const road = (bay && grid && level?.rooms[grid.roomAt(...bay)]?.name) || 'Bus stop';
+    const taken = new Set(sim.activeItems().filter((i) => i.def.t === 'busStop').map((i) => i.def.label));
+    let name = road;
+    for (let n = 2; taken.has(name); n++) name = `${road} ${n}`;
+    return name;
   }
 
   private move(item: Item, to: Tile): void {
@@ -516,7 +532,7 @@ export class Editor {
   /** Lay a stroke of road or path, or rub one out. */
   private paint(tiles: Tile[]): void {
     const tool = this.tool;
-    if (tool !== 'erase' && tool !== 'road' && tool !== 'path') return;
+    if (tool !== 'erase' && !this.drawing(tool)) return;
     const problem = tool === 'erase' ? null : tiles.map((t) => this.brushProblem(t)).find(Boolean);
     if (problem) {
       this.say(problem, true);
@@ -535,7 +551,7 @@ export class Editor {
     });
     if (!done) return;
     this.host.renderer.ghost = null;
-    const what = tool === 'erase' ? 'Rubbed it out' : tool === 'road' ? 'Laid a road' : 'Laid a path';
+    const what = tool === 'erase' ? 'Rubbed it out' : `Laid ${aOrAn(tool)}`;
     this.say(`${what}.${cleared ? ` Cleared ${cleared === 1 ? 'a tree or bush' : `${cleared} trees, bushes and the like`} out of the way.` : ''}`);
   }
 
@@ -569,7 +585,13 @@ export class Editor {
   }
 
   private brushRect(tile: Tile): Rect {
-    return this.tool === 'road' || this.tool === 'path' ? brush(tile, this.tool) : [tile[0], tile[1], 1, 1];
+    const tool = this.tool;
+    return this.drawing(tool) ? brush(tile, tool) : [tile[0], tile[1], 1, 1];
+  }
+
+  /** Is the tool one that draws ground (a road, path or forecourt)? */
+  private drawing(tool: Tool = this.tool): tool is Surface {
+    return tool === 'road' || tool === 'path' || tool === 'forecourt';
   }
 
   private brushProblem(tile: Tile): string | null {
@@ -768,7 +790,8 @@ function thumbnail(t: string): HTMLCanvasElement {
 const GROUND_HINTS = {
   road: 'Drag to draw a road: it follows you along the grid and turns where you turn. Trees and the like in the way are cleared.',
   path: 'Drag to draw a path. Draw one to a front door so people keep to it.',
+  forecourt: 'Drag to draw a forecourt: paving cars can drive and park on, like the charging station’s.',
   crossing: 'Click a road to put in a zebra crossing, where you’d like people to cross.',
-  erase: 'Drag over roads, paths, pavements or crossings to rub them out.',
+  erase: 'Drag over roads, paths, forecourts, pavements or crossings to rub them out.',
 } as const;
 

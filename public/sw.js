@@ -1,7 +1,9 @@
 // The service worker (docs/DEVELOPING.md#the-app): what makes officebit an app
-// you can install. Network first, so you always get the latest when online;
-// everything it fetches is kept, so the town still opens offline.
-const CACHE = 'officebit-v1';
+// you can install. Network first, checking with the server every time (not the
+// browser's own short-lived cache), so you always get the latest when online;
+// everything it fetches is kept, so the town still opens offline. Its cache is
+// named after the release, so a new one starts afresh and clears out the last.
+const CACHE = 'officebit-%VERSION%';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -18,7 +20,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET' || new URL(request.url).origin !== location.origin) return;
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: 'no-cache' })
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();

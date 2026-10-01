@@ -111,6 +111,12 @@ Done (see `docs/UPGRADES.md`): versions, and what a release adds to the starter 
 towns made before it, put up by crews.
 
 ### Also on the list
+- Editor: one Ground button for laying road, path and forecourt, showing the one you last used; a corner mark opens its alternatives beside it, and the one you pick takes its place (like Photoshop's tools). Zebra crossings and rub out stay their own buttons.
+- Single-width roads (one lane, for both ways): cars meeting head-on wait at the end, or in a passing place, for the other to clear. Then they're another choice under Ground.
+- Editor: one Ground button for laying road, path and forecourt, showing the one you last used; a corner mark opens its alternatives beside it, and the one you pick takes its place (like Photoshop's tools). Zebra crossings and rub out stay their own buttons.
+- Single-width roads (one lane, for both ways): cars meeting head-on wait at the end, or in a passing place, for the other to clear. Then they're another choice under Ground.
+- Bus stops: something to mark where the bus the other way pulls up, across the road from a shelter (a flag on a pole was tried; placing it clear of paths and the road needs care).
+- Editor: anything you can move, you can add and delete too (the picker offering every placeable thing, outside and in, with its rules: a bus stop beside a road, a food truck's pitch by one).
 - Co-founders and couples visiting each other's homes.
 - Feed transports (WebSocket, SSE, polled JSON) and bridges (Slack, agents).
 - Residents' cars: people who live far from work drive in, parking on the street

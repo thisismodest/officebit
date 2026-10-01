@@ -12,7 +12,7 @@ if (!existsSync(join(SPOTLIGHTS_DIR, 'index.json'))) void fetchSpotlights(SPOTLI
 
 const PORT = Number(process.env.PORT ?? 6060);
 /** Served here, but the code's where it'll be published. */
-const SITE = { url: `http://localhost:${PORT}/`, repo: publishedSite().repo };
+const SITE = { ...publishedSite(), url: `http://localhost:${PORT}/` };
 
 async function resolve(url: string): Promise<{ body: string | Buffer; type: string; redirect?: string }> {
   const path = normalize(decodeURIComponent(url.split(/[?#]/)[0] ?? '/'));

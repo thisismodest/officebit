@@ -5,8 +5,8 @@
 // vehicle along one, at its speed for the surface.
 import { CATALOG } from './catalog.ts';
 import { Heap, type Grid } from './grid.ts';
-import { AHEAD, MOVERS, blocks, type Heading, type Moving } from './movement.ts';
-import type { LevelDef, Tile } from './world.ts';
+import { AHEAD, MOVERS, blocks, type Heading, type Mover, type Moving } from './movement.ts';
+import type { FurnitureDef, LevelDef, Tile } from './world.ts';
 
 /** Floors a vehicle can drive on, and what each tile costs to route over: a path only when there's no other way. */
 const FLOOR_COST: Record<string, number> = { road: 1, zebra: 1, zebraSide: 1, highway: 1, forecourt: 1, path: 8 };
@@ -15,22 +15,49 @@ export const DRIVABLE = new Set(['road', 'zebra', 'zebraSide', 'highway', 'forec
 /** Route costs, on top of one per tile: a turn, a tile in the wrong lane (more road on your left: we drive on the left), and turning round. */
 const TURN = 2;
 const WRONG_LANE = 3;
-const TURN_ROUND = 20;
+const TURN_ROUND = 100;
+/** Pulling across into the other lane (a quarter-turn onto road that runs out within a few tiles): dearer than a turn, so it's done only to get out of the wrong lane. */
+const LANE_CHANGE = 12;
+/** How a drive remembers its last turn (none; clockwise one or two tiles ago; anticlockwise one or two tiles ago). */
+const MEMORY = 5;
+/** How far (tiles) a bus stop's shelter may stand back from the road it serves. */
+const STOP_REACH = 3;
 /** Route cost of a tile off the road that a vehicle may use to get where it's going (pulling up onto a pitch). */
 const OFF_ROAD = 4;
 
 /** How a vehicle fits: how far its body reaches from its middle (tiles), and anywhere off the road it may go. */
+/**
+ * What a drive needs to know. The vehicle (a car unless said) decides how it
+ * drives, by its size: its reach keeps all of it clear, and turning round in
+ * the road costs it more the bigger it is (so it goes round the block, or a
+ * turning circle, where it can). Nothing drives on paths or pavements, but a
+ * car going up or down a driveway (a drive that starts or ends on a path).
+ */
 export interface Fit {
-  reach?: number;
+  mover?: Mover;
+  /** Ground it may drive over besides the roads (a food truck's pitch, and the pavement in front of it). */
   offRoad?: (x: number, y: number) => boolean;
-  /** What turning right round in the road costs this vehicle (a bus would much rather go round the block). A turn onto road that runs out within a few tiles (hopping into the other lane, halfway to turning round) costs it half as much. */
-  turnRound?: number;
   /** Arrive facing this way (a bus pulling up at a stop, along the kerb). */
   arrive?: Heading;
-  /** Keep to the roads: never up onto a path or pavement (a bus). */
-  roadsOnly?: boolean;
+}
+
+/** What turning right round in the road costs a vehicle, in tiles' worth of driving: more, the bigger it is. Two quarter-turns the same way close together cost as much. */
+export function turnRoundCost(mover: Mover): number {
+  return TURN_ROUND * (1 + (mover.reach ?? 0));
 }
 const HEADINGS = Object.keys(AHEAD) as Heading[];
+
+/** Somewhere to drive to: any of these tiles, arriving facing this way if it matters. */
+export interface Goal {
+  tiles: readonly Tile[];
+  arrive?: Heading;
+}
+
+/** A drive found: its tiles (after where it set off), and what it costs (tiles' worth of driving, turns and all). */
+export interface Drive {
+  path: Tile[];
+  cost: number;
+}
 
 /** Anything that drives: a mover (movement.ts) with the tiles still ahead. Backing out of a bay, it keeps facing the way it was. */
 export interface Driver extends Moving {
@@ -80,6 +107,17 @@ export class RoadMap {
     return this.floorAt(Math.round(x), Math.round(y));
   }
 
+  /** Where a bus stop's bus pulls up: the nearest road (within a few tiles) straight out from the middle of its shelter; null if it isn't beside one. */
+  stopBay(stop: FurnitureDef): Tile | null {
+    const [x, y] = [stop.p[0] + 1, stop.p[1]];
+    for (let r = 1; r <= STOP_REACH; r++)
+      for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]] as const) {
+        const [tx, ty] = [x + dx * r, y + dy * r];
+        if (this.floorAt(tx, ty) === 'road' && this.drivable(tx, ty)) return [tx, ty];
+      }
+    return null;
+  }
+
   /** Every drivable tile of a floor (say, 'road'), for picking somewhere to drive to. */
   tilesOf(floor: string): Tile[] {
     const tiles: Tile[] = [];
@@ -99,52 +137,91 @@ export class RoadMap {
    * The best way by road from one tile to another, setting off facing
    * `heading` (any way, if not given), for a vehicle of a given fit: its whole
    * body kept clear of anything standing, and off the road only where allowed.
-   * Tiles after `from`, ending at `to`; null if there's no way.
+   * `to` may be several tiles (the width of a road, either lane), to end at
+   * whichever comes best. Tiles after `from`, ending there; null if there's no way.
    */
-  route(from: Tile, to: Tile, heading?: Heading, fit: Fit = {}): Tile[] | null {
-    const reach = fit.reach ?? 0;
-    const turnRound = fit.turnRound ?? TURN_ROUND;
+  route(from: Tile, to: Tile | readonly Tile[], heading?: Heading, fit: Fit = {}): Tile[] | null {
+    const tiles: readonly Tile[] = typeof to[0] === 'number' ? [to as Tile] : (to as readonly Tile[]);
+    return this.routes(from, [{ tiles, arrive: fit.arrive }], heading, fit)[0]?.path ?? null;
+  }
+
+  /** The best way to each of several places at once (one search, for working out a bus route): each drive and what it costs, or null where there's no way. */
+  routes(from: Tile, goals: readonly Goal[], heading?: Heading, fit: Omit<Fit, 'arrive'> = {}): (Drive | null)[] {
+    const found: (Drive | null)[] = goals.map(() => null);
+    const mover: Mover = fit.mover ?? MOVERS.car;
+    const reach = mover.reach ?? 0;
+    const turnRound = turnRoundCost(mover);
     const clear = (x: number, y: number) => {
       for (let j = y - reach; j <= y + reach; j++) for (let i = x - reach; i <= x + reach; i++) if (this.inside(i, j) && this.standing[j * this.w + i]) return false;
       return true;
     };
-    const road = (x: number, y: number) => this.drivable(x, y) && !(fit.roadsOnly && this.floorAt(x, y) === 'path');
+    // Off paths and pavements, but for any ground it's let onto; and for a car, when it's going up (or coming down) a
+    // driveway: a path's where it starts or ends. Never across the pavement to cut a corner.
+    const driveway = reach === 0 && [from, ...goals.flatMap((g) => g.tiles)].some((t) => this.floorAt(...t) === 'path');
+    const road = (x: number, y: number) => this.drivable(x, y) && !(this.floorAt(x, y) === 'path' && !driveway && !fit.offRoad?.(x, y));
     const offRoad = (x: number, y: number) => !this.drivable(x, y) && this.inside(x, y) && !!fit.offRoad?.(x, y);
     const enter = (x: number, y: number) => (road(x, y) || offRoad(x, y)) && (reach === 0 || clear(x, y));
-    if (!enter(...from) || !enter(...to)) return null;
-    // The search's scratch space, kept between searches (it's the whole map, every heading).
-    const states = this.w * this.h * 4;
+    if (!enter(...from)) return found;
+    const tile = (x: number, y: number) => y * this.w + x;
+    // Which goals each tile ends; a goal none of whose tiles can be driven onto is never found.
+    const ending = new Map<number, number[]>();
+    let left = 0;
+    for (const [i, goal] of goals.entries()) {
+      const tiles = goal.tiles.filter((t) => enter(...t));
+      if (tiles.length) left++;
+      for (const t of tiles) ending.set(tile(...t), [...(ending.get(tile(...t)) ?? []), i]);
+    }
+    if (!left) return found;
+    // Each state remembers the last turn for a couple of tiles: two quarter-turns the same way that close
+    // together are turning round too (into a side road's mouth, or halfway round a circle, and straight back out).
+    const memory = MEMORY;
+    // The search's scratch space, kept between searches (it's the whole map, every heading, every memory).
+    const states = this.w * this.h * 4 * memory;
     if (this.scratch?.cost.length !== states) this.scratch = { cost: new Float64Array(states), came: new Int32Array(states) };
     const { cost, came } = this.scratch;
     cost.fill(Infinity);
     came.fill(-1);
     const open = new Heap();
-    const tile = (x: number, y: number) => y * this.w + x;
+    const stateOf = (at: number, d: number, m: number) => (at * 4 + d) * memory + m;
+    const pathTo = (end: number): Tile[] => {
+      const path: Tile[] = [];
+      for (let state = end; came[state] !== -1; state = came[state]!) {
+        const at = Math.floor(state / memory / 4);
+        path.push([at % this.w, Math.floor(at / this.w)]);
+      }
+      return path.reverse();
+    };
     for (const [d, h] of HEADINGS.entries()) {
       if (heading && h !== heading) continue;
-      const start = tile(...from) * 4 + d;
+      const start = stateOf(tile(...from), d, 0);
       cost[start] = 0;
       open.push(start, 0);
     }
-    const goal = tile(...to);
-    let end = -1;
-    while (open.size > 0) {
+    while (open.size > 0 && left > 0) {
       const state = open.pop();
-      const at = state >> 2;
-      if (at === goal && (fit.arrive === undefined || HEADINGS[state & 3] === fit.arrive)) {
-        end = state;
-        break;
+      const m = state % memory;
+      const d = Math.floor(state / memory) % 4;
+      const at = Math.floor(state / memory / 4);
+      for (const i of ending.get(at) ?? []) {
+        const arrive = goals[i]!.arrive;
+        if (found[i] || (arrive !== undefined && HEADINGS[d] !== arrive)) continue;
+        found[i] = { path: pathTo(state), cost: cost[state]! };
+        left--;
       }
-      const d = state & 3;
       const x = at % this.w;
       const y = (at - x) / this.w;
       for (const [nd, h] of HEADINGS.entries()) {
         const [dx, dy] = AHEAD[h];
         const [nx, ny] = [x + dx, y + dy];
         if (!enter(nx, ny)) continue;
-        const hop = fit.turnRound !== undefined && nd !== d && [2, 3].some((k) => !road(x + dx * k, y + dy * k));
-        const turn = nd === d ? 0 : (nd + 2) % 4 === d ? turnRound : hop ? turnRound / 2 : TURN;
-        const next = tile(nx, ny) * 4 + nd;
+        // A quarter-turn clockwise (right) or anticlockwise (left), and whether it follows one the same way just now.
+        const clockwise = nd === (d + 1) % 4;
+        const anticlockwise = nd === (d + 3) % 4;
+        const again = (clockwise && (m === 1 || m === 2)) || (anticlockwise && (m === 3 || m === 4));
+        const hop = nd !== d && [2, 3].some((k) => !road(x + dx * k, y + dy * k));
+        const turn = nd === d ? 0 : (nd + 2) % 4 === d || again ? turnRound : hop ? LANE_CHANGE : TURN;
+        const nm = clockwise ? 1 : anticlockwise ? 3 : m === 1 ? 2 : m === 3 ? 4 : 0;
+        const next = stateOf(tile(nx, ny), nd, nm);
         const surface = offRoad(nx, ny) ? OFF_ROAD : FLOOR_COST[this.floorAt(nx, ny)!]!;
         const g = cost[state]! + surface + turn + (this.wrongLane(nx, ny, dx, dy) ? WRONG_LANE : 0);
         if (g >= cost[next]!) continue;
@@ -153,13 +230,7 @@ export class RoadMap {
         open.push(next, g);
       }
     }
-    if (end < 0) return null;
-    const path: Tile[] = [];
-    for (let state = end; came[state] !== -1; state = came[state]!) {
-      const at = state >> 2;
-      path.push([at % this.w, Math.floor(at / this.w)]);
-    }
-    return path.reverse();
+    return found;
   }
 }
 

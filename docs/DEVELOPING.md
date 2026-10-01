@@ -121,8 +121,18 @@ it. `test/seo.test.ts` checks all this.
 officebit installs as an app on phones, tablets and desktops (Add to Home
 Screen, or the browser's install button): `public/site.webmanifest` opens the
 town standalone, without the browser's bars, and `public/sw.js`, the service
-worker, makes it installable and lets it open offline. It fetches from the network
-first (so a deploy shows up straight away) and keeps a copy of everything it
-fetches, for next time there's no signal. Change `CACHE` in `sw.js` to clear
-everyone's copies. `ui/fullscreen.ts` registers it, and hides the full screen
-button when it's running as the app.
+worker, makes it installable and lets it open offline. Stale files after a
+release can't happen, three ways over:
+- **Network first:** it fetches from the network every time, asking the server
+  whether a file has changed (`cache: 'no-cache'`), rather than trusting the
+  browser's own short-lived cache (GitHub Pages lets that keep files for ten
+  minutes). A copy of everything is kept for when there's no signal.
+- **Its cache is named after the release** (`officebit-%VERSION%`, filled in
+  from `package.json` as the site's built), so each release starts a fresh cache
+  and clears out the last.
+- **The worker itself** is registered with `updateViaCache: 'none'`, so the
+  browser always checks it afresh, and a new release's worker takes over
+  straight away.
+
+`ui/fullscreen.ts` registers it, and hides the full screen button when it's
+running as the app.
