@@ -69,7 +69,7 @@ test('robots.txt lets search engines in and points them to the sitemap', () => {
 test('the changelog’s newest release is the version in package.json, and each has a date', () => {
   const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
   const html = page('changelog/index.html');
-  const releases = [...html.matchAll(/<h2>(\d+\.\d+(?:\.\d+)?) <small>· <time datetime="(\d{4}-\d\d-\d\d)">/g)].map((m) => m[1]!);
+  const releases = [...html.matchAll(/<h2>\s*(\d+\.\d+(?:\.\d+)?) <small>· <time datetime="(\d{4}-\d\d-\d\d)">/g)].map((m) => m[1]!);
   assert.ok(releases.length > 1, 'a heading per release: its version and date');
   assert.equal(releases[0], version.replace(/\.0$/, ''), `newest ${releases[0]}, package.json ${version}`);
 });
