@@ -90,6 +90,7 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   weather.ts      clear, grey, rain or snow in spells, from the seed and the date; the wet keeps people in
   birthdays.ts    everyone's birthday: the News, a cheerier day, a party hat, a cake at work (or at home)
   boats.ts        the river's boats: boat trips and rows from the moorings, out and back (docs/RIVER.md)
+  deliveries.ts   the shop's weekly delivery lorry: in on the roads, pulls up outside, unloads, away
   interactions.ts pizza (rider), fire drills, taking control (ControlledBrain)
   works.ts        what a newer release adds to an older town, put up by crews (docs/UPGRADES.md)
   places.ts       buildings on the map and what's inside (for the click card); validate.ts: world checks
@@ -201,7 +202,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), an About page and a welcome card, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-174 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+175 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

@@ -503,6 +503,10 @@ export class Renderer {
     if (car.chargedAt && this.sim.tick < car.chargedAt && Math.floor(this.time / 600) % 2 === 0) {
       for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [0, 2]] as const) dot(this.ctx, x + sprite.width / 2 - 1 + dx, y - 4 + dy, '#9be38a');
     }
+    // A delivery lorry unloading: hazard lights blinking at its corners.
+    if (car.lorry && this.sim.deliveries.unloading(car) && Math.floor(this.time / 450) % 2 === 0) {
+      for (const cx of [x + 1, x + sprite.width - 3]) rect(this.ctx, cx, y + sprite.height - 7, 2, 2, '#ffb43a');
+    }
   }
 
   private paintPerson(p: Person, pos: { x: number; y: number }): void {

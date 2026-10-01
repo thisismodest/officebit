@@ -74,3 +74,22 @@ test('when the shop opens, the queue goes in', () => {
   for (let t = 0; t < 2 * TICKS_PER_HOUR && shopper.level !== 'shop'; t++) sim.step();
   assert.equal(shopper.level, 'shop', 'in they went');
 });
+
+test('a delivery lorry comes to the Corner Shop first thing on a Monday: pulls up at the kerb (not on the crossing), unloads, and drives off out of town', () => {
+  const sim = new Simulation(structuredClone(STARTER));
+  const roads = sim.traffic.roads()!;
+  let pulledUp: { x: number; y: number } | undefined;
+  let came = false;
+  for (let t = 0; t < 3 * TICKS_PER_HOUR; t++) {
+    sim.step();
+    const lorry = sim.traffic.cars.find((c) => c.lorry);
+    came ||= !!lorry;
+    if (lorry && sim.deliveries.unloading(lorry)) pulledUp ??= { x: lorry.x, y: lorry.y };
+  }
+  assert.ok(came, 'a lorry came');
+  assert.ok(pulledUp, 'and pulled up');
+  assert.equal(roads.floorAt(pulledUp!.x, pulledUp!.y), 'road', 'on the road, not on the crossing');
+  assert.ok(Math.abs(pulledUp!.x - 104) <= 8, 'outside the shop');
+  assert.ok(sim.events.some((e) => /Corner Shop's delivery is here/.test(e.text)));
+  assert.ok(!sim.traffic.cars.some((c) => c.lorry), 'and off out of town again');
+});

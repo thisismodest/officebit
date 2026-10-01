@@ -90,7 +90,7 @@ const longSide = (middle: Part[]): Part[] => [
   [-14, -4, 7, 3, "tyre"],
 ];
 
-export type VehicleKind = "car" | "truck" | "bus";
+export type VehicleKind = "car" | "truck" | "bus" | "lorry";
 
 /** Every kind of vehicle, by the same names as the sim's movers (movement.ts). In scale with people (21px tall). */
 export const VEHICLES: Record<VehicleKind, Look> = {
@@ -136,6 +136,17 @@ export const VEHICLES: Record<VehicleKind, Look> = {
       [13, 5, -17, -19, "hatch"],
       [13, 5, -17, 1, "outline"],
       [16, 2, -23, 2, "band"],
+    ]),
+    end: LONG_END,
+  },
+  // The delivery lorry (sim/deliveries.ts): a coloured cab up front and a tall white box behind, with the supplier's stripe along it.
+  lorry: {
+    size: { length: 42, height: 28, width: 15, wheelsBelow: -1 },
+    colours: { body: "#f1eee6", band: "#2f5d7a" },
+    side: longSide([
+      [1, 1, 11, -5, "band"],
+      [12, 1, 1, -5, "outline"],
+      [16, 7, -20, 5, "band"],
     ]),
     end: LONG_END,
   },

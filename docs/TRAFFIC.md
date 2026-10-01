@@ -95,6 +95,17 @@ visitors' own random stream, so they don't change the story.
   rest. Waiting 30 minutes with no bus (or having just missed one at night),
   they give up and walk.
 
+## Deliveries
+
+`src/sim/deliveries.ts`. First thing every Monday (07:00), a delivery lorry
+(`MOVERS.lorry`, about a food truck's size) brings each food shop (a venue
+with `groceries`) its supplies. It comes in by the nearest road off the map,
+pulls up at the kerb outside the shop's door with the shop on its left
+(along the kerb if the door faces a crossing: never on a zebra, and a tile
+clear of one), and unloads for a quarter of an hour with its hazards on:
+anyone behind waits. Then it drives off out of town. In the News: "🚚 The
+Corner Shop's delivery is here".
+
 ## In the starter town
 
 The highway runs across the top of the map, with a slip road down to High
