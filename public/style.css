@@ -1116,10 +1116,25 @@ button.icon-button {
   padding: var(--mdst-space-xs);
 
   & button,
-  & label {
+  & label,
+  & label.mdst-button {
     justify-content: flex-start;
     width: 100%;
+    font-size: var(--mdst-text-xs);
     text-align: left;
+  }
+
+  /* The town's name: a label over its box, at the top. */
+  & .town-name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--mdst-space-xs);
+    font-size: var(--mdst-text-xs);
+
+    & input {
+      width: 100%;
+    }
   }
 
   & hr {
@@ -1179,6 +1194,41 @@ button.icon-button {
     height: 1px;
     margin: 2px 0;
     background: var(--mdst-color-subtle);
+  }
+
+  /* A button with alternatives (the kinds of ground): a corner mark opens them in a row beside it, like Photoshop's tools. */
+  & .tool-set {
+    position: relative;
+    display: grid;
+  }
+
+  /* The ground button's corner: a little black triangle (edged in white, to show on the button pressed) saying there's more to it. */
+  & .tool-set::after {
+    content: "";
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, transparent 44%, #fff 44%, #fff 56%, #000 56%);
+    pointer-events: none;
+  }
+
+  & [data-face] {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  & .flyout {
+    position: absolute;
+    top: -3px;
+    left: calc(100% + 3px);
+    z-index: 1;
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--mdst-color-bg);
+    border: var(--mdst-border-width) solid var(--mdst-color-border);
   }
 
   /* Tools for one kind of place (the town's roads): laid out as if they weren't wrapped, and gone elsewhere. */

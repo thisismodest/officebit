@@ -1,7 +1,8 @@
-// Save and share (docs/BUILDER.md#save-and-share): a small menu from the
-// toolbar. Save the town in this browser, copy a link with it inside, download
-// or open it as a file, or start again from the starter town.
+// Your town (docs/BUILDER.md#save-and-share): a small menu from the cog in the
+// toolbar. Name the town, save it in this browser, copy a link with it inside,
+// download or open it as a file, or start again from the starter town.
 import type { WorldDef } from '../sim/world.ts';
+import { TOWN_NAME_MOST, townName } from './describe.ts';
 import { popover, type Toggle } from './popover.ts';
 import { HASH_KEY, checkWorld, clearLocal, encodeWorld, saveLocal } from './world-io.ts';
 
@@ -11,6 +12,8 @@ export interface ShareHost {
   starter(): WorldDef;
   /** Rebuild the town from a world. Returns validate() problems; throws if it can't run. */
   apply(world: WorldDef): string[];
+  /** Give the town a name (blank: none). */
+  rename(name: string): void;
 }
 
 export class ShareMenu {
@@ -26,10 +29,12 @@ export class ShareMenu {
     this.root.className = 'share-menu popover mdst-card mdst-card--compact';
     this.root.hidden = true;
     this.root.innerHTML = `
+      <label class="town-name">Your town’s name<input class="mdst-input--sm" maxlength="${TOWN_NAME_MOST}" placeholder="Name your town" autocomplete="off"></label>
+      <hr>
       <button type="button" class="mdst-button--ghost mdst-button--sm" data-action="save">Save in this browser</button>
       <button type="button" class="mdst-button--ghost mdst-button--sm" data-action="link">Copy a link to this town</button>
-      <button type="button" class="mdst-button--ghost mdst-button--sm" data-action="download">Download it</button>
-      <label class="mdst-button mdst-button--ghost mdst-button--sm">Open a file…<input type="file" accept="application/json,.json" hidden></label>
+      <button type="button" class="mdst-button--ghost mdst-button--sm" data-action="download">Export townfile</button>
+      <label class="mdst-button mdst-button--ghost mdst-button--sm">Import townfile<input type="file" accept="application/json,.json" hidden></label>
       <hr>
       <button type="button" class="mdst-button--ghost mdst-button--sm" data-action="reset">Start again from the starter town</button>
       <input class="link" readonly hidden aria-label="Link to this town">
@@ -37,9 +42,16 @@ export class ShareMenu {
     this.status = this.root.querySelector('.status')!;
     this.link = this.root.querySelector('.link')!;
     button.after(this.root);
+    const name = this.root.querySelector<HTMLInputElement>('.town-name input')!;
     this.toggle = popover(button, this.root, () => {
       this.link.hidden = true;
       this.say('');
+      name.value = townName(host.design()) ?? '';
+    });
+    name.addEventListener('input', () => host.rename(name.value));
+    // Enter (or Esc) is done with it: the menu closes.
+    name.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') this.toggle(false);
     });
     this.root.addEventListener('click', (event) => {
       const action = (event.target as HTMLElement).closest<HTMLElement>('[data-action]')?.dataset.action;

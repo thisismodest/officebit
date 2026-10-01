@@ -2,6 +2,7 @@
 // workplace and venue with who's there, ventures and building work, and how
 // the homes are doing. Click a place to go and look; from a workplace's …
 // menu, order pizza or run a fire drill (docs/INTERACTIONS.md).
+import { placeName } from './describe.ts';
 import { isWeekend } from '../sim/clock.ts';
 import { asleep } from '../sim/person.ts';
 import { occupants } from '../sim/places.ts';
@@ -96,7 +97,7 @@ export class Overview {
     const html = `
       <section><h3>Today</h3>
         <p class="today mdst-p--sm">${stat(sim.dayOff() ? 'weekend' : 'workday', sim.holiday()?.name ?? (isWeekend(sim.tick) ? 'The weekend' : 'A working day'))}${stat('awake', `${humans.length - sleeping} up and about`)}${stat('asleep', `${sleeping} asleep`)}</p>
-        ${town ? place('town', town.name, `${count([town])} out and about`, town.id) : ''}</section>
+        ${town ? place('town', placeName(sim.world, town), `${count([town])} out and about`, town.id) : ''}</section>
       <section><h3>Workplaces</h3>${workplaces.join('')}</section>
       ${schools.length ? `<section><h3>Schools</h3>${schools.join('')}</section>` : ''}
       ${venues.length ? `<section><h3>Out and about</h3>${venues.join('')}</section>` : ''}

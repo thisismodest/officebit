@@ -111,11 +111,9 @@ Done (see `docs/UPGRADES.md`): versions, and what a release adds to the starter 
 towns made before it, put up by crews.
 
 ### Also on the list
+- A first-visit tour: a few steps that each light up one thing ("Click on this person") and grey out the rest of the town, waiting for you to do it, so newcomers get going without reading anything. Skippable, and findable again from ?.
 - Bus lines: each stop on a line (a name saved with it, chosen in the editor; no line is the main one), a route worked out per line, so rides are shorter and more direct (one loop round all eight stops takes over two hours). Riders take the one line that suits; changing buses later.
 - A much quicker test suite (about 5 minutes locally, 8 on CI, mostly a few long runs of the town: ventures, plans, the diner, groceries, construction). Share one run between tests that watch the same weeks, shorten runs to what each check needs, set up the moment under test directly instead of waiting weeks for it; then put the tests back in CI (`pages.yml`).
-- Editor: one Ground button for laying road, path and forecourt, showing the one you last used; a corner mark opens its alternatives beside it, and the one you pick takes its place (like Photoshop's tools). Zebra crossings and rub out stay their own buttons.
-- Single-width roads (one lane, for both ways): cars meeting head-on wait at the end, or in a passing place, for the other to clear. Then they're another choice under Ground.
-- Editor: one Ground button for laying road, path and forecourt, showing the one you last used; a corner mark opens its alternatives beside it, and the one you pick takes its place (like Photoshop's tools). Zebra crossings and rub out stay their own buttons.
 - Single-width roads (one lane, for both ways): cars meeting head-on wait at the end, or in a passing place, for the other to clear. Then they're another choice under Ground.
 - Bus stops: something to mark where the bus the other way pulls up, across the road from a shelter (a flag on a pole was tried; placing it clear of paths and the road needs care).
 - Editor: anything you can move, you can add and delete too (the picker offering every placeable thing, outside and in, with its rules: a bus stop beside a road, a food truck's pitch by one).

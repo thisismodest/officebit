@@ -25,7 +25,7 @@ import { CLEARABLE, addCrossing, brush, crossingAt, erase, groundProblem, joinsU
 import { aOrAn, isCovering, placementProblem } from '../worlds/placement.ts';
 import type { Grab } from './controls.ts';
 import { esc, narrow } from './html.ts';
-import { iconButton } from './icons.ts';
+import { icon, iconButton } from './icons.ts';
 import { ROOM_HINTS, RoomTools, type RoomTool } from './room-tools.ts';
 
 type Tool = 'move' | 'add' | Surface | 'crossing' | 'erase' | RoomTool;
@@ -44,6 +44,17 @@ const INDOOR_GROUPS: [string, string[]][] = [
   ['Venues', Object.keys(VENUE)],
   ['School', Object.keys(SCHOOL)],
 ];
+/** What the ground button lays (the kinds of ground, and zebra crossings on the roads), as its label says each. */
+type GroundTool = Surface | 'crossing';
+const GROUND: Record<GroundTool, string> = {
+  road: 'Road: drag to draw one',
+  path: 'Path: drag to draw one',
+  forecourt: 'Forecourt: drag to draw hard standing cars can drive on',
+  crossing: 'Zebra crossing: click a road',
+};
+/** How long (ms) to hold the ground button down for the others; and with a mouse, how long after leaving them they stay open. */
+const HOLD_MS = 450;
+const LINGER_MS = 300;
 /** Thumbnail size in the picker, CSS px. */
 const THUMB = 52;
 /** Steps of undo kept while editing. */
@@ -96,10 +107,10 @@ export class Editor {
       ${iconButton('add', 'Add furniture', 'data-tool="add"')}
       <span class="group" data-scene="outside">
         <span class="divider"></span>
-        ${iconButton('road', 'Road: drag to draw one', 'data-tool="road"')}
-        ${iconButton('path', 'Path: drag to draw one', 'data-tool="path"')}
-        ${iconButton('forecourt', 'Forecourt: drag to draw hard standing cars can drive on', 'data-tool="forecourt"')}
-        ${iconButton('crossing', 'Zebra crossing: click a road', 'data-tool="crossing"')}
+        <span class="tool-set">
+          ${iconButton('road', GROUND.road, 'data-tool="road" data-face aria-haspopup="true" aria-expanded="false"')}
+          <span class="flyout" role="menu" hidden>${(Object.keys(GROUND) as GroundTool[]).map((t) => iconButton(t, GROUND[t], `data-tool="${t}" role="menuitemradio"`)).join('')}</span>
+        </span>
         ${iconButton('erase', 'Rub out roads, paths, pavements and crossings', 'data-tool="erase"')}
       </span>
       <span class="group" data-scene="inside">
@@ -114,7 +125,7 @@ export class Editor {
       ${iconButton('trash', 'Delete what’s selected (Delete)', 'data-action="delete"')}
       ${iconButton('undo', 'Undo (Ctrl+Z)', 'data-action="undo" disabled')}
       <span class="divider"></span>
-      ${iconButton('done', 'Done editing', 'data-action="done"')}`;
+      ${iconButton('done', 'Done editing (Esc)', 'data-action="done"')}`;
     this.status = document.createElement('p');
     this.status.className = 'editor-status mdst-p--sm';
     this.status.hidden = true;
@@ -139,6 +150,34 @@ export class Editor {
       if (button?.dataset.action === 'undo') this.undo();
       if (button?.dataset.action === 'done') onDone();
     });
+    // Press and hold the ground button to see the others too; letting go after that isn't a click on it.
+    const face = this.bar.querySelector<HTMLElement>('[data-face]')!;
+    let hold: ReturnType<typeof setTimeout> | undefined;
+    let held = false;
+    face.addEventListener('pointerdown', () => {
+      held = false;
+      hold = setTimeout(() => {
+        held = true;
+        this.showFlyout(true);
+      }, HOLD_MS);
+    });
+    for (const type of ['pointerup', 'pointerleave', 'pointercancel']) face.addEventListener(type, () => clearTimeout(hold));
+    face.addEventListener('click', (event) => {
+      if (held) event.stopPropagation();
+      held = false;
+    });
+    face.addEventListener('contextmenu', (event) => event.preventDefault());
+    // With a mouse, hovering shows them too, and they go a moment after the pointer leaves.
+    const set = face.closest<HTMLElement>('.tool-set')!;
+    let linger: ReturnType<typeof setTimeout> | undefined;
+    set.addEventListener('pointerenter', (event) => {
+      if (event.pointerType !== 'mouse') return;
+      clearTimeout(linger);
+      this.showFlyout(true);
+    });
+    set.addEventListener('pointerleave', (event) => {
+      if (event.pointerType === 'mouse') linger = setTimeout(() => this.showFlyout(false), LINGER_MS);
+    });
     this.picker.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
       // Shrunk to what you've picked (small screens): Change opens it out again.
@@ -158,12 +197,34 @@ export class Editor {
     document.addEventListener('keydown', (event) => {
       if (!this.active || event.target instanceof HTMLInputElement) return;
       if (event.key === 'Delete' || event.key === 'Backspace') this.deleteSelected();
-      if (event.key === 'Escape') this.select(null);
+      if (event.key === 'Escape') this.escape(onDone);
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
         event.preventDefault();
         this.undo();
       }
     });
+  }
+
+  /** Esc puts away whatever's on top: the other kinds of ground, then what's selected, then the tool (back to Move), then the editor itself. */
+  private escape(done: () => void): void {
+    if (this.flyoutOpen()) this.showFlyout(false);
+    else if (this.selected) this.select(null);
+    else if (this.tool !== 'move') this.setTool('move');
+    else done();
+  }
+
+  /** The other kinds of ground to lay, beside the ground button, or put away. */
+  private showFlyout(on: boolean): void {
+    this.flyout.hidden = !on;
+    this.bar.querySelector('[data-face]')!.setAttribute('aria-expanded', String(on));
+  }
+
+  private flyoutOpen(): boolean {
+    return !this.flyout.hidden;
+  }
+
+  private get flyout(): HTMLElement {
+    return this.bar.querySelector<HTMLElement>('.flyout')!;
   }
 
   /** Is this part of the editor (its toolbar, status line, picker or room card)? */
@@ -192,6 +253,7 @@ export class Editor {
 
   /** A click on the map while editing: place, or select. Clicking what's selected again picks what's underneath it. */
   click(x: number, y: number): void {
+    this.showFlyout(false);
     const tile = this.host.tileAt(x, y);
     if (this.tool === 'add') {
       this.place(tile);
@@ -316,6 +378,15 @@ export class Editor {
 
   private setTool(tool: Tool): void {
     this.tool = tool;
+    // The ground button takes the look of the kind of ground picked, for next time.
+    if (Object.hasOwn(GROUND, tool)) {
+      const face = this.bar.querySelector<HTMLElement>('[data-face]')!;
+      face.dataset.tool = tool;
+      face.innerHTML = icon(tool as GroundTool);
+      face.title = GROUND[tool as GroundTool];
+      face.setAttribute('aria-label', GROUND[tool as GroundTool]);
+    }
+    this.showFlyout(false);
     for (const b of this.bar.querySelectorAll<HTMLElement>('[data-tool]')) b.setAttribute('aria-pressed', String(b.dataset.tool === tool));
     this.picker.hidden = tool !== 'add';
     this.rooms.clear();

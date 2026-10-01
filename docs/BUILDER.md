@@ -20,8 +20,7 @@ indoors.
 |---|---|
 | **Move** | Drag a piece of furniture, or outside a building, somewhere else. Click it to select it. It keeps its owner, so a desk stays someone's. |
 | **Add** | Pick from the thumbnails (indoor things indoors, outdoor things outside), then click the map. Click again to add another. A bus stop goes beside a road (it's named after it), and the buses call there from the next one ([TRAFFIC](TRAFFIC.md#buses)). On a phone the thumbnails are a strip at the top, beside the toolbar, that shrinks to what you picked (Change opens it out again), so there's map to tap. |
-| **Road**, **Path**, **Forecourt** | Outside: drag to draw one (see below). A tap lays one dab. A forecourt is paving cars can drive and park on, with no lanes (like the charging station's). |
-| **Crossing** | Click a road to put in a zebra crossing, two tiles wide, straight across it. |
+| **Ground** | Outside: road, path, forecourt or zebra crossing, whichever you used last. Hover over it, or press and hold it, for the others beside it (its corner mark says there are more); the one you pick takes its place. Drag to draw road, path or forecourt (see below); a tap lays one dab. A forecourt is paving cars can drive and park on, with no lanes (like the charging station's). A crossing: click a road, and it goes in two tiles wide, straight across it. |
 | **Rub out** | Drag over roads, paths, pavements and crossings to turn them back to grass. Pavement never runs across the end of a road, so a gap you rub out goes to grass (a one-tile gap keeps the pavements either side joined). Rubbed-out pavement leaves a patch of verge that pavement isn't laid over again (until you draw a path or road there). |
 | **Turn round** | Turns the selected house to face the other way. |
 | **Room** | Indoors: drag a box to build a walled room; click a room to rename it, change its floor or delete it; drag a selected room's wall to move it (see below). |
@@ -30,7 +29,9 @@ indoors.
 | **Stairs up** | Indoors: click where the stairs go, and a floor is built above (see below). |
 | **Delete** | Deletes what's selected (or press Delete). Buildings stay: move them instead. Deleting the stairs up to a floor you added takes that floor away (it asks first). |
 | **Undo** | Undoes the last change (or Ctrl/Cmd+Z), up to 50 steps back. The steps are forgotten when you finish editing. A desk put back is its owner's again. |
-| **Done** | Closes the editor (so does the pencil, or using any other part of the interface, like the sidebar or the menu bar). |
+| **Done** (the tick) | Closes the editor. So do the pencil, using any other part of the interface (the sidebar, the menu bar), and Esc, which first puts away what's on top: the other kinds of ground, then what's selected, then the tool (back to Move). |
+
+Edits save themselves as you go (a moment after the last one, and straight away when you close the editor or leave the page): closing it isn't confirming anything.
 
 Picking goes by the tile you click: a piece standing there comes before a rug
 under it, and clicking the same spot again picks the next thing down, so a rug
@@ -140,13 +141,14 @@ status line says why:
 
 ## Save and share
 
-The share icon in the tool rail (`src/ui/share-menu.ts`):
+The cog in the tool rail, your town's settings (`src/ui/share-menu.ts`):
 
 | | |
 |---|---|
+| **Your town's name** | Shown in the menu bar (instead of "Town"), the World tab and the browser tab, so it's plainly yours when you come back. Saved with the town (and in links and files); blank, it's just Town again. |
 | **Save in this browser** | `localStorage` (`officebit:world`); it opens next time. Edits save themselves; this is for a town you've opened from a file or link and not changed. |
 | **Copy a link** | The whole world, deflated and base64url'd into `#w=…` (about 14k characters for the starter town). Opening the link opens the town. |
-| **Download / Open a file** | The world as JSON (see [WORLD](WORLD.md)) |
+| **Export / Import townfile** | The town as a JSON file (see [WORLD](WORLD.md)) |
 | **Start again** | Back to the starter town, forgetting the save |
 
 On load, a link wins over a save, and a save over the starter town. Whatever

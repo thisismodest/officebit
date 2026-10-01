@@ -13,6 +13,7 @@ import { attachControls } from './ui/controls.ts';
 import { Directory } from './ui/directory.ts';
 import { News } from './ui/news.ts';
 import { Overview } from './ui/overview.ts';
+import { TOWN_NAME_MOST, placeName, townName } from './ui/describe.ts';
 import { PlaceCard } from './ui/place-card.ts';
 import { Profile } from './ui/profile.ts';
 import { Editor } from './ui/editor.ts';
@@ -92,7 +93,7 @@ function newSim(): Simulation {
   return next;
 }
 
-const placeName = $('#place');
+const placeLabel = $('#place');
 const stage = $('#stage');
 const renderer = new Renderer(stage, sim, FIRST_LEVEL);
 const card = new PlaceCard(stage, visit);
@@ -120,16 +121,29 @@ attachTabs(sheet);
 const editButton = $('#edit');
 const editor = new Editor(stage, { sim: () => sim, design: () => design, renderer, tileAt, saved: saveSoon }, () => setEditing(false));
 
-/** Edits save themselves, a moment after the last one. A town opened from a link then lives here: the link comes off the address, or reloading would open the link again over your edits. */
+/**
+ * Edits save themselves, a moment after the last one (so a drag or a run of
+ * quick edits saves once), and straight away on leaving the editor or the page.
+ * A town opened from a link then lives here: the link comes off the address,
+ * or reloading would open the link again over your edits.
+ */
 const SAVE_AFTER_MS = 300;
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 function saveSoon(): void {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    saveLocal(design);
-    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-  }, SAVE_AFTER_MS);
+  saveTimer = setTimeout(saveNow, SAVE_AFTER_MS);
 }
+function saveNow(): void {
+  if (saveTimer === undefined) return;
+  clearTimeout(saveTimer);
+  saveTimer = undefined;
+  saveLocal(design);
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+}
+addEventListener('pagehide', saveNow);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveNow();
+});
 editButton.addEventListener('click', () => setEditing(!editor.active));
 function setEditing(on: boolean): void {
   if (on) {
@@ -139,7 +153,10 @@ function setEditing(on: boolean): void {
     select(null);
     sheet.removeAttribute('data-open');
     editor.open();
-  } else editor.close();
+  } else {
+    editor.close();
+    saveNow();
+  }
   editButton.setAttribute('aria-pressed', String(on));
   // The editor's toolbar takes the tool rail's place.
   stage.toggleAttribute('data-editing', on);
@@ -150,7 +167,18 @@ document.addEventListener('pointerdown', (event) => {
   if (editor.active && target !== renderer.canvas && !editor.contains(target) && !editButton.contains(target)) setEditing(false);
 });
 new Welcome(stage, $('#help'));
-new ShareMenu($('#share'), { design: () => design, starter: () => ({ ...structuredClone(STARTER), seed: storySeed() }), apply: applyDesign });
+new ShareMenu($('#share'), {
+  design: () => design,
+  starter: () => ({ ...structuredClone(STARTER), seed: storySeed() }),
+  apply: applyDesign,
+  rename(name) {
+    // A blank name is no name: the town's called what the starter town is.
+    design.name = sim.world.name = name.trim().slice(0, TOWN_NAME_MOST) || STARTER.name;
+    saveSoon();
+    showPlace();
+    overview.update(sim);
+  },
+});
 
 // Music and sounds (docs/AUDIO.md): opt-in, from the speaker in the menu bar.
 const audio = new AudioMenu($('#music'));
@@ -208,7 +236,9 @@ attachFullscreen($<HTMLButtonElement>('#fullscreen'));
 registerApp();
 /** Where you're looking, by name. Getting about is by the map, the Town button and the sidebar. */
 function showPlace(): void {
-  placeName.textContent = sim.levels.get(renderer.level)?.name ?? '';
+  placeLabel.textContent = placeName(sim.world, sim.levels.get(renderer.level));
+  // The tab says whose town it is, once it's named.
+  document.title = `${townName(sim.world) ?? 'Your town'} · officebit`;
 }
 renderer.onLevelChange = () => {
   showPlace();

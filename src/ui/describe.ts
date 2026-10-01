@@ -2,6 +2,22 @@
 import { PRESETS, type PresetName } from '../sim/personality.ts';
 import { asleep, catchingUp, type Person } from '../sim/person.ts';
 import type { Simulation } from '../sim/sim.ts';
+import type { LevelDef, WorldDef } from '../sim/world.ts';
+import { STARTER } from '../worlds/starter.ts';
+
+/** The most a town's name may be, in characters. */
+export const TOWN_NAME_MOST = 40;
+
+/** The town's own name, if you've given it one (the starter town's isn't one). */
+export function townName(world: WorldDef): string | null {
+  const name = world.name.trim();
+  return name && name !== STARTER.name ? name : null;
+}
+
+/** What a place is called: the town by its own name, if you've named it. */
+export function placeName(world: WorldDef, level: LevelDef | undefined): string {
+  return (level?.kind === 'outside' && townName(world)) || level?.name || '';
+}
 
 export function describe(p: Person, sim: Simulation): string {
   if (p.riding) return 'On the bus 🚌';
