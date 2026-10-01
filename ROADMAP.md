@@ -110,6 +110,7 @@ Done (see `docs/UPGRADES.md`): versions, and what a release adds to the starter 
 towns made before it, put up by crews.
 
 ### Also on the list
+- Beyond the edge of town: other towns and scenes that exist once someone leaves the map (the highway and the river lead somewhere). With accounts, visiting other people's live towns: their people, their day, as it is right now.
 - A leisure centre (bowling, say) for wet days, so there's more to do indoors when the weather keeps people in.
 - Bus lines: each stop on a line (a name saved with it, chosen in the editor; no line is the main one), a route worked out per line, so rides are shorter and more direct (one loop round all eight stops takes over two hours). Riders take the one line that suits; changing buses later.
 - A much quicker test suite (about 5 minutes locally, 8 on CI, mostly a few long runs of the town: ventures, plans, the diner, groceries, construction). Share one run between tests that watch the same weeks, shorten runs to what each check needs, set up the moment under test directly instead of waiting weeks for it; then put the tests back in CI (`pages.yml`).
