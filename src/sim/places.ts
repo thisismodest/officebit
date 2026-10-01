@@ -48,7 +48,7 @@ export interface Exit {
 /** Tiles either side of a door (along its wall) that also count as clicking it. */
 const DOOR_SIDES = 1;
 
-/** The door or stairs at a tile (or one tile either side of it), and where it leads. */
+/** The door or stairs at a tile (or one tile either side of it, or the spot just inside it where you go through), and where it leads. */
 export function exitAt(sim: Simulation, level: string, x: number, y: number): Exit | null {
   const doors = sim.levels.get(level)?.doors ?? [];
   for (const portal of sim.world.portals) {
@@ -62,9 +62,16 @@ export function exitAt(sim: Simulation, level: string, x: number, y: number): Ex
       const hit = horizontal
         ? y === door[1] && Math.abs(x - door[0]) <= DOOR_SIDES
         : x === door[0] && Math.abs(y - door[1]) <= DOOR_SIDES;
-      if (hit) return { kind: portal.kind, to: there };
+      if (hit || (x === ax && y === ay)) return { kind: portal.kind, to: there };
     }
   }
+  return null;
+}
+
+/** Through a building's front door (outside): where it comes out inside, or null if it has no way in. */
+export function insideDoor(sim: Simulation, item: Item): Place | null {
+  for (const portal of sim.world.portals)
+    for (const [here, there] of sides(portal)) if (here.level === item.level && atDoorOf(item.def, here.p)) return there;
   return null;
 }
 

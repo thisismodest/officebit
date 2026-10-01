@@ -5,7 +5,7 @@ import { exposeLocalFeed } from './feeds/local.ts';
 import { Renderer } from './render/renderer.ts';
 import { TICKS_PER_DAY, formatClock, formatTime, weekdayOf } from './sim/clock.ts';
 import { TILE } from './render/pixels.ts';
-import { exitAt, interiorOf, type Exit } from './sim/places.ts';
+import { exitAt, insideDoor, interiorOf, type Exit } from './sim/places.ts';
 import { Simulation, type Item } from './sim/sim.ts';
 import type { Intent } from './sim/person.ts';
 import type { Tile, WorldDef } from './sim/world.ts';
@@ -322,6 +322,13 @@ function command(x: number, y: number): boolean {
         ? { kind: 'work' }
         : { kind: 'use', item: item.index };
     sim.interactions.command(p, intent);
+    return true;
+  }
+  // A door or stairs (outside, the building too): through it, to where it comes out.
+  const building = renderer.pickItem(x, y, enterable);
+  const through = exitUnder(x, y)?.to ?? (building && insideDoor(sim, building.item));
+  if (through) {
+    sim.interactions.command(p, { kind: 'wander', to: through });
     return true;
   }
   const tile = tileAt(x, y);
