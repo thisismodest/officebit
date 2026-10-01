@@ -236,6 +236,16 @@ export const CATALOG: Record<string, FurnitureType> = {
     hangout: true,
     treat: true,
   },
+  birthdayCake: {
+    name: 'Birthday cake',
+    size: [1, 1],
+    solid: true,
+    spots: [[0, -1], [1, 0], [0, 1], [-1, 0]],
+    offers: { hunger: 0.2, fun: 0.25, social: 0.2 },
+    duration: [20, 40],
+    hangout: true,
+    treat: true,
+  },
   till: { name: 'Till', size: [1, 1], solid: true, spots: [[0, 1]], staff: true, duration: [200, 500] },
 
   // Homes

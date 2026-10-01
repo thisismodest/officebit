@@ -126,3 +126,29 @@ test('someone new to the team walks in from the edge of town, to a house to let 
   assert.ok(work, 'then off to work');
   assert.deepEqual(validate(sim.world), []);
 });
+
+test('a birthday: in the News, a cheerier day and a party hat; a cake brought in to work that colleagues share, cleared away after', () => {
+  const sim = new Simulation(world());
+  const { month, day } = sim.dateOf(0);
+  const ines = sim.person('ines')!;
+  sim.defOf('ines')!.birthday = [month, day];
+  ines.needs.fun = 0.2;
+  sim.step();
+  assert.ok(sim.birthdays.is(ines), 'her birthday today');
+  assert.ok(ines.needs.fun > 0.45, 'a bit more cheerful');
+  assert.ok(sim.historyOf('ines').some((e) => /It's Ines's birthday/.test(e.text)));
+  let cake: { uses: number; gone?: boolean } | undefined;
+  let slices = 0;
+  for (let t = 0; t < TICKS_PER_DAY - 2; t++) {
+    sim.step();
+    cake ??= sim.activeItems().find((i) => i.def.t === 'birthdayCake');
+    if (cake) slices = Math.max(slices, cake.uses);
+  }
+  assert.ok(cake, 'a cake came in');
+  assert.ok(slices >= 2, `${slices} slices eaten`);
+  assert.ok(!sim.activeItems().some((i) => i.def.t === 'birthdayCake'), 'and it was cleared away');
+  sim.step();
+  sim.step();
+  assert.ok(!sim.birthdays.is(ines), 'and the next day is just a day');
+  assert.deepEqual(validate(sim.world), []);
+});

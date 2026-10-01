@@ -158,22 +158,7 @@ export class Interactions {
 
   /** A free floor tile beside the company's kitchen table (or any table), with room to stand round it. */
   private kitchenOf(company: string): Place | null {
-    const { sim } = this;
-    const levels = sim.companies.get(company)?.levels ?? [];
-    const tables = sim.activeItems().filter((i) => levels.includes(i.level) && ['smallTable', 'table', 'counter'].includes(i.def.t));
-    for (const table of tables) {
-      const grid = sim.grids.get(table.level)!;
-      const [w, h] = table.type.size;
-      for (let y = table.def.p[1] - 2; y <= table.def.p[1] + h + 1; y++) {
-        for (let x = table.def.p[0] - 2; x <= table.def.p[0] + w + 1; x++) {
-          const around = [[0, -1], [1, 0], [0, 1], [-1, 0]].filter(([dx, dy]) => grid.walkable(x + dx!, y + dy!)).length;
-          if (grid.walkable(x, y) && around >= 3 && !sim.activeItems().some((i) => i.level === table.level && i.def.p[0] === x && i.def.p[1] === y)) {
-            return { level: table.level, p: [x, y] };
-          }
-        }
-      }
-    }
-    return null;
+    return kitchenIn(this.sim, this.sim.companies.get(company)?.levels ?? []);
   }
 
   private inside(levels: Set<string>): Person[] {
@@ -233,4 +218,23 @@ class CourierBrain implements Brain {
     // Stand next to where the pizza goes.
     return { kind: 'wander', to: { level: delivery.to.level, p: [x, y + 1] } };
   }
+}
+
+/** A free floor tile beside a kitchen table, counter or any table on these levels, with room to stand round it: where pizza (or a cake) goes. */
+export function kitchenIn(sim: Simulation, levels: readonly string[]): Place | null {
+  const items = sim.activeItems();
+  const tables = items.filter((i) => levels.includes(i.level) && ['smallTable', 'table', 'counter'].includes(i.def.t));
+  for (const table of tables) {
+    const grid = sim.grids.get(table.level)!;
+    const [w, h] = table.type.size;
+    for (let y = table.def.p[1] - 2; y <= table.def.p[1] + h + 1; y++) {
+      for (let x = table.def.p[0] - 2; x <= table.def.p[0] + w + 1; x++) {
+        const around = [[0, -1], [1, 0], [0, 1], [-1, 0]].filter(([dx, dy]) => grid.walkable(x + dx!, y + dy!)).length;
+        if (grid.walkable(x, y) && around >= 3 && !items.some((i) => i.level === table.level && i.def.p[0] === x && i.def.p[1] === y)) {
+          return { level: table.level, p: [x, y] };
+        }
+      }
+    }
+  }
+  return null;
 }

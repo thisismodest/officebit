@@ -464,6 +464,22 @@ export const OFFICE: Record<string, Painter> = {
     },
   },
 
+  birthdayCake: {
+    up: 10,
+    paint(ctx, w, _h, o) {
+      // A plate, two tiers of sponge with icing, and candles lit.
+      pill(ctx, 1, o + 6, w - 2, 4, '#f1eee6', OUTLINE);
+      rect(ctx, 3, o - 1, w - 6, 9, OUTLINE);
+      rect(ctx, 4, o, w - 8, 7, '#f3d7e2');
+      rect(ctx, 4, o + 3, w - 8, 1, '#d9708f');
+      rect(ctx, 4, o, w - 8, 1, '#ffffff');
+      for (const x of [5, 8, 11]) {
+        rect(ctx, x, o - 5, 1, 4, '#7fb6e6');
+        dot(ctx, x, o - 7, '#ffd04a');
+      }
+    },
+  },
+
   bookshelf: {
     up: 18,
     paint(ctx, w, h, o, seed) {

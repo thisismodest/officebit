@@ -10,6 +10,7 @@ import type { PersonChanges, Simulation } from '../sim/sim.ts';
 import type { WorldDef } from '../sim/world.ts';
 import { FUR, HAIR, SHIRT, SKIN } from '../render/palette.ts';
 import { addFamily, giveJob, letGo, planFamily, removeFamily, removePerson, updatePerson, type Newcomer } from '../worlds/edit.ts';
+import { birthdayOf } from '../sim/birthdays.ts';
 import { esc } from './html.ts';
 
 /** Hair styles, as characters.ts draws them. */
@@ -78,6 +79,7 @@ export class PersonEditor {
                 .join('')}</select></label>`
             : ''
         }
+        ${this.birthday(p)}
         ${
           p.home && (team || household.length)
             ? `<div class="field"><span>Household</span>
@@ -114,6 +116,7 @@ export class PersonEditor {
       this.change(p, { look: [SKIN, HAIR, SHIRT, STYLES].map((list) => Math.floor(rng() * list.length)) });
       return { rebuild: true };
     }
+    if (dataset.edit === 'birthday-month' || dataset.edit === 'birthday-day') return this.setBirthday(p, target);
     if (dataset.edit === 'name' && (target as HTMLInputElement).value.trim()) {
       this.change(p, { name: (target as HTMLInputElement).value });
       return { rebuild: true };
@@ -136,6 +139,37 @@ export class PersonEditor {
     if (dataset.action === 'move-out') return this.moveOut(p.id);
     if (dataset.action === 'leave-town') return this.leaveTown(p);
     return null;
+  }
+
+  /** Their birthday: a month and a day. */
+  private birthday(p: Person): string {
+    const sim = this.host.sim();
+    const def = sim.defOf(p.id);
+    if (!def) return '';
+    const [month, day] = birthdayOf(def, sim.world.seed);
+    const months = Array.from({ length: 12 }, (_, i) => new Date(2001, i, 1).toLocaleString('en-GB', { month: 'long' }));
+    return `<div class="field birthday"><span>Birthday</span>
+      <select class="mdst-dropdown--sm" data-edit="birthday-day" aria-label="Day">${Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}"${i + 1 === day ? ' selected' : ''}>${i + 1}</option>`).join('')}</select>
+      <select class="mdst-dropdown--sm" data-edit="birthday-month" aria-label="Month">${months.map((m, i) => `<option value="${i + 1}"${i + 1 === month ? ' selected' : ''}>${m}</option>`).join('')}</select>
+    </div>`;
+  }
+
+  /** A new birthday, in the town and the design (a day past the month's end comes back to its last day). */
+  private setBirthday(p: Person, target: HTMLElement): { say: string; rebuild: boolean } {
+    const field = target.closest('.birthday')!;
+    const month = Number(field.querySelector<HTMLSelectElement>('[data-edit="birthday-month"]')!.value);
+    const last = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]!;
+    const day = Math.min(Number(field.querySelector<HTMLSelectElement>('[data-edit="birthday-day"]')!.value), last);
+    const birthday: [number, number] = [month, day];
+    const sim = this.host.sim();
+    const def = sim.defOf(p.id);
+    if (def) def.birthday = birthday;
+    const design = this.host.design();
+    const saved = design.people.find((d) => d.id === p.id) ?? design.npcs.find((d) => d.id === p.id);
+    if (saved) saved.birthday = birthday;
+    this.host.saved();
+    const months = new Date(2001, month - 1, 1).toLocaleString('en-GB', { month: 'long' });
+    return { say: `${p.name}’s birthday is ${day} ${months}.`, rebuild: true };
   }
 
   /** Where they work: any company that isn't a venture, or out of work. A venture's people answer to themselves. */

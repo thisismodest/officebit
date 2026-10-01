@@ -37,7 +37,7 @@ const HOUSES = new Set(['terrace', 'house', 'detached']);
 
 /** What the picker offers indoors and out. Buildings, houses, lots and building sites are placed some other way. */
 const OUTSIDE_ONLY = ['tree', 'bush', 'flowers', 'bench', 'lamppost', 'pond', 'busStop', 'billboard'];
-const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza']);
+const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake']);
 const INDOOR_GROUPS: [string, string[]][] = [
   ['Office', Object.keys(OFFICE)],
   ['Home', Object.keys(HOME)],
@@ -79,7 +79,7 @@ export interface EditorHost {
 }
 
 /** Things the town brings in for a while (free pizza): never kept in a place you've arranged. */
-const PASSING = new Set(['pizza']);
+const PASSING = new Set(['pizza', 'birthdayCake']);
 
 export class Editor {
   active = false;

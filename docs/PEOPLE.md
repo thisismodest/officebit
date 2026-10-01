@@ -74,12 +74,24 @@ lists them too.
   them in (a pizza delivery, a car off the highway: see
   [TRAFFIC](TRAFFIC.md#visitors)) and sees them off. They're never saved.
 
+## Birthdays
+
+`sim/birthdays.ts`. Everyone who lives here has a birthday: `birthday: [month,
+day]` on their definition, or one worked out from their id (never 29
+February); **Edit** on a profile changes it. On the day (from 06:00) it's in the
+News, they wake up a bit more cheerful (fun and company topped up), and wear a
+party hat all day. On a working day they bring a cake in to work when they get
+there, put by the kitchen table (`kitchenIn`, as pizza is); family have theirs at
+home from 17:00; pets get the hat and the fuss. A cake is a treat people go out
+of their way for, eight slices, cleared away once it's eaten or after six hours.
+
 ## Editing
 
 **Edit** on a profile (`ui/person-editor.ts`), for the team and their families
 and pets (not staff, crews or passers-by), changes someone in the running town
 (`sim.editPerson`) and in the design (`updatePerson` in `worlds/edit.ts`) at once:
 
+- **Birthday**: a day and a month.
 - **Name, look and personality.** A look is skin, hair, top and hair style
   (pets: fur). A new personality starts from its preset and shows in what they
   do from then on. The team also have a department (type a new one to make it).

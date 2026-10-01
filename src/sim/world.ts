@@ -149,6 +149,8 @@ export interface PersonDef {
   shift?: [start: number, end: number];
   /** False keeps them out of love stories (see docs/LOVE.md). */
   romance?: boolean;
+  /** Their birthday, [month, day]; worked out from their id if not given (see docs/PEOPLE.md#birthdays). */
+  birthday?: [month: number, day: number];
 }
 
 export type Species = 'human' | 'cat' | 'dog';
@@ -160,6 +162,8 @@ export interface NpcDef {
   name: string;
   species: Species;
   look: Look;
+  /** Their birthday, [month, day]; worked out from their id if not given. */
+  birthday?: [month: number, day: number];
   /** Id of the home level they live in (crews have none). */
   home: string;
   /** Preset name; `traits` overrides individual values. Humans only; pets have their own. */

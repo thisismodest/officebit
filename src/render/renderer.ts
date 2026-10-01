@@ -515,6 +515,7 @@ export class Renderer {
       const sprite = petSprite(p.species, p.look[0] ?? 0, this.petSides.get(p.id) ?? 'right', pose);
       rect(ctx, x + 1, feet - 1, 10, 2, 'rgba(20,14,30,0.2)');
       ctx.drawImage(sprite, x - 1, feet - PET_H + 1);
+      if (this.sim.birthdays.is(p)) paintPartyHat(ctx, x + (this.petSides.get(p.id) === 'left' ? 2 : 8), feet - PET_H + 2);
       return;
     }
 
@@ -526,6 +527,8 @@ export class Renderer {
     }
     const sprite = characterSprite(this.lookOf(p), facing, pose, p.status.activity === 'focus');
     ctx.drawImage(sprite, x, feet - SPRITE_H + 1);
+    // Their birthday: a party hat, all day.
+    if (this.sim.birthdays.is(p)) paintPartyHat(ctx, x + 6, feet - SPRITE_H + 1 + headTop(sprite));
     // Working on a project away from a desk (a booth, a bench): a laptop out (docs/PLANS.md).
     const at = p.intent?.kind === 'hustle' && p.phase === 'doing' ? this.sim.items[p.intent.item] : undefined;
     if (at && !at.type.study) paintLaptop(ctx, x, feet);
@@ -656,3 +659,26 @@ function truckLook(label: string | undefined): Colours {
   const { body, stripe } = truckColours(label);
   return { body, band: stripe };
 }
+
+/** Where the top of a sprite's head is (its first row with anything in it), worked out once per sprite: sitting, it's lower. */
+const heads = new WeakMap<HTMLCanvasElement, number>();
+function headTop(sprite: HTMLCanvasElement): number {
+  let top = heads.get(sprite);
+  if (top === undefined) {
+    const { data, width } = sprite.getContext('2d')!.getImageData(0, 0, sprite.width, sprite.height);
+    top = 0;
+    while (top < sprite.height && !Array.from({ length: width }, (_, x) => data[(top! * width + x) * 4 + 3]).some((a) => a! > 0)) top++;
+    heads.set(sprite, top);
+  }
+  return top;
+}
+
+/** A party hat, its brim's middle at (x, y): a striped cone with a bobble on top. */
+function paintPartyHat(ctx: Ctx, x: number, y: number): void {
+  for (let row = 0; row < 5; row++) {
+    const half = Math.floor(row / 2);
+    rect(ctx, x - half - 1, y - 5 + row, half * 2 + 2, 1, row % 2 ? '#3f74b5' : '#e7aa2e');
+  }
+  rect(ctx, x - 1, y - 7, 2, 2, '#c8453a');
+}
+

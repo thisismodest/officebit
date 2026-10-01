@@ -1015,6 +1015,17 @@ aside {
     flex-direction: column;
     gap: var(--mdst-space-sm);
 
+    /* A birthday: the day and the month side by side, under the label. */
+    & .field.birthday {
+      display: grid;
+      grid-template-columns: 5rem 1fr;
+      gap: var(--mdst-space-xs);
+
+      & > span {
+        grid-column: 1 / -1;
+      }
+    }
+
     & label,
     & .field {
       display: flex;

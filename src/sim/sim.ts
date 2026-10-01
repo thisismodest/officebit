@@ -27,6 +27,7 @@ import { Social } from './social.ts';
 import { Traffic } from './traffic.ts';
 import { Visitors } from './visitors.ts';
 import { Arrivals } from './arrivals.ts';
+import { Birthdays } from './birthdays.ts';
 import { Skies } from './weather.ts';
 import { Festivities } from './festivities.ts';
 import { FoodTrucks } from './food-trucks.ts';
@@ -118,6 +119,7 @@ export class Simulation {
   readonly arrivals: Arrivals;
   readonly festivities: Festivities;
   readonly weather: Skies;
+  readonly birthdays: Birthdays;
   readonly foodTrucks: FoodTrucks;
   readonly plans: Plans;
   readonly works: Works;
@@ -183,6 +185,7 @@ export class Simulation {
     this.arrivals = new Arrivals(this);
     this.festivities = new Festivities(this);
     this.weather = new Skies(this);
+    this.birthdays = new Birthdays(this);
     this.foodTrucks = new FoodTrucks(this);
     this.plans = new Plans(this);
     this.works = new Works(this);
@@ -501,6 +504,7 @@ export class Simulation {
     this.buses.step();
     this.arrivals.step();
     this.plans.step();
+    this.birthdays.step();
     const gone: Person[] = [];
     for (const [i, p] of this.people.entries()) {
       p.px = p.x;
