@@ -96,6 +96,14 @@ and pets (not staff, crews or passers-by), changes someone in the running town
   let go, so this is how to take them back. **Leave town**, and they and their household walk off the edge of town and
   are gone; their home goes up to let.
 
+**+ Add someone to the team**, at the top of the People tab (`ui/team-form.ts`):
+a name, where they work, a department (type a new one to make it) and a
+personality. They get a free desk there (their department's kind first) and a
+house to let, named for them (`addPerson`, and the same desk and house in the
+running town where they're free there too). They walk in from the edge of town
+(`arrivals.newStarter`), go home to settle in, and get on with their days. No
+free desk, or no house to let, and it says so.
+
 ## Kinds
 
 `src/sim/roles.ts` says what each kind of person is. There's one entry per

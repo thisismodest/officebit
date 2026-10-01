@@ -11,6 +11,7 @@ import type { Intent } from './sim/person.ts';
 import type { Tile, WorldDef } from './sim/world.ts';
 import { attachControls } from './ui/controls.ts';
 import { Directory } from './ui/directory.ts';
+import { TeamForm } from './ui/team-form.ts';
 import { News } from './ui/news.ts';
 import { Overview } from './ui/overview.ts';
 import { TOWN_NAME_MOST, placeName, townName } from './ui/describe.ts';
@@ -108,6 +109,7 @@ const profile = new Profile(stage, renderer, {
   control: steer,
 }, new PersonEditor({ sim: () => sim, design: () => design, saved: () => saveSoon() }));
 const directory = new Directory($('#directory'), renderer, (id) => select(renderer.selected === id ? null : id));
+new TeamForm($('#directory'), { sim: () => sim, design: () => design, saved: saveSoon, pick: (id) => select(id) });
 const overview = new Overview($('#overview'), visit, (company, event) => {
   const problem = event === 'pizza' ? sim.interactions.pizza(company) : sim.interactions.drill(company);
   if (problem) sim.log(problem);

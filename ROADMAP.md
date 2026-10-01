@@ -47,7 +47,6 @@ editing people from their profile (look, name, department, personality, househol
 let go, leave town); drawing roads, paths and zebra
 crossings, and rubbing them out; save and share (browser, link, file), validated
 on load. Next, in order:
-- Adding someone new to the team (the profile edits people who are here already).
 - New houses and lots from the picker; naming roads; companies.
 - Furniture can be placed on empty lots; it shouldn't be.
 - Share the town as it is now (a 1:1 link: its people, time and story), not

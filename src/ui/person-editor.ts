@@ -175,7 +175,7 @@ export class PersonEditor {
     // The design makes a new department if it needs one; the town gets it too.
     const dept = design.departments.find((d) => d.name.toLowerCase() === name.trim().toLowerCase());
     const sim = this.host.sim();
-    if (dept && !sim.world.departments.some((d) => d.id === dept.id)) sim.world.departments.push(structuredClone(dept));
+    if (dept) sim.addDepartment(dept);
     sim.editPerson(p, { dept: dept?.id ?? '' });
     this.host.saved();
     return { say: dept ? `${p.name} is in ${dept.name} now.` : `${p.name} isn’t in a department now.`, rebuild: true };

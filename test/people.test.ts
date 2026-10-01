@@ -5,7 +5,7 @@ import { TICKS_PER_DAY } from '../src/sim/clock.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { validate } from '../src/sim/validate.ts';
 import type { WorldDef } from '../src/sim/world.ts';
-import { addFamily, giveJob, letGo, planFamily, removePerson, updatePerson, type NewFamily } from '../src/worlds/edit.ts';
+import { addFamily, addPerson, giveJob, letGo, planFamily, removePerson, updatePerson, type NewFamily } from '../src/worlds/edit.ts';
 import { STARTER } from '../src/worlds/starter.ts';
 
 const world = (): WorldDef => structuredClone(STARTER);
@@ -102,4 +102,27 @@ test('editing someone: a new name renames their house; a new personality changes
   assert.equal(back.company, 'head');
   assert.ok(back.desk >= 0, 'at a desk');
   assert.deepEqual(validate(w), []);
+});
+
+test('someone new to the team walks in from the edge of town, to a house to let that takes their name, with a desk at work', () => {
+  const sim = new Simulation(world());
+  const design = world();
+  const { id } = addPerson(design, { name: 'Zara', dept: 'Sound', company: 'head' });
+  const def = structuredClone(design.people.find((p) => p.id === id)!);
+  sim.addDepartment(design.departments.find((d) => d.id === def.dept)!);
+  const desk = sim.activeItems().find((i) => i.type.desk && !i.def.owner && sim.companies.get('head')!.levels.includes(i.level))!;
+  desk.def.owner = id;
+  const zara = sim.arrivals.newStarter(def);
+  assert.deepEqual([zara.level, zara.x, zara.y], [sim.world.spawn.level, ...sim.world.spawn.p], 'at the edge of town');
+  assert.equal(sim.levels.get(zara.home!)!.name, "Zara's house");
+  let home = false;
+  let work = false;
+  for (let t = 0; t < TICKS_PER_DAY * 2; t++) {
+    sim.step();
+    home ||= zara.level === zara.home;
+    work ||= home && sim.companies.get('head')!.levels.includes(zara.level);
+  }
+  assert.ok(home, 'home first, to settle in');
+  assert.ok(work, 'then off to work');
+  assert.deepEqual(validate(sim.world), []);
 });

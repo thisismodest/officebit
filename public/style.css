@@ -716,6 +716,33 @@ aside {
 }
 
 /* Directory: search, group-by, and everyone. */
+/* Adding someone to the team, above the directory: a button, then its form. */
+.team-add {
+  margin-bottom: var(--mdst-space-sm);
+
+  & form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mdst-space-xs);
+  }
+
+  & label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--mdst-text-xs);
+  }
+
+  & .buttons {
+    display: flex;
+    gap: var(--mdst-space-xs);
+  }
+
+  & .status:empty {
+    display: none;
+  }
+}
+
 .directory-tools {
   display: flex;
   flex-wrap: wrap;

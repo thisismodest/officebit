@@ -1,7 +1,8 @@
 // Arrivals (docs/PEOPLE.md#family-and-pets): new family members, added from a
 // profile, come home like anyone new to town. A partner or a pet walks in from
 // the edge of town; a baby is dropped off by car at the nearest bit of road to
-// the house, and crawls in through the front door. Nobody appears out of thin air.
+// the house, and crawls in through the front door. Someone new to the team
+// walks in too, to their new home first. Nobody appears out of thin air.
 import { manhattan } from './geometry.ts';
 import type { Intent, Person } from './person.ts';
 import { outsideDoor } from './places.ts';
@@ -9,7 +10,7 @@ import { hashOf } from './rng.ts';
 import type { Brain, Simulation } from './sim.ts';
 import type { Car } from './traffic.ts';
 import { slowLane } from './visitors.ts';
-import type { NpcDef, Place, Tile } from './world.ts';
+import type { NpcDef, PersonDef, Place, Tile } from './world.ts';
 
 /** How long the car waits once the baby's out, before driving off (ticks). */
 const WAIT_TICKS = 30;
@@ -37,6 +38,14 @@ export class Arrivals {
     this.place(p, this.sim.world.spawn);
     this.homeward(p);
     this.sim.log(`🧳 ${def.name} is on their way to ${this.homeName(def)}`, [p.id]);
+  }
+
+  /** Someone new to the team: in from the edge of town, and to their new home first (if they have one) to settle in. */
+  newStarter(def: PersonDef): Person {
+    const p = this.sim.hire(def);
+    this.place(p, this.sim.world.spawn);
+    if (p.home) this.homeward(p);
+    return p;
   }
 
   /** Babies still on their way home (in a car, or crawling). */

@@ -37,7 +37,7 @@ import { Construction } from './construction.ts';
 import { Buses } from './buses.ts';
 import { Works } from './works.ts';
 import { Ventures } from './ventures.ts';
-import type { CompanyDef, FurnitureDef, LevelDef, NpcDef, PersonDef, Place, PortalDef, Tile, WorldDef } from './world.ts';
+import type { CompanyDef, DepartmentDef, FurnitureDef, LevelDef, NpcDef, PersonDef, Place, PortalDef, Tile, WorldDef } from './world.ts';
 
 /** How often (ticks) people reconsider what they're doing. */
 const RETHINK_EVERY = 20;
@@ -679,6 +679,11 @@ export class Simulation {
     this.changed([id]);
   }
 
+  /** A department the town hasn't got yet (one made in the design): it has it too now. */
+  addDepartment(dept: DepartmentDef): void {
+    if (!this.world.departments.some((d) => d.id === dept.id)) this.world.departments.push(structuredClone(dept));
+  }
+
   addCompany(company: CompanyDef): void {
     this.world.companies.push(company);
     this.companies.set(company.id, company);
@@ -693,9 +698,10 @@ export class Simulation {
     this.changed([]);
   }
 
-  /** Someone new joins the world (a new hire), taking a home that's to let if there is one. They arrive from the spawn point. */
+  /** Someone new joins the world (a new hire), taking a home that's to let if there is one (the one they're given, if it is). It's named for them. */
   hire(def: PersonDef): Person {
-    const home = def.home ? undefined : this.housing.vacant()[0];
+    const vacant = this.housing.vacant();
+    const home = def.home ? vacant.find((h) => h.level.id === def.home) : vacant[0];
     if (home) def.home = home.level.id;
     this.world.people.push(def);
     const p = this.spawnPerson(def);
