@@ -125,24 +125,58 @@ export function lay(level: LevelDef, rects: readonly Rect[], surface: Surface, n
   return cleared;
 }
 
-/** Turn ground back to grass: a path, forecourt, water or pavement tile, or a road's full width where you rub it out. Crossings and bridges on it go too. */
-export function erase(level: LevelDef, [x, y]: Tile): boolean {
-  const hit = level.rooms.filter((r) => (r.floor === 'road' || isDrawnPath(r) || isCrossing(r) || isBridge(r) || WATER.has(r.floor)) && inRect(r.rect, x, y));
-  if (hit.length === 0) {
+/** Turn ground back to grass at a tile: see `eraseAll`. */
+export function erase(level: LevelDef, tile: Tile): boolean {
+  return eraseAll(level, [tile]);
+}
+
+/**
+ * Turn ground back to grass, a stroke at a time: a path, forecourt, water or
+ * pavement tile, or a road's full width where you rub it out. Crossings and
+ * bridges on it go too. Neighbouring tiles come out as one piece (so the river
+ * isn't left in a hundred bits), and pavements are laid again once, at the
+ * end. Rubbed-out pavement leaves verge it won't be laid over. Whether anything changed.
+ */
+export function eraseAll(level: LevelDef, tiles: readonly Tile[]): boolean {
+  const cuts: Rect[] = [];
+  const verges: Tile[] = [];
+  for (const [x, y] of tiles) {
+    const hit = level.rooms.filter((r) => (r.floor === 'road' || isDrawnPath(r) || isCrossing(r) || isBridge(r) || WATER.has(r.floor)) && inRect(r.rect, x, y));
+    if (hit.length > 0) cuts.push(...hit.map((r): Rect => (r.floor === 'road' ? acrossRoad(r.rect, x, y, 1) : [x, y, 1, 1])));
     // Pavement is laid from the roads, so rubbing it out leaves a patch of verge it won't be laid over.
-    if (!level.rooms.some((r) => r.id.startsWith(PAVEMENT) && inRect(r.rect, x, y))) return false;
-    level.rooms.push({ id: `${VERGE}${x}-${y}`, name: 'Verge', rect: [x, y, 1, 1], floor: 'grass' });
-    layPavements(level);
-    return true;
+    else if (level.rooms.some((r) => r.id.startsWith(PAVEMENT) && inRect(r.rect, x, y))) verges.push([x, y]);
   }
-  const cuts = hit.map((r): Rect => (r.floor === 'road' ? acrossRoad(r.rect, x, y, 1) : [x, y, 1, 1]));
+  if (cuts.length === 0 && verges.length === 0) return false;
+  const pieces = runs(cuts);
   level.rooms = level.rooms.flatMap((room) => {
-    if ((isCrossing(room) || isBridge(room)) && cuts.some((c) => overlap(c, room.rect))) return [];
+    if ((isCrossing(room) || isBridge(room)) && pieces.some((c) => overlap(c, room.rect))) return [];
     if (room.floor !== 'road' && !isDrawnPath(room) && !WATER.has(room.floor)) return [room];
-    return cuts.reduce<RoomDef[]>((kept, c) => kept.flatMap((r) => without(r, c)), [room]);
+    if (!pieces.some((c) => overlap(c, room.rect))) return [room];
+    return pieces.reduce<RoomDef[]>((kept, c) => kept.flatMap((r) => without(r, c)), [room]);
   });
+  for (const [x, y, w, h] of runs(verges.map(([x, y]): Rect => [x, y, 1, 1]))) {
+    level.rooms.push({ id: `${VERGE}${x}-${y}`, name: 'Verge', rect: [x, y, w, h], floor: 'grass' });
+  }
   layPavements(level);
   return true;
+}
+
+/** Single tiles side by side in a row joined into runs (anything bigger, a road's width, kept as it is), duplicates dropped. */
+function runs(rects: readonly Rect[]): Rect[] {
+  const tiles = new Set(rects.filter(([, , w, h]) => w === 1 && h === 1).map(([x, y]) => `${x},${y}`));
+  const joined: Rect[] = [];
+  for (const key of [...tiles].sort((a, b) => {
+    const [ax, ay] = a.split(',').map(Number) as [number, number];
+    const [bx, by] = b.split(',').map(Number) as [number, number];
+    return ay - by || ax - bx;
+  })) {
+    const [x, y] = key.split(',').map(Number) as [number, number];
+    const last = joined.at(-1);
+    if (last && last[1] === y && last[0] + last[2] === x) last[2]++;
+    else joined.push([x, y, 1, 1]);
+  }
+  const big = rects.filter(([, , w, h]) => w > 1 || h > 1);
+  return [...joined, ...big.filter((r, i) => big.findIndex((q) => q.join() === r.join()) === i)];
 }
 
 /** A zebra crossing across the road at a tile, two tiles wide. */

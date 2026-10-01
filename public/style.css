@@ -557,6 +557,7 @@ main {
 
   & .actions {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--mdst-space-sm);
 
     & > * {

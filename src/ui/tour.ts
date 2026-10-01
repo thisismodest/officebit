@@ -14,6 +14,8 @@ export interface TourHost {
   meet(): string | null;
   steering(): boolean;
   editing(): boolean;
+  /** Stop the clock while the tour's showing you something (so nobody walks off from under it), or start it again. */
+  pause(on: boolean): void;
 }
 
 interface Step {
@@ -22,6 +24,8 @@ interface Step {
   target: () => DOMRect | null;
   /** Done when this is true (it moves on by itself); without it, a Next button. */
   done?: () => boolean;
+  /** The town carries on meanwhile (walking someone about); every other step, it waits. */
+  live?: boolean;
 }
 
 /** Room round what's lit up, in CSS pixels; and the gap to the bubble. */
@@ -79,6 +83,7 @@ export class Tour {
         text: (name) => `…and click anywhere for ${name} to walk there, a door to go through, or someone to chat to. Let go (or Esc) when you’re done.`,
         target: () => null,
         done: () => !host.steering(),
+        live: true,
       },
       {
         text: () => 'It’s your town to shape: the pencil opens the editor.',
@@ -104,6 +109,7 @@ export class Tour {
   stop(): void {
     this.step = -1;
     this.hole.hidden = this.bubble.hidden = true;
+    this.host.pause(false);
   }
 
   /** Every frame while it's on: moves on once a step's done, and keeps the light on its target (someone walking, a panel sliding out). */
@@ -121,6 +127,7 @@ export class Tour {
       return;
     }
     this.step = i;
+    this.host.pause(!step.live);
     const name = esc((this.who && this.host.sim().person(this.who)?.name) || 'them');
     const last = i === this.steps.length - 1;
     this.bubble.innerHTML = `

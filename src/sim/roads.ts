@@ -98,6 +98,22 @@ export class RoadMap {
     }
   }
 
+  private fingerprint: number | undefined;
+
+  /** A fingerprint of where vehicles can go (every tile's floor cost, and what stands in the way): the same for two maps they'd drive alike, so work done on one (a bus route) holds for the other. */
+  get signature(): number {
+    if (this.fingerprint === undefined) {
+      let h = 2166136261;
+      for (let i = 0; i < this.floors.length; i++) {
+        const floor = this.floors[i];
+        const cost = floor !== undefined && Object.hasOwn(this.network.costs, floor) ? this.network.costs[floor]! : 0;
+        h = Math.imul(h ^ (this.standing[i] ? 255 : cost), 16777619);
+      }
+      this.fingerprint = h >>> 0;
+    }
+    return this.fingerprint;
+  }
+
   private inside(x: number, y: number): boolean {
     return x >= 0 && y >= 0 && x < this.w && y < this.h;
   }

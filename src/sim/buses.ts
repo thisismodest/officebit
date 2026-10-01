@@ -310,7 +310,9 @@ export class Buses {
     if (this.route?.items === items && this.route.roads === roads) return this.route;
     const stops = items.filter((i) => i.def.t === "busStop" && i.level === town && this.bayOf(i));
     const key = stops.map((s) => s.def.p.join()).join(";");
-    if (this.route?.key === key && this.route.roads === roads) {
+    // The same stops on roads that drive the same (an edit to the grass, the river): the same route.
+    if (this.route?.key === key && roads && (this.route.roads === roads || this.route.roads?.signature === roads.signature)) {
+      this.route.roads = roads;
       this.route.items = items;
       return this.route;
     }

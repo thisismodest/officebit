@@ -184,7 +184,19 @@ const tour = new Tour(stage, {
   },
   steering: () => !!steering,
   editing: () => editor.active,
+  pause(on) {
+    // Paused for the tour, and back to the speed it was going at after.
+    if (on && speedBeforeTour === null) {
+      speedBeforeTour = time.speed;
+      setSpeed(0);
+    } else if (!on && speedBeforeTour !== null) {
+      setSpeed(speedBeforeTour);
+      speedBeforeTour = null;
+    }
+  },
 });
+/** The speed the town was going at before the tour paused it (null: the tour hasn't). */
+let speedBeforeTour: number | null = null;
 new Welcome(stage, $('#help'), () => tour.start());
 new ShareMenu($('#share'), {
   design: () => design,

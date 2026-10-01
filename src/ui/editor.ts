@@ -21,7 +21,7 @@ import { PAINTERS } from '../render/props/index.ts';
 import { SCHOOL } from '../render/props/school.ts';
 import { VENUE } from '../render/props/venue.ts';
 import { buildingMoveProblem, flipHouse, isBuilding, moveBuilding, moveFurniture, placeFurniture, removeFurniture, snapshot, type Floor, type Snapshot } from '../worlds/edit.ts';
-import { CLEARABLE, addCrossing, brush, crossingAt, erase, groundProblem, joinsUp, lay, strokeRects, type Surface } from '../worlds/ground.ts';
+import { CLEARABLE, addCrossing, brush, crossingAt, eraseAll, groundProblem, joinsUp, lay, strokeRects, type Surface } from '../worlds/ground.ts';
 import { aOrAn, isCovering, placementProblem } from '../worlds/placement.ts';
 import type { Grab } from './controls.ts';
 import { esc, narrow } from './html.ts';
@@ -614,7 +614,7 @@ export class Editor {
     let erased = false;
     const done = this.reshapeHere((map, _world, live) => {
       if (tool === 'erase') {
-        for (const t of tiles) erased = erase(map, t) || erased;
+        erased = eraseAll(map, tiles);
         return live && !erased ? 'There’s no road, path, pavement or crossing there.' : null;
       }
       const gone = lay(map, strokeRects(tiles, tool), tool);
