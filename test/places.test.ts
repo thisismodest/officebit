@@ -42,3 +42,13 @@ test('houses facing up lead inside through the door on the row above them', () =
   const inside = interiorOf(sim, house)!;
   assert.equal(inside.levels[0]!.id, `home-${house.def.owner}`);
 });
+
+test('anywhere on a flight of stairs is the stairs: up from the ground floor, down from the first', () => {
+  const sim = new Simulation(structuredClone(STARTER));
+  const stairs = sim.activeItems().find((i) => i.level === 'ground' && i.def.t === 'stairs')!;
+  const [x, y] = stairs.def.p;
+  for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]] as const) {
+    assert.equal(exitAt(sim, 'ground', x + dx, y + dy)?.to.level, 'first', `${x + dx},${y + dy} goes up`);
+    assert.equal(exitAt(sim, 'first', x + dx, y + dy)?.to.level, 'ground', `${x + dx},${y + dy} comes down`);
+  }
+});

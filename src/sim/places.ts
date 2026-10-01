@@ -2,7 +2,7 @@
 // A building leads inside through a portal on the row just below its
 // footprint (above, for buildings that face up); everything reachable from there without going back outdoors
 // is "inside".
-import { atDoorOf, sides } from './geometry.ts';
+import { atDoorOf, covers, sides } from './geometry.ts';
 import type { Person } from './person.ts';
 import type { Item, Simulation } from './sim.ts';
 import type { LevelDef, Place, PortalDef } from './world.ts';
@@ -48,8 +48,14 @@ export interface Exit {
 /** Tiles either side of a door (along its wall) that also count as clicking it. */
 const DOOR_SIDES = 1;
 
-/** The door or stairs at a tile (or one tile either side of it, or the spot just inside it where you go through), and where it leads. */
+/** The door or stairs at a tile (a door, or one tile either side of it, or the spot just inside it where you go through; anywhere on the stairs), and where it leads. */
 export function exitAt(sim: Simulation, level: string, x: number, y: number): Exit | null {
+  // Anywhere on a flight of stairs is the stairs.
+  const stairs = sim.activeItems().find((i) => i.level === level && i.def.t === 'stairs' && covers(i.def, x, y));
+  if (stairs) {
+    for (const portal of sim.world.portals)
+      for (const [here, there] of sides(portal)) if (here.level === level && covers(stairs.def, ...here.p)) return { kind: portal.kind, to: there };
+  }
   const doors = sim.levels.get(level)?.doors ?? [];
   for (const portal of sim.world.portals) {
     for (const [here, there] of sides(portal)) {
