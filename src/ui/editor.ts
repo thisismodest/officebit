@@ -31,13 +31,13 @@ import { ROOM_HINTS, RoomTools, type RoomTool } from './room-tools.ts';
 
 type Tool = 'move' | 'add' | Surface | 'crossing' | 'grass' | RoomTool;
 /** Tools for the ground outside: they only work on the town map. */
-const GROUND_TOOLS = new Set<Tool>(['road', 'path', 'forecourt', 'water', 'sand', 'shallows', 'crossing', 'grass']);
+const GROUND_TOOLS = new Set<Tool>(['road', 'path', 'forecourt', 'water', 'sand', 'shallows', 'runway', 'apron', 'crossing', 'grass']);
 /** Tools for walls, doorways and floors: they only work indoors (room-tools.ts). */
 const INDOOR_TOOLS = new Set<Tool>(['room', 'area', 'door', 'stairs']);
 const HOUSES = new Set(['terrace', 'house', 'detached']);
 
 /** What the picker offers indoors and out. Buildings, houses, lots and building sites are placed some other way. */
-const OUTSIDE_ONLY = ['tree', 'bush', 'hedge', 'fence', 'flowers', 'bench', 'lamppost', 'pond', 'busStop', 'billboard', 'sailboat', 'lifebuoy'];
+const OUTSIDE_ONLY = ['tree', 'bush', 'hedge', 'fence', 'plane', 'stand', 'gate', 'hangar', 'windsock', 'flowers', 'bench', 'lamppost', 'pond', 'busStop', 'billboard', 'sailboat', 'lifebuoy'];
 const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse', 'leisureCentre']);
 const INDOOR_GROUPS: [string, string[]][] = [
   ['Office', Object.keys(OFFICE)],
@@ -55,6 +55,8 @@ const GROUND: Record<GroundTool, string> = {
   water: 'Water: drag to draw a river, canal or pond',
   shallows: 'Shallows: drag to draw water shallow enough to paddle in',
   sand: 'Beach: drag to draw sand',
+  runway: 'Runway: drag to draw one, for the plane',
+  apron: 'Apron: drag to draw an airfield’s apron, for stands and gates',
   crossing: 'Zebra crossing: click a road',
   grass: 'Grass: drag to lay grass over roads, paths, water, beach and pavement',
 };
@@ -66,6 +68,8 @@ const LAID: Record<Surface | 'grass', string> = {
   water: 'Drew some water',
   shallows: 'Drew some shallows',
   sand: 'Laid a stretch of beach',
+  runway: 'Laid a runway',
+  apron: 'Laid an apron',
   grass: 'Laid grass',
 };
 /** How long (ms) to hold the ground button down for the others; and with a mouse, how long after leaving them they stay open. */
@@ -677,7 +681,7 @@ export class Editor {
 
   /** Is the tool one that draws ground (a road, path or forecourt)? */
   private drawing(tool: Tool = this.tool): tool is Surface {
-    return tool === 'road' || tool === 'path' || tool === 'forecourt' || tool === 'water' || tool === 'sand' || tool === 'shallows';
+    return tool === 'road' || tool === 'path' || tool === 'forecourt' || tool === 'water' || tool === 'sand' || tool === 'shallows' || tool === 'runway' || tool === 'apron';
   }
 
   private brushProblem(tile: Tile): string | null {
@@ -881,6 +885,8 @@ const GROUND_HINTS = {
   water: 'Drag to draw water: a river, a canal or a pond. Draw a road or path across it afterwards and it’s bridged.',
   shallows: 'Drag to draw shallows: water shallow enough to paddle in, off a beach.',
   sand: 'Drag to draw a beach, any shape you like.',
+  runway: 'Drag to draw a runway, three tiles wide: the plane takes off and lands on the one nearest each gate.',
+  apron: 'Drag to draw an apron: hard standing by a runway, for an aircraft stand and a gate.',
   crossing: 'Click a road to put in a zebra crossing, where you’d like people to cross.',
   grass: 'Drag over roads, paths, forecourts, water, beach, pavements, crossings or bridges to lay grass.',
 } as const;

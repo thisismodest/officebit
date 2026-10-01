@@ -151,6 +151,8 @@ export interface PersonDef {
   shift?: [start: number, end: number];
   /** False keeps them out of love stories (see docs/LOVE.md). */
   romance?: boolean;
+  /** Has a car of their own, kept in the parking bay nearest home (docs/TRAFFIC.md#own-cars). */
+  car?: boolean;
   /** Their birthday, [month, day]; worked out from their id if not given (see docs/PEOPLE.md#birthdays). */
   birthday?: [month: number, day: number];
 }
@@ -178,4 +180,6 @@ export interface NpcDef {
   shift?: [start: number, end: number];
   /** False keeps them out of love stories. */
   romance?: boolean;
+  /** Has a car of their own. */
+  car?: boolean;
 }

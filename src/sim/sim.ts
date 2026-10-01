@@ -39,6 +39,8 @@ import { DEFAULT_CALENDAR, dateOf, daylightAt, type Calendar, type CalendarDate 
 import { bankHoliday, holidayOn, type Holiday } from './holidays.ts';
 import { Construction } from './construction.ts';
 import { Buses } from './buses.ts';
+import { OwnCars } from './cars.ts';
+import { Planes } from './planes.ts';
 import { Works } from './works.ts';
 import { Ventures } from './ventures.ts';
 import type { CompanyDef, DepartmentDef, FurnitureDef, LevelDef, NpcDef, PersonDef, Place, PortalDef, Tile, WorldDef } from './world.ts';
@@ -128,6 +130,8 @@ export class Simulation {
   readonly plans: Plans;
   readonly works: Works;
   readonly buses: Buses;
+  readonly cars: OwnCars;
+  readonly planes: Planes;
   /** Where every body is, on foot and on wheels (collision.ts), for who's in whose way. */
   readonly space = new Space();
   /** Each person as a body in the space: live views, so always where the person is. */
@@ -203,6 +207,8 @@ export class Simulation {
     this.plans = new Plans(this);
     this.works = new Works(this);
     this.buses = new Buses(this);
+    this.cars = new OwnCars(this);
+    this.planes = new Planes(this);
     this.mindVenues(false);
     // Households start out close.
     const humans = this.people.filter((p) => p.species === 'human' && p.home);
@@ -550,9 +556,11 @@ export class Simulation {
     this.foodTrucks.step();
     if (!this.brisk) this.space.fill('foot', this.people.map((p) => this.bodyOf(p)));
     this.traffic.step();
+    this.cars.step();
     if (!this.brisk) {
       this.visitors.step();
       this.buses.step();
+      this.planes.step();
     }
     this.arrivals.step();
     this.plans.step();
@@ -1215,7 +1223,7 @@ export class Simulation {
     const dest = rulesFor(intent).to(this, p, intent);
     const route = dest && this.nav.route(here, dest);
     // A long walk through town: the bus, perhaps (let go of anything claimed on the way there first).
-    const ride = !walk && route ? this.buses.consider(p, intent, route) : null;
+    const ride = !walk && route ? (this.cars.consider(p, intent, route) ?? this.planes.consider(p, intent, route) ?? this.buses.consider(p, intent, route)) : null;
     if (ride) {
       this.stop(p);
       this.begin(p, ride, true);

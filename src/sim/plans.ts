@@ -36,7 +36,7 @@ interface Activity {
 
 export const ACTIVITIES: Record<ActivityId, Activity> = {
   catch: { news: 'for frisbee', emoji: '🥏', group: [2, 4], who: 'friends', where: 'park', hours: 1 },
-  picnic: { news: 'for a picnic', emoji: '🧺', group: [3, 6], who: 'friends', family: true, where: 'park', hours: 1.5, daysOffOnly: true },
+  picnic: { news: 'for a picnic', emoji: '🧺', group: [2, 6], who: 'friends', family: true, where: 'park', hours: 1.5, daysOffOnly: true },
   meetup: { news: 'to catch up', emoji: '☕', group: [2, 4], who: 'friends', where: 'gather', hours: 1.5 },
   meal: { news: 'for a bite to eat', emoji: '🍔', group: [3, 4], who: 'friends', where: 'gather', hours: 1.5 },
   cowork: { news: 'to work on their projects together', emoji: '💻', group: [2, 4], who: 'makers', where: 'worktop', hours: 2 },
@@ -218,7 +218,7 @@ export class Plans {
         ? sim.weather.wet(start) === 0 && month >= BOATING[0] && month <= BOATING[1]
         : ACTIVITIES[id].where !== 'park' || sim.weather.wet(start) === 0 || sim.rng.next() < WET_PARK;
     // On a day off, a picnic's the likeliest thing to suggest; on an evening, something to eat.
-    const likely: ActivityId[] = dayOff ? ['catch', 'picnic', 'picnic', 'picnic', 'meetup', 'meal', 'boat', 'boat'] : ['catch', 'meetup', 'meal', 'meal', 'boat'];
+    const likely: ActivityId[] = dayOff ? ['catch', 'picnic', 'picnic', 'picnic', 'picnic', 'meetup', 'meal', 'boat', 'boat'] : ['catch', 'meetup', 'meal', 'meal', 'boat'];
     const options = likely.filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (!outdoors(id) || light(id)) && dry(id));
     return options[sim.rng.int(0, options.length - 1)];
   }

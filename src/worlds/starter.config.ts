@@ -1,7 +1,7 @@
 // The starter town, as data (docs/WORLD.md#town-configs): built into a world by build.ts. From north to south:
 //
 //   The highway  — through-traffic, hedged on both sides; Hill Road comes down off it into the village.
-//   West Field   — the airfields either side of town (to come), the woods and fields round them.
+//   The airfields — West Field and East Field, either side of town, below the highway: a plane flies between them.
 //   Kiln Lane    — off Hill Road: lots for new companies.
 //   The Street   — the village street: terraces, the food trucks, the head office, the diner, the shop, a lot,
 //                  the charging station and the leisure centre.
@@ -32,6 +32,16 @@ export const STARTER_CONFIG: TownConfig = {
     { name: 'The Green', floor: 'grass', rects: [[43, 71, 54, 42]], park: true, square: true },
     { name: 'Playing field', floor: 'grass', rects: [[57, 120, 12, 8]] },
     { name: 'Charging station', floor: 'forecourt', rects: [[100, 63, 9, 5]] },
+    // The airfields, either side of town: a runway and an apron each.
+    { name: 'West Field runway', floor: 'runway', rects: [[4, 43, 32, 3]] },
+    { name: 'West Field apron', floor: 'apron', rects: [[24, 46, 12, 9]] },
+    { name: 'East Field runway', floor: 'runway', rects: [[124, 43, 32, 3]] },
+    { name: 'East Field apron', floor: 'apron', rects: [[124, 46, 12, 9]] },
+    // Car parks for the homes and the office, and driveways between the cottages.
+    { name: 'Back Lane car park', floor: 'forecourt', rects: [[3, 72, 7, 10]] },
+    { name: 'Office car park', floor: 'forecourt', rects: [[47, 50, 13, 6]] },
+    { name: 'Green Lane car park', floor: 'forecourt', rects: [[100, 114, 6, 8]] },
+    { name: 'Driveway', floor: 'forecourt', rects: [[129, 99, 2, 5], [137, 99, 2, 5], [145, 99, 2, 5], [129, 106, 2, 5], [137, 106, 2, 5], [145, 106, 2, 5]] },
     { name: 'The beach', floor: 'sand', rects: [[70, 135, 10, 3]] },
     { name: 'The shallows', floor: 'shallows', rects: [[70, 138, 10, 2]] },
     { name: 'Jetty', floor: 'jetty', rects: [[96, 138, 1, 3]] },
@@ -66,8 +76,10 @@ export const STARTER_CONFIG: TownConfig = {
   ],
 
   paths: [
-    // Across the Green, both ways; along the river bank by the moorings.
+    // Across the Green, both ways; along the river bank by the moorings; from each airfield's gate down to the Street.
     [43, 91, 54, 1],
+    [31, 55, 1, 12],
+    [131, 55, 1, 12],
     [69, 71, 1, 42],
     [80, 137, 16, 1],
     [44, 141, 22, 1],
@@ -110,6 +122,25 @@ export const STARTER_CONFIG: TownConfig = {
     { t: 'parkingBay', row: [101, 103], y: 65 },
     { t: 'chargingBay', row: [105, 107], y: 65 },
     { t: 'bench', p: [110, 62] },
+    // Parking bays: people's own cars live in the ones nearest home (docs/TRAFFIC.md#own-cars).
+    { t: 'parkingBay', column: [73, 75, 77, 79], x: 4 },
+    { t: 'parkingBay', column: [73, 75, 77, 79], x: 8 },
+    { t: 'parkingBay', row: [48, 50, 52, 54, 56], y: 50 },
+    { t: 'parkingBay', row: [48, 50, 52, 54, 56], y: 55 },
+    { t: 'parkingBay', column: [115, 117, 119], x: 104 },
+    { t: 'parkingBay', column: [116, 118, 120], x: 101 },
+    { t: 'parkingBay', row: [129, 137, 145], y: 99 },
+    { t: 'parkingBay', row: [129, 137, 145], y: 110 },
+    // The airfields (docs/TRAFFIC.md#planes): the plane on its stand at West Field, a stand and a gate at each, a hangar, a windsock.
+    { t: 'plane', p: [28, 48], label: 'Dove Air' },
+    { t: 'stand', p: [28, 48] },
+    { t: 'gate', p: [30, 53], label: 'West Field' },
+    { t: 'hangar', p: [8, 48] },
+    { t: 'windsock', p: [2, 41] },
+    { t: 'stand', p: [128, 48] },
+    { t: 'gate', p: [130, 53], label: 'East Field' },
+    { t: 'hangar', p: [144, 48] },
+    { t: 'windsock', p: [157, 41] },
     // Bus stops (docs/TRAFFIC.md#buses) and billboards by the highway, each showing a spotlight.
     { t: 'busStop', p: [56, 66], label: 'Head office' },
     { t: 'busStop', p: [35, 71], label: 'The Street West' },
@@ -260,22 +291,22 @@ export const STARTER_CONFIG: TownConfig = {
   ],
 
   people: [
-    { id: 'rowan', name: 'Rowan', dept: 'ceo', look: [1, 4, 7, 0], preset: 'magnet', traits: { diligence: 0.7 } },
-    { id: 'ines', name: 'Ines', dept: 'film', look: [2, 0, 1, 2], preset: 'workhorse' },
-    { id: 'theo', name: 'Theo', dept: 'film', look: [0, 2, 5, 0], preset: 'distractor' },
+    { id: 'rowan', name: 'Rowan', dept: 'ceo', look: [1, 4, 7, 0], preset: 'magnet', traits: { diligence: 0.7 }, car: true },
+    { id: 'ines', name: 'Ines', dept: 'film', look: [2, 0, 1, 2], preset: 'workhorse', car: true },
+    { id: 'theo', name: 'Theo', dept: 'film', look: [0, 2, 5, 0], preset: 'distractor', car: true },
     { id: 'mo', name: 'Mo', dept: 'film', look: [4, 0, 3, 0], preset: 'founder' },
-    { id: 'priya', name: 'Priya', dept: 'cs', look: [3, 0, 6, 1], preset: 'regular' },
+    { id: 'priya', name: 'Priya', dept: 'cs', look: [3, 0, 6, 1], preset: 'regular', car: true },
     { id: 'sam', name: 'Sam', dept: 'cs', look: [0, 1, 0, 0], preset: 'introvert' },
     { id: 'lou', name: 'Lou', dept: 'cs', look: [1, 6, 2, 1], preset: 'magnet' },
-    { id: 'ada', name: 'Ada', dept: 'brand', look: [0, 1, 4, 2], preset: 'regular' },
+    { id: 'ada', name: 'Ada', dept: 'brand', look: [0, 1, 4, 2], preset: 'regular', car: true },
     { id: 'bea', name: 'Bea', dept: 'brand', look: [2, 3, 1, 1], preset: 'magnet' },
     { id: 'cal', name: 'Cal', dept: 'brand', look: [1, 0, 2, 0], preset: 'distractor' },
     { id: 'dev', name: 'Dev', dept: 'eng', look: [3, 2, 3, 0], preset: 'introvert' },
-    { id: 'hana', name: 'Hana', dept: 'eng', look: [0, 0, 7, 1], preset: 'workhorse', traits: { ambition: 0.75 } },
-    { id: 'gus', name: 'Gus', dept: 'eng', look: [2, 4, 6, 0], preset: 'introvert' },
+    { id: 'hana', name: 'Hana', dept: 'eng', look: [0, 0, 7, 1], preset: 'workhorse', traits: { ambition: 0.75 }, car: true },
+    { id: 'gus', name: 'Gus', dept: 'eng', look: [2, 4, 6, 0], preset: 'introvert', car: true },
     { id: 'fay', name: 'Fay', dept: 'design', look: [1, 6, 5, 1], preset: 'regular' },
-    { id: 'eli', name: 'Eli', dept: 'ops', look: [4, 4, 4, 0], preset: 'workhorse' },
-    { id: 'nia', name: 'Nia', dept: 'ops', look: [3, 0, 0, 2], preset: 'regular' },
+    { id: 'eli', name: 'Eli', dept: 'ops', look: [4, 4, 4, 0], preset: 'workhorse', car: true },
+    { id: 'nia', name: 'Nia', dept: 'ops', look: [3, 0, 0, 2], preset: 'regular', car: true },
     // Work at the Corner Shop, in shifts that cover its opening hours (07:00–22:00) and each other's lunch.
     { id: 'wes', name: 'Wes', company: 'shop', look: [2, 1, 3, 0], preset: 'regular', traits: { ambition: 0.2 }, shift: [7, 15] },
     { id: 'juno', name: 'Juno', company: 'shop', look: [0, 6, 6, 1], preset: 'magnet', traits: { ambition: 0.25 }, shift: [12, 22] },
@@ -298,11 +329,11 @@ export const STARTER_CONFIG: TownConfig = {
     { id: 'omar', name: 'Omar', species: 'human', look: [3, 0, 3, 0], home: 'priya', preset: 'regular', role: 'child', works: 'school' },
     { id: 'lina', name: 'Lina', species: 'human', look: [0, 1, 6, 2], home: 'hana', preset: 'introvert', role: 'child', works: 'school' },
     // Their teacher.
-    { id: 'maggie', name: 'Maggie', species: 'human', look: [2, 3, 4, 1], own: true, preset: 'workhorse', role: 'staff', works: 'school', shift: [8, 16] },
+    { id: 'maggie', name: 'Maggie', species: 'human', look: [2, 3, 4, 1], own: true, preset: 'workhorse', role: 'staff', works: 'school', shift: [8, 16], car: true },
     // Fen lives on the narrowboat moored on the river, and is out on the water whenever it's fine.
     { id: 'fen', name: 'Fen', species: 'human', look: [3, 2, 3, 1], own: true, preset: 'regular', traits: { ambition: 0.8, chaos: 0.6, social: 0.5 }, role: 'resident' },
     // The diner's staff: Dot on days, Ray on nights, so it never closes.
-    { id: 'dot', name: 'Dot', species: 'human', look: [1, 3, 1, 2], own: true, preset: 'magnet', role: 'staff', works: 'diner', shift: [6, 18] },
+    { id: 'dot', name: 'Dot', species: 'human', look: [1, 3, 1, 2], own: true, preset: 'magnet', role: 'staff', works: 'diner', shift: [6, 18], car: true },
     { id: 'ray', name: 'Ray', species: 'human', look: [3, 5, 7, 0], own: true, preset: 'introvert', role: 'staff', works: 'diner', shift: [18, 6] },
     // The leisure centre's: Sol opens up, Bex closes.
     { id: 'sol', name: 'Sol', species: 'human', look: [2, 2, 0, 0], own: true, preset: 'regular', role: 'staff', works: 'leisure', shift: [7, 15] },

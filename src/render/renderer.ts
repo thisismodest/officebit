@@ -28,6 +28,8 @@ const FEET = 14;
 const ALWAYS_LIT = new Set(['lamppost', 'chargingCanopy', 'christmasTree', 'homeTree', 'billboard', 'busStop']);
 /** Headlights: how far ahead of a car (tiles) they light the road, and how wide (pixels). */
 const HEADLIGHT_REACH = 1.5;
+/** How high the plane flies, in pixels up the screen at full height. */
+const PLANE_HEIGHT = 40;
 const HEADLIGHT_RADIUS = 26;
 /** How dark (0–1) it must be for lights to come on. */
 const DUSK = 0.4;
@@ -183,7 +185,13 @@ export class Renderer {
     const drawables: { sortY: number; draw: () => void }[] = props.map((prop) => {
       // Food trucks are wherever their drive has got to (and only on the map, not the dark beyond it).
       // Boats are on their moorings, out on the river, or (a rowing boat) put away in the club.
-      const moving = prop.item.type.street ? vehicleAt(sim, prop.item) : prop.item.type.boat ? sim.boats.poseOf(prop.item) : undefined;
+      const moving = prop.item.type.street
+        ? vehicleAt(sim, prop.item)
+        : prop.item.type.boat
+          ? sim.boats.poseOf(prop.item)
+          : prop.item.type.airfield === 'plane'
+            ? sim.planes.poseOf(prop.item)
+            : undefined;
       // Between steps, like the cars.
       const pose = moving && { ...moving, x: moving.px + (moving.x - moving.px) * alpha, y: moving.py + (moving.y - moving.py) * alpha };
       if (pose === null) return { sortY: 0, draw: () => {} };
@@ -195,6 +203,9 @@ export class Renderer {
       }
       const sortY = pose ? (pose.y + prop.item.type.size[1]) * TILE : prop.sortY;
       if (pose && prop.item.type.boat) return { sortY, draw: () => this.onMap(() => this.paintBoat(prop, night, pose)) };
+      // The plane in the air: over everything, its shadow on the ground below.
+      const up = prop.item.type.airfield === 'plane' ? sim.planes.poseOf(prop.item)?.up : undefined;
+      if (pose && up !== undefined) return { sortY: up > 0 ? Infinity : sortY, draw: () => this.onMap(() => this.paintFlying(prop, { ...pose, up })) };
       return { sortY, draw: pose ? () => this.onMap(() => this.paintProp(prop, night, pose)) : () => this.paintProp(prop, night, pose) };
     });
     for (const p of visible) {
@@ -553,6 +564,23 @@ export class Renderer {
     // Working on a project away from a desk (a booth, a bench): a laptop out (docs/PLANS.md).
     const at = p.intent?.kind === 'hustle' && p.phase === 'doing' ? this.sim.items[p.intent.item] : undefined;
     if (at && !at.type.study) paintLaptop(ctx, x, feet);
+  }
+
+  /** The plane where it's got to: lifted off the ground as high as it's flying, facing the way it's going, its shadow beneath. */
+  private paintFlying(prop: Prop, pose: { x: number; y: number; facing: string; up: number }): void {
+    const { ctx } = this;
+    const [w, h] = [prop.item.type.size[0] * TILE, prop.item.type.size[1] * TILE];
+    const [x, y] = [Math.round(pose.x * TILE), Math.round(pose.y * TILE)];
+    const lift = Math.round(pose.up * PLANE_HEIGHT);
+    ctx.fillStyle = `rgba(20,14,30,${0.25 - pose.up * 0.1})`;
+    ctx.fillRect(x + 8, y + h - 4, w - 16, 4);
+    // The image starts above the footprint (its tail fin), as it does standing.
+    const top = y - lift + (prop.y - prop.item.def.p[1] * TILE);
+    ctx.save();
+    ctx.translate(pose.facing === 'left' ? x + w : x, top);
+    if (pose.facing === 'left') ctx.scale(-1, 1);
+    ctx.drawImage(prop.img, 0, 0);
+    ctx.restore();
   }
 
   /** A boat out on the river, with whoever's aboard sitting in it (head and shoulders, along it). */

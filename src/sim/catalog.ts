@@ -80,6 +80,8 @@ export interface FurnitureType {
   pool?: boolean;
   /** A swim or a workout (the leisure centre): an outing the diligent and the driven make time for. */
   exercise?: boolean;
+  /** The airfields (planes.ts): a plane, the stand it parks on, and the gate passengers wait at. */
+  airfield?: 'plane' | 'stand' | 'gate';
 }
 
 const workstation = (name: string, size: [number, number] = [2, 1], spot: Tile = [0, 1]): FurnitureType => ({
@@ -372,4 +374,10 @@ export const CATALOG: Record<string, FurnitureType> = {
   chargingCanopy: { ...decor('Canopy', [9, 1], false), hardStanding: true },
   parkingBay: { ...decor('Parking bay', [1, 1], false), parking: 'park', hardStanding: true },
   chargingBay: { ...decor('Charging bay', [1, 1], false), parking: 'charge', hardStanding: true },
+  // The airfields (planes.ts): the little plane that flies between them, the stand it parks on, and a gate to wait at (its bench is for passengers).
+  plane: { ...decor('Plane', [4, 2]), hardStanding: true, airfield: 'plane', blocks: { wheels: false } },
+  stand: { ...decor('Aircraft stand', [4, 2], false), hardStanding: true, airfield: 'stand' },
+  gate: { ...decor('Gate', [3, 1], false), spots: [[0, 0], [1, 0]], seat: true, hardStanding: true, airfield: 'gate' },
+  hangar: decor('Hangar', [7, 4]),
+  windsock: decor('Windsock', [1, 1]),
 };

@@ -257,6 +257,29 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
     fits: (sim, p, intent, phase, area) => rulesFor(intent.after).fits(sim, p, intent.after, phase, area),
   },
 
+  // To their car (cars.ts), and off in it to a bay near where they're going.
+  drive: {
+    to: (sim, p) => {
+      const at = sim.cars.doorOf(p);
+      return at ? { level: sim.traffic.level ?? p.level, p: at } : sim.placeOf(p);
+    },
+    start: (sim, p, intent) => sim.cars.drive(p, intent),
+    fits: (sim, p, intent, phase, area) => rulesFor(intent.after).fits(sim, p, intent.after, phase, area),
+  },
+
+  // Waiting at a gate for the plane (planes.ts): on its bench if there's room, otherwise by it; given up on after a while.
+  fly: {
+    to: (sim, p, intent) => sim.planes.waitingPlace(p, intent),
+    start: (sim, p, intent) => {
+      p.timer = sim.planes.patience;
+      sim.planes.lookOut(p, intent);
+    },
+    doing: (sim, p, intent) => {
+      if (p.timer <= sim.dt) sim.walkOn(p, intent.after);
+    },
+    fits: (sim, p, intent, phase, area) => rulesFor(intent.after).fits(sim, p, intent.after, phase, area),
+  },
+
   leave: {
     to: (sim) => sim.world.spawn,
     start: (sim, p) => {

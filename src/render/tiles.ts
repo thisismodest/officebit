@@ -174,6 +174,27 @@ function paintFloor(
       else if (ty !== ry && tx % 3 === 0) rect(ctx, x0 + 2, y0 - 1, 8, 2, '#ecebe4');
       break;
     }
+    case 'runway': {
+      rect(ctx, x0, y0, TILE, TILE, style.base);
+      speckle(style.base, 0.07, 0.04, 9);
+      if (!room) break;
+      const [rx, ry, rw, rh] = room.rect;
+      // Edge lines, a dashed centre line, and threshold stripes across each end (it runs the long way).
+      const along = rw >= rh;
+      const [first, last] = along ? [tx === rx, tx === rx + rw - 1] : [ty === ry, ty === ry + rh - 1];
+      if (along) {
+        if (ty === ry) rect(ctx, x0, y0, TILE, 1, '#ecebe4');
+        if (ty === ry + rh - 1) rect(ctx, x0, y0 + TILE - 1, TILE, 1, '#ecebe4');
+        if (first || last) for (let s = 2; s < TILE; s += 4) rect(ctx, x0 + 3, y0 + s, 10, 2, '#ecebe4');
+        else if (ty === ry + Math.floor(rh / 2) && tx % 2 === 0) rect(ctx, x0 + 2, y0 + 7, 10, 2, '#ecebe4');
+      } else {
+        if (tx === rx) rect(ctx, x0, y0, 1, TILE, '#ecebe4');
+        if (tx === rx + rw - 1) rect(ctx, x0 + TILE - 1, y0, 1, TILE, '#ecebe4');
+        if (first || last) for (let s = 2; s < TILE; s += 4) rect(ctx, x0 + s, y0 + 3, 2, 10, '#ecebe4');
+        else if (tx === rx + Math.floor(rw / 2) && ty % 2 === 0) rect(ctx, x0 + 7, y0 + 2, 2, 10, '#ecebe4');
+      }
+      break;
+    }
     case 'sand': {
       rect(ctx, x0, y0, TILE, TILE, style.base);
       speckle(style.base, 0.12, 0.08, 13);

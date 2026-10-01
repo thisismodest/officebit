@@ -46,7 +46,7 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
       if (type.afloat) {
         if (floor !== 'water' && floor !== 'shallows') return 'Boats go on the water.';
       } else if (type.hardStanding) {
-        if (floor !== 'forecourt' && floor !== 'path') return 'That goes on a forecourt or paving.';
+        if (floor !== 'forecourt' && floor !== 'path' && floor !== 'apron' && floor !== 'runway') return 'That goes on a forecourt or paving.';
       } else if (floor !== 'grass' && floor !== 'sand') return 'Outdoors, things go on the grass (or the beach).';
     }
   }

@@ -4,6 +4,7 @@ import type { Item } from '../../sim/sim.ts';
 import { hash } from '../palette.ts';
 import { TILE, canvas } from '../pixels.ts';
 import type { Painter, Rect } from './common.ts';
+import { AIRFIELD } from './airfield.ts';
 import { HOME } from './home.ts';
 import { LEISURE } from './leisure.ts';
 import { OFFICE } from './office.ts';
@@ -11,7 +12,7 @@ import { OUTDOOR } from './outdoor.ts';
 import { SCHOOL } from './school.ts';
 import { VENUE } from './venue.ts';
 
-export const PAINTERS: Record<string, Painter> = { ...OFFICE, ...HOME, ...OUTDOOR, ...VENUE, ...SCHOOL, ...LEISURE };
+export const PAINTERS: Record<string, Painter> = { ...OFFICE, ...HOME, ...OUTDOOR, ...VENUE, ...SCHOOL, ...LEISURE, ...AIRFIELD };
 
 export interface Prop {
   item: Item;

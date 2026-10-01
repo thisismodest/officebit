@@ -96,7 +96,8 @@ with a spare checkout for anyone who needs a job (see [CAREERS](CAREERS.md)).
 **Greenside Leisure Centre**, on the Street, has a pool hall, a gym (treadmills, weight
 benches) and reception, open 07:00–21:00, with Sol (07:00–15:00) and Bex (14:00–22:00) on
 the desk. A swim or a workout (`exercise` in the catalog) is an outing the driven make time
-for: the pool draws the sociable, the gym the diligent (`EXERCISE_PULL` in `brain.ts`).
+for: the pool draws the sociable, the gym the diligent (`EXERCISE_PULL` in `brain.ts`). The less
+diligent sometimes stretch it into working hours; workhorses leave on time.
 Swimmers in the `pool` are drawn in the water.
 
 A venue with staff of its own (the shop, the diner, the leisure centre) is only open while one of

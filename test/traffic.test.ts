@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TICKS_PER_DAY } from '../src/sim/clock.ts';
+import { AHEAD } from '../src/sim/movement.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { STARTER } from '../src/worlds/starter.ts';
 import { onMap } from './town.ts';
@@ -44,7 +45,7 @@ test('a visitor turns off the highway, parks, gets out for their errand, then dr
   for (let t = 0; t < 3 * TICKS_PER_DAY && !(seen.size > 0 && !sim.people.some((p) => p.role === 'visitor')); t++) {
     sim.step();
     for (const p of sim.people) if (p.role === 'visitor') seen.add(p.id);
-    const car = sim.traffic.cars.find((c) => c.parked);
+    const car = sim.traffic.cars.find((c) => c.parked && !sim.cars.owned.some((o) => o.car === c));
     if (car) parkedAt = [car.x, car.y];
   }
   assert.ok(seen.size > 0, 'someone visited');
@@ -68,15 +69,19 @@ test('cars wait for someone on a zebra crossing, then carry on', () => {
   assert.equal(car.x, 100, 'and on its way once she’s across');
 });
 
-test('a parked car stays exactly where it is', () => {
+test('a parked car stays exactly where it is, nose in', () => {
   const sim = fresh();
   let parked = 0;
+  const bayAt = (x: number, y: number) => sim.activeItems().find((i) => i.type.parking && i.def.p[0] === x && i.def.p[1] === y);
   for (let t = 0; t < 2 * TICKS_PER_DAY; t++) {
     sim.step();
     for (const c of sim.traffic.cars.filter((c) => c.parked)) {
       parked++;
       assert.deepEqual([c.px, c.py], [c.x, c.y]);
-      assert.equal(c.facing, 'up', 'nose in');
+      // A food truck faces the pavement it serves; a car faces into its bay (the tile behind, where it pulled in from, isn't a bay).
+      const [bx, by] = [c.x - AHEAD[c.facing][0], c.y - AHEAD[c.facing][1]];
+      if (c.truck !== undefined) assert.equal(c.facing, 'up', 'the truck faces the pavement');
+      else assert.ok(bayAt(c.x, c.y) && !bayAt(bx, by), 'nose in');
     }
   }
   assert.ok(parked > 0);

@@ -10,7 +10,7 @@ from late morning, and on weekday evenings after work.
 | Activity | Who | Where | How long |
 |---|---|---|---|
 | 🥏 Catch (a frisbee or a ball) | 2–4 friends | A clear spot of grass in a park | 1 h |
-| 🧺 A picnic (days off only) | 3–6: friends, plus partners and children (counted in the six) | A blanket laid out in a park | 1½ h |
+| 🧺 A picnic (days off only) | 2–6: friends, plus partners and children (counted in the six) | A blanket laid out in a park | 1½ h |
 | ☕ Catching up | 2–4 friends | Seats that `gather` (a diner booth) | 1½ h |
 | 🍔 A bite to eat | 3–4 friends, round one table | Seats that `gather` | 1½ h |
 | 💻 Working on projects together | 2–4 makers | Seats that are a `worktop` (a booth, a park bench) | 2 h |

@@ -27,7 +27,11 @@ export type Intent =
   /** A game in the park with friends (catch, frisbee): at their place in the ring, for a plan (plans.ts). */
   | { kind: 'play'; plan: number; spot: Place }
   /** By bus (buses.ts): to the stop `from` (an item), wait for the bus going round `run` (0 or 1: which way), ride to `to`, then carry on with `after`. */
-  | { kind: 'bus'; from: number; to: number; run: number; after: Intent };
+  | { kind: 'bus'; from: number; to: number; run: number; after: Intent }
+  /** By car (cars.ts): to their car, drive to the bay `to` (an item), then carry on with `after`. */
+  | { kind: 'drive'; to: number; after: Intent }
+  /** By plane (planes.ts): to the gate `from` (an item), wait for the plane, fly to the gate `to`, then carry on with `after`. */
+  | { kind: 'fly'; from: number; to: number; after: Intent };
 
 export interface Person {
   readonly id: string;
@@ -65,6 +69,8 @@ export interface Person {
   readonly works?: string;
   /** Hours they work every day, weekends too, if they work shifts. */
   readonly shift?: [start: number, end: number];
+  /** Has a car of their own (cars.ts). */
+  readonly car?: boolean;
   preset: string;
   traits: Traits;
   routine: Routine;

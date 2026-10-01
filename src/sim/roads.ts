@@ -81,7 +81,7 @@ export class RoadMap {
   private readonly w: number;
   private readonly h: number;
   private readonly floors: (string | undefined)[];
-  /** Tiles with something standing on them (a lamppost, a charger, a canopy's posts): no car goes there. Bays are for cars. */
+  /** Tiles with something standing on them (a lamppost, a charger, a canopy's posts), and bays: no route goes through them. */
   private readonly standing: Uint8Array;
 
   private scratch: { cost: Float64Array; came: Int32Array } | null = null;
@@ -94,7 +94,8 @@ export class RoadMap {
     this.standing = new Uint8Array(this.w * this.h);
     for (const f of level.furniture) {
       const type = CATALOG[f.t];
-      if (!type || !blocks(type, network.mover)) continue;
+      // Bays too: a car only ever pulls into one at the end of its drive (added after the route), never drives through.
+      if (!type || (!blocks(type, network.mover) && !type.parking)) continue;
       const [fw, fh] = type.size;
       for (let y = f.p[1]; y < f.p[1] + fh; y++) for (let x = f.p[0]; x < f.p[0] + fw; x++) if (x >= 0 && y >= 0 && x < this.w && y < this.h) this.standing[y * this.w + x] = 1;
     }

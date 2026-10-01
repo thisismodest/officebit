@@ -35,6 +35,10 @@ const HIGHWAY = 0.9;
 const CREEP = 0.2;
 /** Tiles per step for a boat on the river. */
 const BOAT = 0.15;
+/** The little plane (planes.ts): taxiing on the apron, rolling down the runway, and in the air. */
+const TAXI = 0.3;
+const ROLL = 0.8;
+const FLY = 1.5;
 
 /** On foot: slow for someone just ahead, wait right behind them, step aside for someone coming the other way, give way to someone crossing, and after a second or so squeeze past. */
 const WALKING: Manners = { slow: 0.9, stop: 0.55, width: 0.5, oncoming: "pass", crossing: "yield", patience: 12 };
@@ -53,7 +57,9 @@ export const MOVERS = {
   // The delivery lorry: a car's pace, about a food truck's size.
   lorry: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
   // A boat on the river: a gentle pace, rowed or under sail.
-  boat: { on: "wheels", speed: BOAT, manners: DRIVING }
+  boat: { on: "wheels", speed: BOAT, manners: DRIVING },
+  // The plane: in the air at a good clip, slower rolling down the runway, slowest taxiing to its stand.
+  plane: { on: "wheels", speed: FLY, surfaces: { runway: ROLL, apron: TAXI }, manners: DRIVING }
 } satisfies Record<string, Mover>;
 
 /**

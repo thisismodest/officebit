@@ -1,6 +1,7 @@
 // Plain-English summaries of what someone is up to, and where, for the panel.
 import { PRESETS, type PresetName } from '../sim/personality.ts';
 import { asleep, catchingUp, type Person } from '../sim/person.ts';
+import { PLANE } from '../sim/planes.ts';
 import type { Simulation } from '../sim/sim.ts';
 import type { LevelDef, WorldDef } from '../sim/world.ts';
 import { STARTER } from '../worlds/starter.ts';
@@ -20,7 +21,7 @@ export function placeName(world: WorldDef, level: LevelDef | undefined): string 
 }
 
 export function describe(p: Person, sim: Simulation): string {
-  if (p.riding) return 'On the bus 🚌';
+  if (p.riding) return p.riding === PLANE ? 'Flying ✈️' : sim.cars.of(p)?.car.id === p.riding ? 'Driving 🚗' : 'On the bus 🚌';
   if (p.hidden) return 'Out of the office';
   if (p.status.label) return p.status.label;
   if (p.transit > 0) return sim.levels.get(p.level)?.kind === 'building' ? 'On the stairs' : 'Through the door';
@@ -110,6 +111,10 @@ export function describe(p: Person, sim: Simulation): string {
     }
     case 'bus':
       return moving ? 'Off to the bus stop' : 'Waiting for the bus';
+    case 'drive':
+      return 'Off to the car';
+    case 'fly':
+      return moving ? 'Off to the airfield' : 'Waiting for the plane';
     case 'play': {
       const plan = sim.plans.get(intent.plan);
       if (moving) return 'Off to the park for frisbee';

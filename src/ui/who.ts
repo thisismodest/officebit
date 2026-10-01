@@ -75,6 +75,10 @@ export function optionLabel(intent: Intent, sim: Simulation, p?: Person): string
       return 'Frisbee in the park';
     case 'bus':
       return 'The bus';
+    case 'drive':
+      return 'The car';
+    case 'fly':
+      return 'The plane';
     case 'chat':
       return `Chat with ${name(intent.with)}`;
     case 'wander':

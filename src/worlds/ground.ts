@@ -8,12 +8,12 @@ import { footprint, freeRoomId, inRect, intersection, overlap } from '../sim/geo
 import type { FurnitureDef, LevelDef, Rect, RoomDef, Tile } from '../sim/world.ts';
 import { aOrAn, type Problem } from './placement.ts';
 
-export type Surface = 'road' | 'path' | 'forecourt' | 'water' | 'sand' | 'shallows';
+export type Surface = 'road' | 'path' | 'forecourt' | 'water' | 'sand' | 'shallows' | 'runway' | 'apron';
 
 /** How wide each surface is drawn, in tiles. */
-const WIDTH: Record<Surface, number> = { road: 2, path: 1, forecourt: 1, water: 2, sand: 2, shallows: 2 };
+const WIDTH: Record<Surface, number> = { road: 2, path: 1, forecourt: 1, water: 2, sand: 2, shallows: 2, runway: 3, apron: 2 };
 /** What each surface is called on the map. */
-const NAMES: Record<Surface, string> = { road: 'Road', path: 'Path', forecourt: 'Forecourt', water: 'River', sand: 'Beach', shallows: 'Shallows' };
+const NAMES: Record<Surface, string> = { road: 'Road', path: 'Path', forecourt: 'Forecourt', water: 'River', sand: 'Beach', shallows: 'Shallows', runway: 'Runway', apron: 'Apron' };
 /** Floors that are water: drawn across, a road or path becomes a bridge. */
 const WATER = new Set(['water', 'shallows']);
 /** Ground that isn't for walking or driving on as laid (water, the shallows, a beach): no road or path goes under it, and a road or path over it is bridged (over water) or laid on it. */
@@ -32,12 +32,12 @@ const VERGE = 'verge-';
 /**
  * Pavements, worked out from the roads: every tile beside a road (diagonals
  * too, so they wrap round corners, and round the end of a dead end, like a
- * kerb) that isn't road itself, except along the highway. Stored as runs along
+ * kerb) that isn't road itself, except along the highway, and on forecourts (they meet the road). Stored as runs along
  * each row, replacing any laid before.
  */
 export function layPavements(level: LevelDef): void {
   const roads = level.rooms.filter((r) => r.floor === 'road').map((r) => r.rect);
-  const keepOff = level.rooms.filter((r) => r.floor === 'highway' || SOFT.has(r.floor) || isBridge(r)).map((r) => r.rect);
+  const keepOff = level.rooms.filter((r) => r.floor === 'highway' || r.floor === 'forecourt' || SOFT.has(r.floor) || isBridge(r)).map((r) => r.rect);
   const [w, h] = level.size;
   const isRoad = (x: number, y: number) => inAny(roads, x, y);
   const verges = level.rooms.filter((r) => r.id.startsWith(VERGE)).map((r) => r.rect);
@@ -224,8 +224,10 @@ export function joinsUp(level: LevelDef, [x, y]: Tile): boolean {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** A path or forecourt that was drawn (front paths, park paths, ones you drew), not a pavement laid from the roads. */
+/** Hard ground drawn on the map (paths, forecourts, an airfield's apron and runway), not pavement worked out from the roads. */
+const HARD = new Set(['path', 'forecourt', 'apron', 'runway']);
 function isDrawnPath(room: RoomDef): boolean {
-  return (room.floor === 'path' || room.floor === 'forecourt') && !room.id.startsWith(PAVEMENT);
+  return HARD.has(room.floor) && !room.id.startsWith(PAVEMENT);
 }
 
 function isBridge(room: RoomDef): boolean {

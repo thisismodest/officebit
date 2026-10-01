@@ -81,7 +81,7 @@ vehicles alike; routes that know a vehicle's size (a truck keeps its body clear,
 onto its pitch by a real route; placement refuses a pitch with no clear way on); parked
 vehicles block the tiles they stand on; one collision layer (collision.ts) for everything: people
 give way, step aside to pass and never get stuck, cars keep their distance, crowds spread out.
-Next, when wanted: trains (a rail surface), planes.
+Planes are done (see `docs/TRAFFIC.md#planes`). Next, when wanted: trains (a rail surface).
 
 ### Plans ✓
 Done (see `docs/PLANS.md`): friends and friendly colleagues play frisbee and
@@ -107,11 +107,19 @@ walk may ride, some always walk, and nobody waits for ever. Next, when wanted: m
 
 ### Town upgrades ✓
 Done (see `docs/UPGRADES.md`): versions, and what a release adds to the starter town reaching
-towns made before it, put up by crews.
+towns made before it, put up by crews; towns from before 0.5 move onto the new map.
+
+### The new town ✓
+Done (0.5; see `docs/BUILDINGS.md#the-starter-town`, `docs/WORLD.md#town-configs`): the starter town is
+data (`starter.config.ts`); the map from mock-up D; the leisure centre; hedges and fences; people's own
+cars and car parks; two airfields with a plane between them, used like the bus.
 
 ### Also on the list
 - Beyond the edge of town: other towns and scenes that exist once someone leaves the map (the highway and the river lead somewhere). With accounts, visiting other people's live towns: their people, their day, as it is right now.
-- A leisure centre (bowling, say) for wet days, so there's more to do indoors when the weather keeps people in.
+- Bowling at the leisure centre (or a venue of its own), for wet days.
+- People's own cars, next: couples sharing one, new households buying one, parking on the street.
+- An og:image of the new town (the share picture still shows the old map).
+- Hedges and fences drawn in a stroke in the editor, like paths (they go in a tile at a time for now).
 - Bus lines: each stop on a line (a name saved with it, chosen in the editor; no line is the main one), a route worked out per line, so rides are shorter and more direct (one loop round all eight stops takes over two hours). Riders take the one line that suits; changing buses later.
 - A much quicker test suite (about 5 minutes locally, 8 on CI, mostly a few long runs of the town: ventures, plans, the diner, groceries, construction). Share one run between tests that watch the same weeks, shorten runs to what each check needs, set up the moment under test directly instead of waiting weeks for it; then put the tests back in CI (`pages.yml`).
 - Single-width roads (one lane, for both ways): cars meeting head-on wait at the end, or in a passing place, for the other to clear. Then they're another choice under Ground.

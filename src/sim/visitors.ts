@@ -62,6 +62,11 @@ export class Visitors {
     this.nextTour = sim.tick + this.tourGap();
   }
 
+  /** The bays visitors have (parked in, or heading for). */
+  bays(): Item[] {
+    return this.visits.map((v) => v.bay);
+  }
+
   /** The visit someone's on, if they're a visitor. */
   of(p: Person): Visit | undefined {
     return this.visits.find((v) => v.driver === p.id);
@@ -102,7 +107,7 @@ export class Visitors {
     const lane = slowLane(sim.traffic.lanes(), 'left');
     const reason: Reason = rng.next() < HUNGRY ? 'eat' : 'charge';
     const taken = new Set(this.visits.map((v) => v.bay));
-    const bays = sim.activeItems().filter((i) => i.type.parking && !taken.has(i) && (reason === 'eat' || i.type.parking === 'charge'));
+    const bays = sim.activeItems().filter((i) => i.type.parking && !taken.has(i) && !sim.cars.taken(i) && (reason === 'eat' || i.type.parking === 'charge'));
     // Chargers are for charging: diners take a plain bay if there is one.
     const bay = bays.find((i) => i.type.parking === 'park') ?? bays[0];
     if (!roads || !lane || !bay) return;

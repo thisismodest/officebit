@@ -95,6 +95,29 @@ visitors' own random stream, so they don't change the story.
   rest. Waiting 30 minutes with no bus (or having just missed one at night),
   they give up and walk.
 
+## Own cars
+
+`sim/cars.ts`. Someone with `"car": true` keeps a car in the free parking bay nearest home (within 25
+tiles), from the start. For a long way through town (45 tiles or more), with the car within 30 tiles and
+a free bay within 25 of where they're going (and the walks either end no more than half the way), they
+walk to it, drive (out of sight inside: "Driving 🚗"), pull nose first into that bay and walk the rest.
+The car stays where it's left, so the next long trip (home, say) starts from there. When they leave
+town, the car drives off too. Bays are taken by their car or on the way to it, so visitors and others
+keep out of them; no route goes through a bay (a car pulls in at the end of its drive). Car parks are
+forecourts with bays (pavements aren't laid over forecourts, so one opens straight onto a side road).
+
+## Planes
+
+`sim/planes.ts`. An airfield is a `gate` (a bench for passengers), the `stand` nearest it and the
+`runway` nearest that, on an `apron`; all of it can be drawn and placed in the editor. The `plane`
+flies between the airfields, west to east and back, by day (07:00 to 21:30): from the first on the
+hour, from the next on the half hour. It taxis off its stand, rolls down the runway towards where it's
+going, climbs, flies straight over, lands, rolls out and taxis to the far stand (`MOVERS.plane`: taxi,
+roll, fly), drawn higher the further it is from a runway, with its shadow below. Like the bus: anyone
+with a long walk (70 tiles or more) that the gates at either end halve, and a flight leaving soon
+enough, walks to the gate and waits (40 minutes at most), flies ("✈️ Lou flew to West Field") and
+walks on from the other gate.
+
 ## Deliveries
 
 `src/sim/deliveries.ts`. First thing every Monday (07:00), a delivery lorry
@@ -108,7 +131,9 @@ Corner Shop's delivery is here".
 
 ## In the starter town
 
-The highway runs across the top of the map, with Hill Road down into the village, and
+West Field and East Field sit either side of town below the highway, each with a path down to the
+Street. Car parks: off Back Lane by the western homes, behind the office on Hill Road, on Green Lane,
+and driveways between the cottages. The highway runs across the top of the map, with Hill Road down into the village, and
 Mill Road leaves by the east edge. Eight bus stops, where people go most: Head office,
 The Street West, Corner Shop, Leisure centre, Orchard Close, Acacia Primary, Pond Lane
 and Mill Road; the Street runs in loops (Back Lane, Ferry Lane), so the bus never turns
