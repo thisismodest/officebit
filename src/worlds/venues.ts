@@ -27,6 +27,22 @@ export function buildDiner(id: string, name: string): Venue {
   return { level: b.build(), entry: [10, 10] };
 }
 
+/** The boating club's clubhouse, 12×8: the rowing boats on their racks along the back wall, a corner for a cup of tea, and lockers. */
+export function buildClubhouse(id: string, name: string): Venue {
+  const b = new LevelBuilder(id, name, 'venue', 12, 8)
+    .room(id, name, [0, 0, 12, 8], 'wood', { walled: true })
+    .door([6, 7])
+    .put('boatRack', 1, 1)
+    .put('boatRack', 5, 1)
+    .put('counter', 9, 1)
+    .put('sink', 10, 1)
+    .put('smallTable', 8, 4)
+    .put('sofa', 8, 6)
+    .put('bookshelf', 1, 5)
+    .put('plant', 10, 5);
+  return { level: b.build(), entry: [6, 6] };
+}
+
 /** A small supermarket, 16×12: three aisles, fruit and veg, chillers, three checkouts. Also a workplace. */
 export function buildShop(id: string, name: string, staff: string[]): Venue {
   const b = new LevelBuilder(id, name, 'venue', 16, 12)

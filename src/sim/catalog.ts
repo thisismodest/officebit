@@ -242,12 +242,14 @@ export const CATALOG: Record<string, FurnitureType> = {
     hangout: true,
     treat: true,
   },
-  boathouse: {
-    name: 'Boating club',
-    size: [6, 3],
+  // The boating club on the river bank: a building with its door onto the bank path (the clubhouse inside: worlds/venues.ts).
+  boathouse: decor('Boating club', [6, 3]),
+  // In the clubhouse: the rowing boats on their rack, and oars. Taking one down is going rowing (boats.ts), on fine days in the season.
+  boatRack: {
+    name: 'Boat rack',
+    size: [3, 1],
     solid: true,
-    // At its doors on the bank: someone going rowing.
-    spots: [[2, 3], [3, 3]],
+    spots: [[0, 1], [1, 1], [2, 1]],
     offers: { fun: 0.4 },
     duration: [10, 20],
     boating: true,

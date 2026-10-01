@@ -129,6 +129,20 @@ export const VENUE: Record<string, Painter> = {
     },
   },
 
+  // Upturned rowing boats on a timber rack, with a pair of oars leant against it.
+  boatRack: {
+    up: 14,
+    paint(ctx, w, h, o) {
+      for (const x of [2, w - 4]) rect(ctx, x, o - 12, 2, h + 10, '#6b4a33');
+      for (const [y, colour] of [[-10, '#9b6a43'], [-3, '#2f5d7a']] as const) {
+        pill(ctx, 1, o + y, w - 2, 6, colour, OUTLINE);
+        rect(ctx, 4, o + y + 2, w - 8, 1, shade(colour, 0.2));
+      }
+      rect(ctx, w - 9, o - 13, 1, h + 12, '#d9b886');
+      rect(ctx, w - 7, o - 13, 1, h + 12, '#d9b886');
+    },
+  },
+
   jukebox: {
     up: 14,
     paint(ctx, w, h, o) {

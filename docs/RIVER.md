@@ -29,14 +29,18 @@ ripples. Over a July fortnight, about a dozen swims, two in at once at most.
 boat's gentle pace (`MOVERS.boat`).
 
 - **The moorings**, west of the footbridge: the boating club (`boathouse`) on the
-  bank, a path along it, a `jetty` out into the river, two sailing boats
+  bank, a building like any other (its door onto the bank path, into the
+  clubhouse, a venue: boat racks, a corner for a cup of tea; `buildClubhouse`
+  in `worlds/venues.ts`), a path along it, a `jetty` out into the river, two sailing boats
   (`sailboat`) tied up beside it, and the club's two rowing boats (`rowboat`),
   kept inside: they're only seen while they're out.
 - **A boat trip** ([PLANS](PLANS.md)): friends meet at the jetty and set off, two
   in a rowing boat, three or four in a sailing boat.
 - **A row on your own**: on a fine day (April to October, by day, dry:
   `sim.boatingDay()`), the restless and the driven may walk down to the club in
-  their own time and take a rowing boat out; it's the day's outing.
+  their own time, take a boat off the rack (`boatRack`) and row out from the
+  club's doors; it's the day's outing. Back again, they step off in the
+  clubhouse and walk out.
 - **On the river**: out from the moorings, downriver or up (20 to 40 tiles), and
   back, with whoever's aboard drawn sitting in the boat (following them follows
   the boat); then ashore where they got on, and on with their day. A rowing boat

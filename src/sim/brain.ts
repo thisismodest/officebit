@@ -145,7 +145,8 @@ export class PersonalityBrain implements Brain {
       if (type.event) score += EVENT_PULL * (0.3 + t.social);
       // A swim, or a row on the river: the day's outing, for the sociable and the playful (a row, for the restless and the driven).
       if (type.summer || type.boating) {
-        if (wentOutToday && !(p.intent?.kind === 'use' && p.intent.item === item.index)) continue;
+        // Once a day: an outing somewhere else first (not into the club itself, to get to the boats) rules it out.
+        if (wentOutToday && p.level !== item.level && !(p.intent?.kind === 'use' && p.intent.item === item.index)) continue;
         score += type.summer ? SWIM_PULL * (0.6 + t.social * 0.4 + t.chaos * 0.3) : ROW_PULL * (0.4 + t.ambition * 0.4 + t.chaos * 0.4);
       }
       if (outing(item.level) && sim.festivities.nightOut()) score += NIGHT_OUT;

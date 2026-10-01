@@ -367,12 +367,15 @@ export const OUTDOOR: Record<string, Painter> = {
       // Roof.
       for (let row = 0; row < 12; row++) rect(ctx, 2 + row, o - 20 + row, w - 4 - row * 2, 1, row === 0 ? OUTLINE : row % 3 ? '#2f5d7a' : '#274e67');
       rect(ctx, 0, o - 9, w, 2, OUTLINE);
-      // The doors onto the slipway, and a window.
-      rect(ctx, w / 2 - 14, o + h - 18, 28, 16, OUTLINE);
-      rect(ctx, w / 2 - 13, o + h - 17, 13, 15, '#7a5a40');
-      rect(ctx, w / 2 + 1, o + h - 17, 12, 15, '#7a5a40');
-      rect(ctx, 8, o - 3, 10, 7, OUTLINE);
-      rect(ctx, 9, o - 2, 8, 5, '#9fc6dc');
+      // The door people use (one tile in, where the doorway is), the wide doors the boats come out of, and a window.
+      rect(ctx, TILE + 2, o + h - 16, 12, 14, OUTLINE);
+      rect(ctx, TILE + 3, o + h - 15, 10, 13, '#7a2f2a');
+      dot(ctx, TILE + 11, o + h - 9, '#e7aa2e');
+      rect(ctx, 3 * TILE - 2, o + h - 18, 28, 16, OUTLINE);
+      rect(ctx, 3 * TILE - 1, o + h - 17, 13, 15, '#7a5a40');
+      rect(ctx, 3 * TILE + 13, o + h - 17, 12, 15, '#7a5a40');
+      rect(ctx, 4, o - 3, 8, 7, OUTLINE);
+      rect(ctx, 5, o - 2, 6, 5, '#9fc6dc');
       // A sign, and a flag on the gable.
       rect(ctx, w - 30, o - 4, 22, 6, '#e8e2d6');
       rect(ctx, w - 28, o - 2, 18, 2, '#2f5d7a');

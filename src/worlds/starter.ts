@@ -7,9 +7,9 @@
 import type { CompanyDef, DepartmentDef, NpcDef, PersonDef, PortalDef, Tile, WorldDef } from "../sim/world.ts";
 import { buildHome, buildNarrowboat, buildToLet, type HomeStyle } from "./homes.ts";
 import { buildSchool } from "./school.ts";
-import { buildDiner, buildShop } from "./venues.ts";
+import { buildDiner, buildShop, buildClubhouse } from "./venues.ts";
 import { LevelBuilder, portal } from "./layout.ts";
-import { DINER_DOOR, NARROWBOAT, OFFICE_DOOR, PLOTS, SCHOOL_DOOR, SHOP_DOOR, SPAWN, buildTown, type Plot } from "./town.ts";
+import { BOATHOUSE_DOOR, DINER_DOOR, NARROWBOAT, OFFICE_DOOR, PLOTS, SCHOOL_DOOR, SHOP_DOOR, SPAWN, buildTown, type Plot } from "./town.ts";
 import { resolveTraits } from "../sim/personality.ts";
 import { VERSION } from "./upgrades.ts";
 
@@ -316,6 +316,7 @@ const town = buildTown([...housed.map(({ person, plot }) => ({ plot, owner: pers
 
 const diner = buildDiner("diner", "The Night Owl Diner");
 const shop = buildShop("shop", "Corner Shop", ofCompany("shop"));
+const clubhouse = buildClubhouse("clubhouse", "Boating club");
 const school = buildSchool("school", "Acacia Primary", NPCS.filter((n) => n.role === "child").map((n) => n.id));
 
 const portals: PortalDef[] = [
@@ -323,6 +324,7 @@ const portals: PortalDef[] = [
   portal("door", town.at(DINER_DOOR), { level: diner.level.id, p: diner.entry }),
   portal("door", town.at(SHOP_DOOR), { level: shop.level.id, p: shop.entry }),
   portal("door", town.at(SCHOOL_DOOR), { level: school.level.id, p: school.entry }),
+  portal("door", town.at(BOATHOUSE_DOOR), { level: clubhouse.level.id, p: clubhouse.entry }),
   portal("stairs", ground.at(STAIRS), first.at(STAIRS))
 ];
 
@@ -352,7 +354,7 @@ export const STARTER: WorldDef = {
   seed: 20260929,
   companies: COMPANIES,
   departments: DEPARTMENTS,
-  levels: [town.build(), ground.build(), first.build(), diner.level, shop.level, school.level, ...homes, narrowboat.level, ...emptyHomes],
+  levels: [town.build(), ground.build(), first.build(), diner.level, shop.level, school.level, clubhouse.level, ...homes, narrowboat.level, ...emptyHomes],
   portals,
   spawn: town.at(SPAWN),
   people: PEOPLE.map((person) => ({ ...person, home: home(person.id) })),
