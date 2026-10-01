@@ -1,8 +1,8 @@
 // Buses (docs/TRAFFIC.md#buses): one route round town, calling at every bus
 // stop in turn, run both ways. A bus comes in by a road off the map, pulls up at
-// each stop for a minute for people to get off and on, and leaves by another
-// road. One each way every half hour at rush hour, hourly through the day, and a
-// night bus every two hours. Anyone with a long walk through town may take it instead: they walk
+// each stop for anyone getting off or on, and leaves by another road. One each
+// way every hour through the day (a round takes two), and a night bus every two
+// hours. Anyone with a long walk through town may take it instead: they walk
 // to the stop nearest them, wait (not for ever), ride hidden inside, get off at
 // the stop nearest where they're going, and carry on. Some would rather walk.
 import { TICKS_PER_HOUR, hourOf } from "./clock.ts";
@@ -18,14 +18,14 @@ import { MOVERS, OPPOSITE, headingOf, type Heading } from "./movement.ts";
 import type { Place, Tile } from "./world.ts";
 
 /** Game minutes between buses: at rush hour, through the day, and through the night. */
-const EVERY = { rush: 30, day: 60, night: 120 };
+const EVERY = { rush: 60, day: 60, night: 120 };
 const RUSH: [from: number, to: number][] = [
   [7, 10],
   [16, 19]
 ];
 const DAY: [from: number, to: number] = [6, 23];
-/** How long a bus stays at each stop (ticks), for people to get off and on. */
-const DWELL = 10;
+/** How long a bus stays at a stop where people are getting off or on (ticks: half a minute). From an empty stop it pulls straight away. */
+const DWELL = 5;
 /**
  * A walk through town at least this long (tiles) is worth the bus, if the walks
  * to and from the stops save at least this share of it, and going by bus
@@ -63,6 +63,8 @@ interface Service {
   /** Which stop it's calling at next (or at now). */
   next: number;
   dwell: number;
+  /** Someone's got off or on at this stop: it waits a little. */
+  busy: boolean;
   riders: Rider[];
   leaving: boolean;
 }
@@ -234,19 +236,21 @@ export class Buses {
       const car = sim.traffic.add(0, way.off, [way.edge, ...drive]);
       car.facing = way.heading;
       car.bus = true;
-      this.services.push({ car, run, route, next: 0, dwell: 0, riders: [], leaving: false });
+      this.services.push({ car, run, route, next: 0, dwell: 0, busy: false, riders: [], leaving: false });
     }
   }
 
-  /** At a stop: people off, people on, and after a minute, on to the next (or away out of town after the last). */
+  /** At a stop: people off, people on, and after half a minute (straight away, if nobody did), on to the next (or away out of town after the last). */
   private call(service: Service): void {
     const { sim } = this;
     const { route } = service;
     const stop = route.stops[service.next];
     if (!stop) return;
     if (service.dwell === 0) {
-      for (const rider of service.riders.filter((r) => r.to === stop)) this.alight(rider, stop, service);
+      const off = service.riders.filter((r) => r.to === stop);
+      for (const rider of off) this.alight(rider, stop, service);
       service.riders = service.riders.filter((r) => r.to !== stop);
+      service.busy = off.length > 0;
     }
     // Anyone waiting here for a stop further round gets on (latecomers too, while it's here).
     const later = new Set(route.stops.slice(service.next + 1).map((s) => s.index));
@@ -255,9 +259,10 @@ export class Buses {
       if (intent?.kind !== "bus" || intent.run !== service.run || intent.from !== stop.index || !later.has(intent.to) || p.phase !== "doing" || p.riding) continue;
       service.riders.push({ id: p.id, to: sim.items[intent.to]!, after: intent.after });
       sim.board(p, service.car.id);
+      service.busy = true;
     }
     service.dwell += sim.dt;
-    if (service.dwell < DWELL) return;
+    if (service.busy && service.dwell < DWELL) return;
     service.dwell = 0;
     service.next++;
     const leg = route.legs[service.next] ?? [];

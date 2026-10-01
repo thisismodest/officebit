@@ -14,11 +14,11 @@ const timetable = (from: number) => {
   return times;
 };
 
-test('the timetable: every half hour at rush hour, hourly by day, and a night bus every two hours', () => {
+test('the timetable: hourly by day, rush hour too, and a night bus every two hours', () => {
   const times = timetable(0);
   const between = (a: number, b: number) => times.filter((h) => h >= a && h < b);
-  assert.equal(between(7, 10).length, 6, 'rush hour, morning');
-  assert.equal(between(16, 19).length, 6, 'rush hour, evening');
+  assert.equal(between(7, 10).length, 3, 'rush hour, morning');
+  assert.equal(between(16, 19).length, 3, 'rush hour, evening');
   assert.deepEqual(between(10, 16), [10, 11, 12, 13, 14, 15]);
   assert.deepEqual(times.filter((h) => h >= 23 || h < 6).sort((a, b) => a - b), [1, 3, 5, 23]);
 });
@@ -37,7 +37,10 @@ test('buses call at every stop in turn, both ways round the town, without turnin
   for (let t = 0; t < TICKS_PER_DAY; t++) {
     sim.step();
     for (const s of sim.buses.services) {
-      if (s.dwell === 1) calls.set(s.car.id, [...(calls.get(s.car.id) ?? []), runs[s.run]!.stops[s.next]!.def.label!]);
+      // Each stop it's moved on from, in turn (an empty stop it pulls straight away from).
+      const called = calls.get(s.car.id) ?? [];
+      for (let i = called.length; i < Math.min(s.next, runs[s.run]!.stops.length); i++) called.push(runs[s.run]!.stops[i]!.def.label!);
+      calls.set(s.car.id, called);
       if (facing.get(s.car.id) === OPPOSITE[s.car.facing]) turnedRound = true;
       facing.set(s.car.id, s.car.facing);
     }

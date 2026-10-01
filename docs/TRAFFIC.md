@@ -78,9 +78,9 @@ visitors' own random stream, so they don't change the story.
   and the route follows from the next bus; buses already out finish their round.
 - **Driving:** a car's pace, three tiles long, never up on the pavement, and it
   goes round the block (or the crescent) rather than turn round in the road.
-- **Timetable:** a bus each way every 30 minutes at rush hour (07:00–10:00, 16:00–19:00),
-  hourly from 06:00 to 23:00, and a night bus at 23:00, 01:00, 03:00 and 05:00.
-  It waits a minute at each stop.
+- **Timetable:** a bus each way hourly from 06:00 to 23:00 (rush hour, 07:00–10:00 and 16:00–19:00,
+  can have its own gap: `EVERY.rush`; a round takes about two game hours, so four or five are out at once), and a night bus at 23:00, 01:00, 03:00 and 05:00.
+  It waits half a minute where anyone's getting off or on, and pulls straight away from an empty stop.
 - **Riders:** anyone who lives in town (grown-ups and children), going
   somewhere with a long walk through town (40 tiles or more). They go by bus if:
   - the stops nearest either end cut the walk by at least 40%
