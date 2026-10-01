@@ -50,13 +50,12 @@ export class Deliveries {
     }
     for (const d of [...this.deliveries]) {
       if (d.stage === 'arriving' && d.car.path.length === 0) {
+        // Nothing more to drive for now: it stays put (anyone behind waits, as behind any stopped car).
         d.stage = 'unloading';
-        d.car.parked = true;
         d.until = sim.tick + UNLOAD_MINUTES * (TICKS_PER_HOUR / 60);
         sim.log(`🚚 The ${sim.levels.get(d.shop)?.name ?? 'shop'}'s delivery is here`, []);
       } else if (d.stage === 'unloading' && sim.tick >= d.until) {
         d.stage = 'leaving';
-        d.car.parked = false;
         d.car.through = true;
         d.car.path = [...d.leave, d.out.off];
       } else if (d.car.removed) {
