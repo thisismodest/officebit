@@ -17,6 +17,8 @@ export type Intent =
   | { kind: 'chat'; with: string }
   | { kind: 'wander'; to: Place }
   | { kind: 'retreat'; to: Place }
+  /** A swim in the shallows off a beach (intents.ts). */
+  | { kind: 'swim'; to: Place }
   | { kind: 'meeting'; level: string; room: number }
   | { kind: 'sleep'; item: number; until: number }
   /** Wait outside a venue that should be open by now, for up to `wait` ticks once there (then give up). */

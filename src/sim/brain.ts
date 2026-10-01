@@ -65,6 +65,8 @@ const PLAY_NEAR = 12;
 /** In the wet (at its heaviest): how much less anything outdoors appeals, and how much more something fun indoors. */
 const WET_OUTSIDE = 0.35;
 const WET_INSIDE = 0.06;
+/** A birthday cake in the kitchen: a slice is worth leaving the desk for, more so for the sociable. */
+const CELEBRATION_PULL = 0.35;
 /** A swim on a summer's day (once a day at most, as an outing): worth the walk down to the river, more so for the sociable and the playful. */
 const SWIM_PULL = 0.9;
 /** Taking a rowing boat out from the club (days off and fine evenings, April to October). */
@@ -143,12 +145,13 @@ export class PersonalityBrain implements Brain {
       if (type.hangout) score += (crowd * 0.08 + sim.pullAt(item.level, x, y, 2.5, p) * 0.35) * t.social * lonely;
       if (type.treat) score += TREAT_BONUS + t.chaos * 0.1;
       if (type.event) score += EVENT_PULL * (0.3 + t.social);
-      // A swim, or a row on the river: the day's outing, for the sociable and the playful (a row, for the restless and the driven).
-      if (type.summer || type.boating) {
+      if (type.celebration) score += CELEBRATION_PULL * (0.4 + t.social * 0.6);
+      // A row on the river: the day's outing, for the restless and the driven.
+      if (type.boating) {
         // Once a day: an outing somewhere else first (not into the club itself, to get to the boats) rules it out.
         if (wentOutToday && p.level !== item.level && !(p.intent?.kind === 'use' && p.intent.item === item.index)) continue;
-        if (type.boating && sim.boats.wentOutToday(p)) continue;
-        score += type.summer ? SWIM_PULL * (0.6 + t.social * 0.4 + t.chaos * 0.3) : ROW_PULL * (0.4 + t.ambition * 0.4 + t.chaos * 0.4);
+        if (sim.boats.wentOutToday(p)) continue;
+        score += ROW_PULL * (0.4 + t.ambition * 0.4 + t.chaos * 0.4);
       }
       if (outing(item.level) && sim.festivities.nightOut()) score += NIGHT_OUT;
       if (type.game) score += ARCADE_PULL * (gamer ? 1 : ARCADE_SHARE) * (0.5 + t.chaos) * (1.3 - p.needs.fun);
@@ -172,6 +175,14 @@ export class PersonalityBrain implements Brain {
       }
       const place = { level: item.level, p: item.def.p };
       options.push({ intent: { kind: 'use', item: item.index, mode }, score: score - cost(place) + noise() });
+    }
+
+    // A swim on a summer's day, in the shallows off a beach (somewhere no one else is swimming): the day's outing, for the sociable and the playful.
+    if (phase === 'home' && !wentOutToday && roleOf(p).goesOut && p.species === 'human' && sim.summerDay()) {
+      const taken = new Set(sim.people.flatMap((q) => (q !== p && q.intent?.kind === 'swim' ? [q.intent.to.p.join()] : [])));
+      const spots = sim.swimSpots().filter((s) => !taken.has(s.p.join()));
+      const spot = spots.length ? spots[sim.rng.int(0, spots.length - 1)] : undefined;
+      if (spot) options.push({ intent: { kind: 'swim', to: spot }, score: SWIM_PULL * (0.6 + t.social * 0.4 + t.chaos * 0.3) - cost(spot) + noise() });
     }
 
     // A plan with friends: off to it, and at it till it's over.

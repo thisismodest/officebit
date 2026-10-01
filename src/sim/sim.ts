@@ -243,12 +243,11 @@ export class Simulation {
 
   /** Is it open right now: within its hours, and (in a venue with staff) with someone minding it? */
   isOpen(item: Item): boolean {
-    // A food truck serves once it's parked on its pitch; a swim is for summer days.
+    // A food truck serves once it's parked on its pitch; the boats go out on fine days in the season.
     return (
       this.withinHours(item) &&
       this.venueOpen(item.level) &&
       (!item.type.street || this.foodTrucks.parked(item)) &&
-      (!item.type.summer || this.summerDay()) &&
       (!item.type.boating || this.boatingDay())
     );
   }
@@ -258,6 +257,24 @@ export class Simulation {
     const { month } = this.dateOf();
     return month >= 4 && month <= 10 && this.daylight() > 0.6 && this.weather.wet() === 0;
   }
+
+  /** Where you can swim, out in town: the shallows off a beach (a shallows tile beside sand). Worked out again whenever the ground changes. */
+  swimSpots(): readonly Place[] {
+    const level = this.traffic.level;
+    const def = level ? this.levels.get(level) : undefined;
+    const grid = level ? this.grids.get(level) : undefined;
+    if (!level || !def || !grid) return [];
+    if (this.swimmable?.grid !== grid) {
+      const floor = (x: number, y: number) => (grid.inBounds(x, y) ? def.rooms[grid.roomAt(x, y)]?.floor : undefined);
+      const spots: Place[] = [];
+      for (let y = 0; y < grid.h; y++)
+        for (let x = 0; x < grid.w; x++)
+          if (floor(x, y) === 'shallows' && grid.walkable(x, y) && [[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dx, dy]) => floor(x + dx!, y + dy!) === 'sand')) spots.push({ level, p: [x, y] });
+      this.swimmable = { grid, spots };
+    }
+    return this.swimmable.spots;
+  }
+  private swimmable: { grid: Grid; spots: Place[] } | null = null;
 
   /** A summer's day: June to August, in daylight, and dry. */
   summerDay(): boolean {
@@ -301,9 +318,9 @@ export class Simulation {
     if (item.gone || !(opening ? this.withinHours(item) : this.isOpen(item))) return false;
     const needs = item.type.usesPantry ?? 0;
     if (needs > 0 && this.levels.get(item.level)?.kind === 'home' && this.pantry(this.baseOf(item.level)) < needs) return false;
-    // Out of work: a swim on a summer's day, or a row on the river, is somewhere to go too (for anyone who goes out at all).
-    const swim = phase === 'home' && !!(item.type.summer || item.type.boating) && roleOf(p).goesOut;
-    return this.areaOf(p, phase).includes(item.level) || (phase === 'work' && !!item.type.street) || swim;
+    // Out of work: a row on the river is somewhere to go too (for anyone who goes out at all).
+    const rowing = phase === 'home' && !!item.type.boating && roleOf(p).goesOut;
+    return this.areaOf(p, phase).includes(item.level) || (phase === 'work' && !!item.type.street) || rowing;
   }
 
   /** Meals' worth of ingredients in a home's kitchen. */

@@ -58,10 +58,10 @@ export interface FurnitureType {
   blocks?: { foot?: boolean; wheels?: boolean };
   /** A town event (the bonfire): worth walking over for, and the town's open to everyone while it's on. */
   event?: boolean;
-  /** Only for summer days: June to August, in daylight, when it's dry (a swim in the river). */
-  summer?: boolean;
   /** A boat (boats.ts): moored (a sailboat) or kept in the clubhouse (a rowing boat) till someone takes it out on the river. */
   boat?: 'sail' | 'row';
+  /** Something to celebrate (a birthday cake): worth leaving the desk for, for anyone who likes company. */
+  celebration?: boolean;
   /** Floats: it goes on the water (a boat), and nowhere else. */
   afloat?: boolean;
   /** Where to take a boat out from (the boating club): open on fine days in the boating season (April to October, by day, dry). */
@@ -261,17 +261,8 @@ export const CATALOG: Record<string, FurnitureType> = {
   narrowboat: { ...decor('Narrowboat', [7, 1]), solid: true, afloat: true },
   // Out of the boating club and onto the water while someone's rowing it (boats.ts); back in the club after.
   rowboat: { ...decor('Rowing boat', [2, 1], false), boat: 'row', afloat: true, blocks: { foot: true, wheels: false } },
-  lifebuoy: {
-    name: 'Bathing spot',
-    size: [1, 1],
-    solid: true,
-    // Swimmers paddle about in the shallows in front of it (the beach's lifebuoy marks the spot).
-    spots: [[-3, 2], [-1, 2], [1, 2], [3, 2], [-2, 3], [0, 3], [2, 3], [4, 3]],
-    offers: { fun: 0.45, social: 0.1 },
-    duration: [60, 140],
-    hangout: true,
-    summer: true,
-  },
+  // A lifebuoy on a post, for the beach (swimming's in the shallows off any beach: intents.ts).
+  lifebuoy: decor('Lifebuoy', [1, 1]),
   birthdayCake: {
     name: 'Birthday cake',
     size: [1, 1],
@@ -281,6 +272,7 @@ export const CATALOG: Record<string, FurnitureType> = {
     duration: [20, 40],
     hangout: true,
     treat: true,
+    celebration: true,
   },
   till: { name: 'Till', size: [1, 1], solid: true, spots: [[0, 1]], staff: true, duration: [200, 500] },
 

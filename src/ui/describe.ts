@@ -82,7 +82,6 @@ export function describe(p: Person, sim: Simulation): string {
       if (item?.def.t === 'hopscotch') return 'Playing hopscotch';
       if (item?.def.t === 'pizza') return 'Having pizza 🍕';
       if (item?.def.t === 'birthdayCake') return 'Having birthday cake 🎂';
-      if (item?.def.t === 'lifebuoy') return 'Swimming in the river 🏊';
       if (item?.type.seat && sim.levels.get(item.level)?.kind === 'home') return 'Watching TV';
       return `At the ${name}`;
     }
@@ -95,6 +94,8 @@ export function describe(p: Person, sim: Simulation): string {
     case 'wander':
       if (p.role === 'crew') return 'Heading to the building site';
       return moving ? 'Wandering' : 'Pottering about';
+    case 'swim':
+      return moving ? 'Off for a swim 🏊' : 'Swimming in the river 🏊';
     case 'retreat':
       if (sim.levels.get(p.level)?.kind === 'home') return 'Having some time alone';
       return moving ? 'Escaping the crowd' : 'Hiding somewhere quiet';

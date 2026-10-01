@@ -14,13 +14,14 @@ water, shallows and beaches in the editor, and a road or path drawn across water
 
 ## Swimming
 
-A sandy beach on the north bank, just east of the footbridge, with shallows in
-front of it and a lifebuoy (`lifebuoy`, a `summer` thing to use: its spots are
-in the shallows). On a summer's day (June to August, by day, and dry:
-`sim.summerDay()`) anyone who goes out may walk down for a swim in their own
-time: it's the day's outing, worth the walk, more so for the sociable and the
-playful. In the water, people are drawn head and shoulders, face on, with
-ripples. Over a July fortnight, about a dozen swims, two in at once at most.
+In the shallows off any beach (a `shallows` tile beside `sand`: `sim.swimSpots()`,
+worked out again whenever the ground changes), so drawing a beach with shallows
+by it in the editor makes somewhere to swim. On a summer's day (June to August, by
+day, and dry: `sim.summerDay()`) anyone who goes out may walk down for a swim in
+their own time (the `swim` intent): it's the day's outing, worth the walk, more so
+for the sociable and the playful, one swimmer to a spot. In the water, people are
+drawn head and shoulders, face on, with ripples. The starter town's beach is just
+east of the footbridge, with a lifebuoy (decoration).
 
 ## Boats
 

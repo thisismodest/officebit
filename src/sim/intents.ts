@@ -15,6 +15,9 @@ const WORK_SPELL: [number, number] = [150, 350];
 const CHAT: [number, number] = [40, 90];
 const WANDER: [number, number] = [20, 60];
 const RETREAT: [number, number] = [80, 160];
+/** A swim, and the fun and company it gives every tick. */
+const SWIM: [number, number] = [80, 160];
+const SWIMMING = { fun: 0.004, social: 0.001 };
 const MEETING = 50;
 /** Using furniture with no duration of its own. */
 const USE: [number, number] = [30, 60];
@@ -88,8 +91,8 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
       const item = sim.items[intent.item]!;
       p.timer = sim.rng.int(...(item.type.duration ?? USE));
       sim.used(p, item);
-      // A swim, or a row on the river, is the day's outing.
-      if (item.type.summer || item.type.boating) p.lastOuting = sim.tick;
+      // A row on the river is the day's outing.
+      if (item.type.boating) p.lastOuting = sim.tick;
       const offers: Partial<Needs> = { ...item.type.offers };
       eatFrom(sim, p, item);
       if (intent.mode === 'takeaway') {
@@ -162,6 +165,20 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
     },
     doing: (_sim, p, _intent, refill) => refill(p, 'fun', 0.004 * p.traits.chaos),
     fits: somewhere,
+  },
+
+  // A swim in the shallows off a beach, on a summer's day: the day's outing.
+  swim: {
+    to: (_sim, _p, intent) => intent.to,
+    start: (sim, p) => {
+      p.timer = sim.rng.int(...SWIM);
+      p.lastOuting = sim.tick;
+    },
+    doing: (_sim, p, _intent, refill) => {
+      refill(p, 'fun', SWIMMING.fun);
+      refill(p, 'social', SWIMMING.social);
+    },
+    fits: (sim) => sim.summerDay(),
   },
 
   retreat: {
