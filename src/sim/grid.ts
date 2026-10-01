@@ -21,6 +21,7 @@ const WALK_COST: Record<string, number> = {
   bridgeSide: 1,
   road: 3,
   grass: 4,
+  sand: 3,
   shallows: 6,
   highway: Infinity,
   water: Infinity,

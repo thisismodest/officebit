@@ -237,8 +237,14 @@ export class Simulation {
 
   /** Is it open right now: within its hours, and (in a venue with staff) with someone minding it? */
   isOpen(item: Item): boolean {
-    // A food truck serves once it's parked on its pitch.
-    return this.withinHours(item) && this.venueOpen(item.level) && (!item.type.street || this.foodTrucks.parked(item));
+    // A food truck serves once it's parked on its pitch; a swim is for summer days.
+    return this.withinHours(item) && this.venueOpen(item.level) && (!item.type.street || this.foodTrucks.parked(item)) && (!item.type.summer || this.summerDay());
+  }
+
+  /** A summer's day: June to August, in daylight, and dry. */
+  summerDay(): boolean {
+    const { month } = this.dateOf();
+    return month >= 6 && month <= 8 && this.daylight() > 0.6 && this.weather.wet() === 0;
   }
 
   /** Within its opening hours? (The shop keeps daily hours; food trucks weekday lunches.) */
@@ -277,7 +283,9 @@ export class Simulation {
     if (item.gone || !(opening ? this.withinHours(item) : this.isOpen(item))) return false;
     const needs = item.type.usesPantry ?? 0;
     if (needs > 0 && this.levels.get(item.level)?.kind === 'home' && this.pantry(this.baseOf(item.level)) < needs) return false;
-    return this.areaOf(p, phase).includes(item.level) || (phase === 'work' && !!item.type.street);
+    // Out of work: a swim on a summer's day is somewhere to go too (for anyone who goes out at all).
+    const swim = phase === 'home' && !!item.type.summer && roleOf(p).goesOut;
+    return this.areaOf(p, phase).includes(item.level) || (phase === 'work' && !!item.type.street) || swim;
   }
 
   /** Meals' worth of ingredients in a home's kitchen. */

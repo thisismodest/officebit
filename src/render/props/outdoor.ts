@@ -411,6 +411,17 @@ export const OUTDOOR: Record<string, Painter> = {
     poster: (w, _h, o) => [w - 13, o - 21, 12, 26],
   },
 
+  lifebuoy: {
+    up: 14,
+    paint(ctx, w, h, o) {
+      // A post on the beach with a red and white ring hung on it.
+      rect(ctx, w / 2 - 1, o - 12, 2, h + 10, '#6b4a33');
+      pill(ctx, w / 2 - 5, o - 10, 10, 10, '#e8e2d6', OUTLINE);
+      rect(ctx, w / 2 - 2, o - 7, 4, 4, '#6b4a33');
+      for (const [x, y] of [[-4, -6], [3, -6], [-1, -10], [-1, -2]] as const) rect(ctx, w / 2 + x, o + y, 2, 2, '#c8453a');
+    },
+  },
+
   lamppost: {
     up: 30,
     paint(ctx, w, h, o) {

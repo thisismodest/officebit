@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TICKS_PER_HOUR } from '../src/sim/clock.ts';
+import { TICKS_PER_DAY, TICKS_PER_HOUR } from '../src/sim/clock.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { STARTER } from '../src/worlds/starter.ts';
 
@@ -20,4 +20,25 @@ test('the weather: about as wet as an English year, snow only in winter, the sam
   assert.equal(sim.weather.snowLying(skies[last]!.t), 1, 'lying while it falls');
   assert.ok(sim.weather.snowLying(skies[last + 2]!.t) > 0, 'still lying a while after');
   assert.equal(sim.weather.snowLying(skies[last + 4]!.t), 0, 'and gone half a day after it stops');
+});
+
+test('a swim in the river: on summer days only (June to August, by day, dry), and people go', () => {
+  const sim = new Simulation(structuredClone(STARTER));
+  sim.calendar = { ...sim.calendar, start: [2026, 7, 6] };
+  const buoy = sim.activeItems().find((i) => i.def.t === 'lifebuoy')!;
+  let swims = 0;
+  let outOfSeason = 0;
+  for (let t = 0; t < 10 * TICKS_PER_DAY; t++) {
+    sim.step();
+    for (const p of sim.people) {
+      if (p.intent?.kind !== 'use' || p.intent.item !== buoy.index || p.phase !== 'doing' || p.timer !== sim.dt) continue;
+      swims++;
+      if (!sim.summerDay()) outOfSeason++;
+    }
+  }
+  assert.ok(swims >= 2, `${swims} swims in ten July days`);
+  const winter = new Simulation(structuredClone(STARTER));
+  winter.calendar = { ...winter.calendar, start: [2026, 12, 7] };
+  assert.ok(!winter.isOpen(winter.activeItems().find((i) => i.def.t === 'lifebuoy')!), 'not in December');
+  assert.ok(outOfSeason <= 1, 'and only on summer days');
 });

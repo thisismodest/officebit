@@ -23,6 +23,8 @@ export type FloorStyle =
   | { kind: 'highway'; base: string }
   /** A zebra crossing: stripes run with the traffic, so `across` is the way people walk over it. */
   | { kind: 'zebra'; base: string; across: 'ns' | 'ew' }
+  /** Sand on a beach. */
+  | { kind: 'sand'; base: string }
   /** Water: a river or canal, deep (`water`) or shallow enough to wade (`shallows`). */
   | { kind: 'water'; base: string }
   /** A bridge over water: planks running the way you cross (`across`), railings along its sides. */
@@ -46,6 +48,7 @@ export const FLOORS: Record<string, FloorStyle> = {
   forecourt: { kind: 'slabs', base: '#8f9297', size: 32 },
   zebra: { kind: 'zebra', base: '#55535c', across: 'ns' },
   zebraSide: { kind: 'zebra', base: '#55535c', across: 'ew' },
+  sand: { kind: 'sand', base: '#e3cf9a' },
   water: { kind: 'water', base: '#3d78a8' },
   shallows: { kind: 'water', base: '#62a2c4' },
   bridge: { kind: 'bridge', base: '#9b7451', across: 'ns' },

@@ -65,6 +65,8 @@ const PLAY_NEAR = 12;
 /** In the wet (at its heaviest): how much less anything outdoors appeals, and how much more something fun indoors. */
 const WET_OUTSIDE = 0.35;
 const WET_INSIDE = 0.06;
+/** A swim on a summer's day (once a day at most, as an outing): worth the walk down to the river, more so for the sociable and the playful. */
+const SWIM_PULL = 0.9;
 
 export interface Option {
   intent: Intent;
@@ -139,6 +141,10 @@ export class PersonalityBrain implements Brain {
       if (type.hangout) score += (crowd * 0.08 + sim.pullAt(item.level, x, y, 2.5, p) * 0.35) * t.social * lonely;
       if (type.treat) score += TREAT_BONUS + t.chaos * 0.1;
       if (type.event) score += EVENT_PULL * (0.3 + t.social);
+      if (type.summer) {
+        if (wentOutToday && !(p.intent?.kind === 'use' && p.intent.item === item.index)) continue;
+        score += SWIM_PULL * (0.6 + t.social * 0.4 + t.chaos * 0.3);
+      }
       if (outing(item.level) && sim.festivities.nightOut()) score += NIGHT_OUT;
       if (type.game) score += ARCADE_PULL * (gamer ? 1 : ARCADE_SHARE) * (0.5 + t.chaos) * (1.3 - p.needs.fun);
       // Swings and hopscotch: a go on them, if they're feeling playful and it's just there.

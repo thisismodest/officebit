@@ -58,6 +58,8 @@ export interface FurnitureType {
   blocks?: { foot?: boolean; wheels?: boolean };
   /** A town event (the bonfire): worth walking over for, and the town's open to everyone while it's on. */
   event?: boolean;
+  /** Only for summer days: June to August, in daylight, when it's dry (a swim in the river). */
+  summer?: boolean;
   /** A workstation you work standing up (the diner's grill), not sat at. */
   standing?: boolean;
   /** A game machine (arcades): gamers seek it out whether or not they're bored. */
@@ -235,6 +237,17 @@ export const CATALOG: Record<string, FurnitureType> = {
     duration: [40, 80],
     hangout: true,
     treat: true,
+  },
+  lifebuoy: {
+    name: 'Bathing spot',
+    size: [1, 1],
+    solid: true,
+    // Swimmers paddle about in the shallows in front of it (the beach's lifebuoy marks the spot).
+    spots: [[-3, 2], [-1, 2], [1, 2], [3, 2], [-2, 3], [0, 3], [2, 3], [4, 3]],
+    offers: { fun: 0.45, social: 0.1 },
+    duration: [60, 140],
+    hangout: true,
+    summer: true,
   },
   birthdayCake: {
     name: 'Birthday cake',

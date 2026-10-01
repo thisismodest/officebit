@@ -57,6 +57,9 @@ export const BUS_STOPS: FurnitureDef[] = [
 /** The river along the bottom of town, from one edge to the other. */
 export const RIVER: Rect = [0, 144, TOWN, 5];
 const RIVER_NAME = 'River Dove';
+/** The beach on the north bank, running down to the river: where it starts across, and how wide. */
+const BEACH_X = 111;
+const BEACH_W = 9;
 
 /** The highway across the top of the map: two lanes each way, eastbound on the north side (we drive on the left). */
 const HIGHWAY: Rect = [0, 4, TOWN, 4];
@@ -250,6 +253,10 @@ export function buildTown(residents: Resident[]): LevelBuilder {
     .room('park-cut-river', 'Path', [108, 140, 1, RIVER[1] - 140], 'path')
     .room('footbridge', 'Footbridge', [108, RIVER[1], 1, RIVER[3]], 'bridge')
     .room('south-bank-path', 'Path', [108, RIVER[1] + RIVER[3], 1, 3], 'path')
+    // The beach just east of the footbridge, and the shallows in front of it for a swim on summer days.
+    .room('beach', 'The beach', [BEACH_X, RIVER[1] - 3, BEACH_W, 3], 'sand')
+    .room('shallows', 'The shallows', [BEACH_X, RIVER[1], BEACH_W, 2], 'shallows')
+    .put('lifebuoy', BEACH_X + 4, RIVER[1] - 2)
     .put('pond', 96, 113)
     .put('pond', 122, 126)
     .row('bench', [86, 104, 116, 130], 119)

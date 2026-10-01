@@ -174,6 +174,11 @@ function paintFloor(
       else if (ty !== ry && tx % 3 === 0) rect(ctx, x0 + 2, y0 - 1, 8, 2, '#ecebe4');
       break;
     }
+    case 'sand': {
+      rect(ctx, x0, y0, TILE, TILE, style.base);
+      speckle(style.base, 0.12, 0.08, 13);
+      break;
+    }
     case 'water': {
       rect(ctx, x0, y0, TILE, TILE, style.base);
       // Ripples: short light and dark strokes, a few to a tile.

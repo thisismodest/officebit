@@ -519,6 +519,17 @@ export class Renderer {
       return;
     }
 
+    // In the water: head and shoulders, at the waterline, with ripples round them.
+    if (this.inWater(p, pos)) {
+      // Face on (or side on), so you can see who it is: nobody's seen swimming away.
+      const sprite = characterSprite(this.lookOf(p), p.facing === 'up' ? 'down' : p.facing, 'stand', false);
+      const cut = headTop(sprite) + SWIM_SHOWS;
+      ctx.drawImage(sprite, 0, 0, sprite.width, cut, x, feet - 1 - cut, sprite.width, cut);
+      const ripple = Math.floor(this.time / 400) % 2;
+      rect(ctx, x + 1 - ripple, feet - 2, 10 + ripple * 2, 1, 'rgba(255,255,255,0.7)');
+      rect(ctx, x + 3, feet - 1, 6, 1, 'rgba(255,255,255,0.35)');
+      return;
+    }
     const pose = this.poseOf(p, pos);
     const facing: Facing = pose === 'sitDesk' ? 'up' : pose === 'sitSofa' || pose === 'sleep' ? 'down' : p.facing;
     if (pose !== 'sitDesk' && pose !== 'sitSofa' && pose !== 'sleep') {
@@ -532,6 +543,15 @@ export class Renderer {
     // Working on a project away from a desk (a booth, a bench): a laptop out (docs/PLANS.md).
     const at = p.intent?.kind === 'hustle' && p.phase === 'doing' ? this.sim.items[p.intent.item] : undefined;
     if (at && !at.type.study) paintLaptop(ctx, x, feet);
+  }
+
+  /** Is someone standing in water (the shallows, for a swim)? */
+  private inWater(p: Person, pos: { x: number; y: number }): boolean {
+    const level = this.sim.levels.get(p.level);
+    const grid = this.sim.grids.get(p.level);
+    if (level?.kind !== 'outside' || !grid) return false;
+    const floor = level.rooms[grid.roomAt(Math.round(pos.x), Math.round(pos.y))]?.floor;
+    return floor === 'shallows' || floor === 'water';
   }
 
   private paintBubble(p: Person, pos: { x: number; y: number }): void {
@@ -659,6 +679,9 @@ function truckLook(label: string | undefined): Colours {
   const { body, stripe } = truckColours(label);
   return { body, band: stripe };
 }
+
+/** How much of a swimmer shows above the water, from the top of their head (sprite rows). */
+const SWIM_SHOWS = 11;
 
 /** Where the top of a sprite's head is (its first row with anything in it), worked out once per sprite: sitting, it's lower. */
 const heads = new WeakMap<HTMLCanvasElement, number>();
