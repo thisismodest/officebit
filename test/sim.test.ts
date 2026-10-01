@@ -40,6 +40,8 @@ test('nobody ever stands inside a wall or furniture', () => {
     sim.step();
     if (i % 5) continue;
     for (const p of sim.people) {
+      // Aboard something (the bus, a boat on the river), they're where it is.
+      if (p.riding) continue;
       const grid = sim.grids.get(p.level)!;
       // Mid-step positions sit between two walkable tiles, so check both.
       for (const [x, y] of [[Math.floor(p.x), Math.floor(p.y)], [Math.ceil(p.x), Math.ceil(p.y)]] as const) {

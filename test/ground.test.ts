@@ -115,14 +115,14 @@ test('undo puts a map back as it was, with the same pieces', () => {
 test('water: nobody walks in it and nothing drives on it; a road drawn across it is a bridge, with no pavement on the water, and rubbing it out takes the bridge too', () => {
   const town = structuredClone(STARTER).levels.find((l) => l.kind === 'outside')!;
   assert.match(groundProblem(town, [76, 100, 2, 2], 'water') ?? '', /across the water/, 'no water over a road');
-  lay(town, strokeRects([[80, 136], [80, 152]], 'road'), 'road');
-  const bridge = town.rooms.find((r) => r.floor === 'bridge' && r.rect[0] === 80)!;
-  assert.deepEqual(bridge.rect, [80, 144, 2, 5], 'bridged just where it crosses the river');
+  lay(town, strokeRects([[60, 136], [60, 152]], 'road'), 'road');
+  const bridge = town.rooms.find((r) => r.floor === 'bridge' && r.rect[0] === 60)!;
+  assert.deepEqual(bridge.rect, [60, 144, 2, 5], 'bridged just where it crosses the river');
   const grid = new Grid(town);
-  assert.ok(!grid.walkable(70, 146), 'nobody walks in the river');
-  assert.ok(grid.walkable(81, 146), 'but over the bridge');
-  assert.equal(new RoadMap(town, grid).route([80, 137], [81, 151])?.at(-1)?.join(), '81,151', 'and drives over it');
+  assert.ok(!grid.walkable(50, 146), 'nobody walks in the river');
+  assert.ok(grid.walkable(61, 146), 'but over the bridge');
+  assert.equal(new RoadMap(town, grid).route([60, 137], [61, 151])?.at(-1)?.join(), '61,151', 'and drives over it');
   assert.ok(!town.rooms.some((r) => r.id.startsWith('pavement-') && r.rect[1] >= 144 && r.rect[1] < 149), 'no pavement on the water');
-  erase(town, [80, 146]);
-  assert.ok(!town.rooms.some((r) => r.floor === 'bridge' && r.rect[0] === 80), 'rubbed out, bridge and all');
+  erase(town, [60, 146]);
+  assert.ok(!town.rooms.some((r) => r.floor === 'bridge' && r.rect[0] === 60), 'rubbed out, bridge and all');
 });
