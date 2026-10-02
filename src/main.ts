@@ -7,7 +7,7 @@ import { TICKS_PER_DAY, formatClock, formatTime, weekdayOf } from './sim/clock.t
 import { TILE } from './render/pixels.ts';
 import { exitAt, insideDoor, interiorOf, type Exit } from './sim/places.ts';
 import { Simulation, type Item } from './sim/sim.ts';
-import { restore, snapshot } from './sim/snapshot.ts';
+import { restore, shapeOf, snapshot } from './sim/snapshot.ts';
 import { asleep, type Intent } from './sim/person.ts';
 import type { Tile, WorldDef } from './sim/world.ts';
 import { attachControls } from './ui/controls.ts';
@@ -93,12 +93,19 @@ function storySeed(fresh = false): number {
  * carries on between visits; it carries on from its last snapshot if there's one of this town.
  */
 function newSim(): Simulation {
-  if (time.mode === 'live' && fits(lastSaved, design, time.since)) {
-    const next = restore(structuredClone(lastSaved.snap));
-    time.resume(next);
-    return next;
-  }
   const next = new Simulation(structuredClone(design));
+  // Carrying on from where it was saved, if the snapshot's of this town and from a build like this one; if it won't
+  // restore after all, the town starts from its first morning instead, as if there were none.
+  if (time.mode === 'live' && fits(lastSaved, design, time.since) && lastSaved.snap.shape === shapeOf(next)) {
+    try {
+      const restored = restore(structuredClone(lastSaved.snap));
+      time.resume(restored);
+      return restored;
+    } catch (error) {
+      console.warn('officebit: the saved town wouldn’t restore, so it’s catching up from the start', error);
+      lastSaved = null;
+    }
+  }
   if (time.mode === 'live' && !time.since) {
     time.since = Date.now();
     localStorage.setItem(SINCE_KEY, String(time.since));

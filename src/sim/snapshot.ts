@@ -35,13 +35,25 @@ import { Visitors, VisitorBrain } from './visitors.ts';
 import { Skies } from './weather.ts';
 import { Works } from './works.ts';
 
-/** Bump when the shape of what's saved changes in a way older snapshots can't be read with. */
-export const SNAPSHOT_FORMAT = 1;
+/** Bump when the shape of what's saved changes in a way older snapshots can't be read with (the shape check catches most). */
+export const SNAPSHOT_FORMAT = 2;
 
 export interface Snapshot {
   format: number;
+  /** The sim's shape when it was saved (`shapeOf`): a build with other parts, or other fields in them, can't use it. */
+  shape: string;
   tick: number;
   graph: unknown;
+}
+
+/**
+ * The sim's shape: each of its parts (the sim, and every subsystem it holds) and the fields it has. A snapshot only
+ * fits a sim of the same shape: one from an older build, missing a part this one has (its own cars, the planes), would
+ * break the moment it ran.
+ */
+export function shapeOf(sim: Simulation): string {
+  const parts = [sim, ...Object.values(sim).filter((v): v is object => !!v && typeof v === 'object' && (v as object).constructor?.name in CLASSES)];
+  return parts.map((part) => `${part.constructor.name}:${Object.keys(part).sort().join(',')}`).sort().join(';');
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: any class's constructor
@@ -113,7 +125,7 @@ export function snapshot(sim: Simulation): Snapshot {
     }
     return out;
   };
-  return { format: SNAPSHOT_FORMAT, tick: sim.tick, graph: encode(sim) };
+  return { format: SNAPSHOT_FORMAT, shape: shapeOf(sim), tick: sim.tick, graph: encode(sim) };
 }
 
 /** The town back from a snapshot, just as it was. */
