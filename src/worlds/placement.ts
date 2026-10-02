@@ -47,7 +47,7 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
         if (floor !== 'water' && floor !== 'shallows') return 'Boats go on the water.';
       } else if (type.hardStanding) {
         if (floor !== 'forecourt' && floor !== 'path' && floor !== 'runway') return 'That goes on concrete or paving.';
-      } else if (floor !== 'grass' && floor !== 'sand') return 'Outdoors, things go on the grass (or the beach).';
+      } else if (floor !== 'grass' && floor !== 'sand' && floor !== 'forecourt') return 'Outdoors, things go on the grass, the beach or concrete.';
     }
   }
   // Rugs and the like lie on the floor: other things can stand on them, and they can slide under other things.

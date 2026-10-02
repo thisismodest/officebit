@@ -101,8 +101,8 @@ visitors' own random stream, so they don't change the story.
 each other are one junction, controlling the road strictly between them. A vehicle about to drive
 into it (the tile just ahead) waits unless its way has a green. The cycle: east–west green (the
 longer), amber, north–south green, amber; worked out from the clock, each junction a little out of
-step, so nothing to save. A light shows the way of the road beside it; on a corner of two, alternate
-corners show either way. The highway's markings stop across a junction. The starter town has four
+step, so nothing to save. Every light has two heads: the left for traffic going up and down the
+screen, the right for traffic going across. The highway's markings stop across a junction. The starter town has four
 at the crossroads where Hill Road and Nursery Lane meet the highway.
 
 ## Own cars

@@ -1,8 +1,7 @@
 // Traffic lights (docs/TRAFFIC.md#traffic-lights): lights near each other are one junction, and the road between them
 // is controlled. A vehicle about to drive into it waits unless its way has a green: east–west (the busier way, the
 // longer green), amber, north–south, amber, round again. The phase comes from the clock (each junction a little out of
-// step with the next), so there's nothing to save. A light shows its own road's signal (on a corner, alternate corners
-// show either way).
+// step with the next), so there's nothing to save. Every light has two heads: one for each way.
 import { hashOf } from './rng.ts';
 import type { Heading } from './movement.ts';
 import type { Grid } from './grid.ts';
@@ -18,7 +17,7 @@ const CYCLE = GREEN_EW + AMBER + GREEN_NS + AMBER;
 const SAME_JUNCTION = 8;
 
 export type Lamp = 'red' | 'amber' | 'green';
-type Way = 'ns' | 'ew';
+export type Way = 'ns' | 'ew';
 
 /** A junction under lights: the road between them, and how far its cycle is out of step. */
 interface Junction {
@@ -46,10 +45,10 @@ export class Signals {
     return false;
   }
 
-  /** What a light's showing now. */
-  lampOf(item: Item): Lamp {
+  /** What a light's head for one way (north–south, or east–west) is showing now. */
+  lampOf(item: Item, way: Way): Lamp {
     const j = this.junctions().find((junction) => junction.lights.includes(item));
-    return j ? this.lamp(j, this.wayOf(item)) : 'red';
+    return j ? this.lamp(j, way) : 'red';
   }
 
   private lamp(j: Junction, way: Way): Lamp {
@@ -57,16 +56,6 @@ export class Signals {
     if (way === 'ew') return t < GREEN_EW ? 'green' : t < GREEN_EW + AMBER ? 'amber' : 'red';
     const ns = t - GREEN_EW - AMBER;
     return ns >= 0 && ns < GREEN_NS ? 'green' : ns >= GREEN_NS ? 'amber' : 'red';
-  }
-
-  /** The way a light faces: along the road beside it (one to its left or right runs north–south; above or below, east–west); on a corner of two, alternate corners face either way. */
-  private wayOf(item: Item): Way {
-    const roads = this.sim.traffic.roads();
-    const [x, y] = item.def.p;
-    const road = (rx: number, ry: number) => ['road', 'highway'].includes(roads?.floorAt(rx, ry) ?? '');
-    const ns = road(x - 1, y) || road(x + 1, y);
-    const ew = road(x, y - 1) || road(x, y + 1);
-    return ns && ew ? ((x + y) % 2 === 0 ? 'ns' : 'ew') : ns ? 'ns' : 'ew';
   }
 
   /** The junctions: lights grouped by being near each other (two or more), each controlling the road strictly between them. */

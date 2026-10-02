@@ -86,7 +86,10 @@ test('safe zones: off walls, clear of doorways and stairs, inside one room, and 
   const ways = [{ kind: 'door' as const, a: { level: 'corridor', p: [1, 1] as [number, number] }, b: { level: 'town', p: [0, 0] as [number, number] } }, { kind: 'stairs' as const, a: { level: 'corridor', p: [5, 1] as [number, number] }, b: { level: 'x', p: [0, 0] as [number, number] } }];
   assert.equal(placementProblem(corridor, ways, 'plant', [3, 1]), 'That would block the way.');
   const town = w.levels.find((l) => l.id === 'town')!;
-  assert.equal(placementProblem(town, w.portals, 'bench', [OFFICE_DOOR[0] - 4, OFFICE_DOOR[1] + 3]), 'Outdoors, things go on the grass (or the beach).', 'on the Street');
+  assert.equal(placementProblem(town, w.portals, 'bench', [OFFICE_DOOR[0] - 4, OFFICE_DOOR[1] + 3]), 'Outdoors, things go on the grass, the beach or concrete.', 'on the Street');
+  // Anything can stand on concrete: a hangar in the garden centre's car park, clear of its bays.
+  const concrete = town.rooms.find((r) => r.name === 'Garden centre car park')!;
+  assert.equal(placementProblem(town, w.portals, 'hangar', [concrete.rect[0] + 1, concrete.rect[1] + 1]), null, 'on concrete');
   // The charging station's things go on hard ground: the canopy can be moved and put back on the forecourt, but not the grass.
   const canopy = town.furniture.find((f) => f.t === 'chargingCanopy')!;
   assert.equal(placementProblem(town, w.portals, 'chargingCanopy', canopy.p, canopy), null, 'back where it was');

@@ -410,14 +410,21 @@ export const OUTDOOR: Record<string, Painter> = {
     },
   },
 
-  // Traffic lights on a pole: three lamps in a black head, dim (the lit one's drawn live: renderer.ts, `LAMPS`).
+  // Traffic lights on a pole, with two heads: the left one for traffic going up and down the screen, the right one for
+  // traffic going across. Their lamps dim here (the lit ones are drawn live: renderer.ts, `LAMPS`, `HEADS`).
   trafficLight: {
     up: 22,
     paint(ctx, w, h, o) {
       rect(ctx, w / 2 - 1, o - 8, 2, h + 6, OUTLINE);
       rect(ctx, w / 2 - 3, o + h - 3, 6, 2, OUTLINE);
-      rect(ctx, w / 2 - 3, o - 22, 6, 15, OUTLINE);
-      for (const [i, colour] of ['#5a2424', '#5a4a1e', '#1e4a2a'].entries()) rect(ctx, w / 2 - 2, o - 21 + i * 5, 4, 4, colour);
+      rect(ctx, w / 2 - 7, o - 9, 14, 2, OUTLINE);
+      for (const x of [w / 2 - 8, w / 2 + 2]) {
+        rect(ctx, x, o - 22, 6, 15, OUTLINE);
+        for (const [i, colour] of ['#5a2424', '#5a4a1e', '#1e4a2a'].entries()) rect(ctx, x + 1, o - 21 + i * 5, 4, 4, colour);
+      }
+      // A little arrow under each head: which way it's for.
+      rect(ctx, w / 2 - 6, o - 6, 1, 3, OUTLINE);
+      rect(ctx, w / 2 + 3, o - 5, 3, 1, OUTLINE);
     },
   },
 

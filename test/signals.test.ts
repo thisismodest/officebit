@@ -13,10 +13,10 @@ test('traffic lights take turns: each way gets a green, never both at once, with
   const seen = new Set<string>();
   for (let t = 0; t < 60; t++) {
     sim.step();
-    const lamps = lights.map((l) => sim.signals.lampOf(l));
-    seen.add(lamps.join());
-    // Opposite corners show the same way: two lights green at most, and never all four.
-    assert.ok(lamps.filter((l) => l === 'green').length <= 2, `${lamps}`);
+    const [ns, ew] = [sim.signals.lampOf(lights[0]!, 'ns'), sim.signals.lampOf(lights[0]!, 'ew')];
+    seen.add(`${ns},${ew}`);
+    assert.ok(!(ns === 'green' && ew === 'green'), 'never green both ways');
+    for (const l of lights) assert.deepEqual([sim.signals.lampOf(l, 'ns'), sim.signals.lampOf(l, 'ew')], [ns, ew], 'every light at a junction agrees');
   }
   for (const lamp of ['red', 'amber', 'green']) assert.ok([...seen].some((s) => s.includes(lamp)), `${lamp} shows`);
 });

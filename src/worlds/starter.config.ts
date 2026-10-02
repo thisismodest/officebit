@@ -90,6 +90,9 @@ export const STARTER_CONFIG: TownConfig = {
     [43, 91, 54, 1],
     [31, 55, 1, 12],
     [131, 55, 1, 12],
+    // From each hangar's door across to its airfield's apron.
+    [11, 52, 13, 1],
+    [136, 52, 12, 1],
     // Onto the footbridge, either side of the highway.
     [58, 31, 1, 3],
     [58, 38, 1, 2],
