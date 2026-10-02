@@ -18,7 +18,7 @@ canvas. Modules live in `src/ui/`.
 | **News tab** | `news.ts` | The event log, newest first. With someone selected, **Only {name}** narrows it to their story. |
 | **Profile** | `profile.ts` | A slide-out over the stage for whoever's selected: portrait, what they're doing, needs, personality, their day, home and household, love and venture, what's happened to them lately, relationships, what they're thinking about (their top brain options) and their stats so far. Everyone but crews and passers-by has a button to take control ([INTERACTIONS](INTERACTIONS.md)). The team, their families and pets also have **Edit**, which swaps the sections for a form ([PEOPLE](PEOPLE.md#editing)). Follow, take control and edit are icon buttons under the name, pressed while they're on. |
 | **Building card** | `place-card.ts` | Click a building: name, who's in, a Visit button per floor. Click a door or stairs (`exitAt` in `sim/places.ts`): **To {place}**, which takes you through to where it comes out. Click a billboard or bus-stop poster: the spotlight it's showing, its line, and **Visit {site} ↗** full width (a new tab). |
-| **Controls** | `controls.ts` | Drag (flick to glide), wheel or pinch to zoom, click, keyboard: arrows or WASD pan, `+`/`-` zoom, `f` follows whoever's selected, Esc stops following, space pauses (`main.ts`) |
+| **Controls** | `controls.ts` | Drag (flick to glide), wheel or pinch to zoom, click, keyboard: arrows or WASD pan, `+`/`-` zoom, `f` follows whoever's selected, Esc stops following, space pauses (`main.ts`), or in the editor with a drawing tool out, held, moves the map like Figma's hand |
 
 Shared wording lives in `describe.ts` (what someone's doing, where) and
 `who.ts` (role, household, routine, option labels).

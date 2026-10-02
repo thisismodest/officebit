@@ -627,13 +627,23 @@ document.addEventListener('keydown', (event) => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
   if (event.key === ' ') {
     event.preventDefault();
-    setSpeed(time.paused ? 1 : 0);
+    // Drawing in the editor, Space held moves the map instead (like Figma's hand); otherwise it pauses.
+    if (editor.active && editor.drawsOnPress()) editor.holdHand(true);
+    else if (!event.repeat) setSpeed(time.paused ? 1 : 0);
   }
   if (event.key === 'Escape') {
     card.close();
     if (steering) steer(null);
   }
 });
+
+document.addEventListener('keyup', (event) => {
+  if (event.key !== ' ') return;
+  // Not a press of whichever button has focus, either.
+  event.preventDefault();
+  editor.holdHand(false);
+});
+addEventListener('blur', () => editor.holdHand(false));
 
 /** The loading screen (town/index.html), until the town's first frame is on screen, and a moment more so it doesn't just flash. */
 const LOADING_LINGER_MS = 300;

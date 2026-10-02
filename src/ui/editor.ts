@@ -262,6 +262,7 @@ export class Editor {
   /** Finish editing: the undo steps go with it. */
   close(): void {
     this.active = false;
+    this.holdHand(false);
     this.undos.length = 0;
     this.showUndo();
     this.bar.hidden = this.picker.hidden = this.status.hidden = true;
@@ -299,6 +300,11 @@ export class Editor {
   /** The outline under the pointer: where the new piece would go, or what you'd pick up. */
   hover(x: number, y: number): boolean {
     const { renderer } = this.host;
+    // Moving the map (Space held): no brush outline under the hand.
+    if (this.hand) {
+      renderer.ghost = null;
+      return false;
+    }
     if (GROUND_TOOLS.has(this.tool)) {
       renderer.ghost = this.groundPreview([this.host.tileAt(x, y)]);
       return true;
@@ -351,6 +357,8 @@ export class Editor {
 
   /** Press on a piece of furniture with the move tool: drag it somewhere else. */
   grab(x: number, y: number): Grab | null {
+    // Space held: the press moves the map, whatever the tool.
+    if (this.hand) return null;
     if (this.drawing() || this.tool === 'grass') return this.stroke(this.host.tileAt(x, y));
     if (this.tool === 'room' || this.tool === 'area') return this.rooms.grab(this.tool, this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
     if (this.tool === 'door') return this.rooms.grabDoor(this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
@@ -395,8 +403,23 @@ export class Editor {
     if (this.tool === 'add' && this.pickerLevel !== this.host.renderer.level) this.fillPicker();
   }
 
+  /** Does the tool draw (or build) on every press, so dragging can't move the map? Then Space held does (`holdHand`). */
+  drawsOnPress(): boolean {
+    return this.drawing() || this.tool === 'grass' || this.tool === 'room' || this.tool === 'area' || this.tool === 'door';
+  }
+
+  /** Space held, or let go: presses move the map while it's held (like Figma's hand), and draw again after. */
+  holdHand(on: boolean): void {
+    if (this.hand === on) return;
+    this.hand = on;
+    this.host.renderer.canvas.classList.toggle('hand', on);
+    if (on) this.host.renderer.ghost = null;
+  }
+  private hand = false;
+
   private setTool(tool: Tool): void {
     this.tool = tool;
+    this.holdHand(false);
     // The ground button takes the look of the kind of ground picked, for next time.
     if (Object.hasOwn(GROUND, tool)) {
       const face = this.bar.querySelector<HTMLElement>('[data-face]')!;
@@ -415,10 +438,10 @@ export class Editor {
       this.say(this.adding ? `Click the map to put down the ${CATALOG[this.adding]!.name.toLowerCase()}.` : 'Pick something to add.');
     } else if (GROUND_TOOLS.has(tool)) {
       this.select(null);
-      this.say(GROUND_HINTS[tool as keyof typeof GROUND_HINTS]);
+      this.say(GROUND_HINTS[tool as keyof typeof GROUND_HINTS] + HAND_HINT);
     } else if (INDOOR_TOOLS.has(tool)) {
       this.select(null);
-      this.say(ROOM_HINTS[tool as RoomTool]);
+      this.say(ROOM_HINTS[tool as RoomTool] + (this.drawsOnPress() ? HAND_HINT : ''));
     } else {
       this.say(this.outside() ? 'Drag furniture or a building to move it, or click it to select it.' : 'Drag furniture to move it, or click it to select it.');
     }
@@ -879,6 +902,9 @@ function thumbnail(t: string): HTMLCanvasElement {
   img.style.height = `${Math.round(img.height * scale)}px`;
   return img;
 }
+
+/** How to move the map while drawing. */
+const HAND_HINT = ' Hold Space and drag to move the map.';
 
 const GROUND_HINTS = {
   road: 'Drag to draw a road: it follows you along the grid and turns where you turn. Trees and the like in the way are cleared.',
