@@ -1,11 +1,11 @@
 // The airfields (docs/TRAFFIC.md#planes): little airfields either side of town, each a runway, a stand and a gate, and a
 // plane that flies between them like a bus, by day: from the first on the hour, from the next on the half hour. It
 // taxis out, rolls down the runway, takes off, flies straight there, lands and taxis to the stand. Anyone with a long
-// way across town that a flight cuts right down may fly: they walk to the gate nearest them, wait (not for ever), fly
+// way across town that a flight cuts right down may fly (when the pilot's on: no pilot at that end, no flight): they walk to the gate nearest them, wait (not for ever), fly
 // (out of sight inside), and walk on from the other gate.
-import { TICKS_PER_HOUR, hourOf } from './clock.ts';
+import { TICKS_PER_DAY, TICKS_PER_HOUR, hourOf } from './clock.ts';
 import type { VehiclePose } from './food-trucks.ts';
-import { manhattan } from './geometry.ts';
+import { atDoorOf, manhattan } from './geometry.ts';
 import type { Grid } from './grid.ts';
 import { MOVERS, advance, speedOn, type Moving } from './movement.ts';
 import type { Leg } from './navigation.ts';
@@ -15,7 +15,7 @@ import type { Item, Simulation } from './sim.ts';
 import type { Place, Rect, Tile } from './world.ts';
 
 /** The first and last departures of the day (hours), and the minutes past each hour that each airfield's flight leaves. */
-const DAY: [from: number, to: number] = [7, 21];
+const DAY: [from: number, to: number] = [8, 20];
 const MINUTES_APART = 30;
 /** A walk through town at least this long (tiles) might be worth a flight, if the walks to and from the gates save this share of it. */
 const FLY_FROM = 70;
@@ -28,6 +28,8 @@ const CLIMB = 8;
 const FLYERS = new Set(['employee', 'family', 'staff', 'child', 'resident']);
 const JOURNEYS = new Set<Intent['kind']>(['use', 'work', 'hustle', 'wander', 'play', 'sleep']);
 const TICKS_PER_MINUTE = TICKS_PER_HOUR / 60;
+/** How near the plane's stand (tiles) the pilot can be, out on the field, to fly it. */
+const NEAR_THE_PLANE = 12;
 /** What a passenger is riding (`p.riding`): the plane. */
 export const PLANE = 'plane';
 
@@ -36,6 +38,8 @@ interface Field {
   gate: Item;
   stand: Item;
   runway: Rect;
+  /** The hangar's inside (a level), where the crew wait between flights, if the field has one. */
+  hangar?: string;
 }
 
 interface Flight {
@@ -44,6 +48,8 @@ interface Flight {
   /** The field it's flying to (an index into the fields as they were when it took off), and who's aboard. */
   to: Field;
   riders: { id: string; after: Intent }[];
+  /** Who's flying it. */
+  pilot: string;
 }
 
 /** Where the plane is, and the height it's at: 0 on the ground, 1 at full height. */
@@ -72,9 +78,9 @@ export class Planes {
     return { x, y, px, py, facing, moving: false, middle: [0, 0], up: this.height(Math.round(x + 2), Math.round(y + 1)) };
   }
 
-  /** Who's aboard the plane (for the click card, and following them follows the plane). */
+  /** Who's aboard the plane, the pilot first (for the click card, and following them follows the plane). */
   aboard(): string[] {
-    return this.flight?.riders.map((r) => r.id) ?? [];
+    return this.flight ? [this.flight.pilot, ...this.flight.riders.map((r) => r.id)] : [];
   }
 
   /** Every step: the plane takes off on time, flies, and lands; its passengers go with it. */
@@ -90,8 +96,8 @@ export class Planes {
       const [cx, cy] = [Math.round(flight.pose.x + 2), Math.round(flight.pose.y + 1)];
       const floor = grid.inBounds(cx, cy) ? level.rooms[grid.roomAt(cx, cy)]?.floor : undefined;
       const done = advance(flight.pose, flight.path, speedOn(MOVERS.plane, floor));
-      for (const r of flight.riders) {
-        const p = sim.person(r.id);
+      for (const id of [flight.pilot, ...flight.riders.map((r) => r.id)]) {
+        const p = sim.person(id);
         if (p) [p.px, p.py, p.x, p.y] = [flight.pose.px + 2, flight.pose.py + 1, flight.pose.x + 2, flight.pose.y + 1];
       }
       if (done) this.land(plane, flight);
@@ -164,7 +170,7 @@ export class Planes {
         if (!stands.length || !tiles.length) return [];
         const stand = stands.reduce((a, b) => (manhattan(a.def.p, gate.def.p) <= manhattan(b.def.p, gate.def.p) ? a : b));
         const start = tiles.reduce((a, b) => (manhattan(a, stand.def.p) <= manhattan(b, stand.def.p) ? a : b));
-        return [{ gate, stand, runway: strip(start, runway) }];
+        return [{ gate, stand, runway: strip(start, runway), hangar: this.hangarNear(gate.def.p) }];
       });
     this.cache = { grid, items, fields };
     return fields;
@@ -181,6 +187,16 @@ export class Planes {
     const { sim } = this;
     const from = fields[at]!;
     const to = fields[(at + 1) % fields.length]!;
+    // No pilot here, on shift: no flight (and passengers wait, or give up and walk). In the News once a day.
+    const pilot = sim.people.find((p) => p.flies && this.onDuty(p, from));
+    if (!pilot) {
+      this.nextFlight = departure(sim.tick, at);
+      const day = Math.floor(sim.tick / TICKS_PER_DAY);
+      if (this.grounded !== day) sim.log(`✈️ No flight from ${from.gate.def.label ?? 'the airfield'}: the pilot isn't in`, []);
+      this.grounded = day;
+      return;
+    }
+    sim.board(pilot, PLANE, null);
     const riders: Flight['riders'] = [];
     for (const p of sim.people) {
       const intent = p.intent;
@@ -198,7 +214,7 @@ export class Planes {
     const course = [[fx, fy], onto([fx, fy], away, from.runway), away, toward, touch, rollTo, onto([tx, ty], rollTo, to.runway), [tx, ty]] as Tile[];
     const path = course.slice(1).flatMap((t, i) => line(course[i]!, t)).map(([x, y]): Tile => [x - 2, y - 1]);
     const [x, y] = plane.def.p;
-    this.flight = { pose: { x, y, px: x, py: y, facing: 'right' }, path, to, riders };
+    this.flight = { pose: { x, y, px: x, py: y, facing: 'right' }, path, to, riders, pilot: pilot.id };
     this.nextFlight = -1;
   }
 
@@ -211,6 +227,34 @@ export class Planes {
       const p = sim.person(r.id);
       if (p) sim.alight(p, { level: flight.to.gate.level, p: this.waitAt(flight.to.gate) }, r.after);
     }
+    // The pilot's off too, and works from this end's hangar now, till the next flight takes them back.
+    const pilot = sim.person(flight.pilot);
+    if (pilot) {
+      if (flight.to.hangar) pilot.works = flight.to.hangar;
+      sim.alight(pilot, { level: flight.to.gate.level, p: this.waitAt(flight.to.gate) }, { kind: 'wander', to: { level: flight.to.gate.level, p: this.waitAt(flight.to.gate) } });
+    }
+  }
+
+  /** Is the pilot here for this field's flight: on shift, and in its hangar or out by the plane? */
+  private onDuty(p: Person, field: Field): boolean {
+    const { sim } = this;
+    if (sim.phaseOf(p) !== 'work' || !sim.present(p)) return false;
+    if (field.hangar && p.level === field.hangar) return true;
+    return p.level === field.gate.level && manhattan([Math.round(p.x), Math.round(p.y)], field.stand.def.p) <= NEAR_THE_PLANE;
+  }
+  private grounded = -1;
+
+  /** The inside of the hangar nearest a tile, through its door. */
+  private hangarNear(at: Tile): string | undefined {
+    const { sim } = this;
+    const town = sim.traffic.level;
+    const hangars = sim.activeItems().filter((i) => i.level === town && i.def.t === 'hangar');
+    const hangar = hangars.sort((a, b) => manhattan(a.def.p, at) - manhattan(b.def.p, at))[0];
+    if (!hangar) return undefined;
+    for (const portal of sim.world.portals) {
+      for (const [end, other] of [[portal.a, portal.b], [portal.b, portal.a]] as const) if (end.level === town && atDoorOf(hangar.def, end.p)) return other.level;
+    }
+    return undefined;
   }
 
   /** How high the plane is over a tile: on the ground over a runway or concrete (its apron), climbing to full height within a few tiles of one. */

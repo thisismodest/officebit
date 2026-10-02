@@ -182,4 +182,6 @@ export interface NpcDef {
   romance?: boolean;
   /** Has a car of their own. */
   car?: boolean;
+  /** Flies the plane (planes.ts): staff at the airfield's hangar, wherever the plane is. */
+  flies?: boolean;
 }

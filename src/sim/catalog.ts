@@ -231,6 +231,9 @@ export const CATALOG: Record<string, FurnitureType> = {
   treadmill: { name: 'Treadmill', size: [1, 2], solid: true, spots: [[0, 1]], offers: { fun: 0.25 }, duration: [100, 200], hours: [7, 21], standing: true, exercise: true },
   weightBench: { name: 'Weight bench', size: [2, 1], solid: true, spots: [[0, 1]], offers: { fun: 0.2, social: 0.05 }, duration: [80, 160], hours: [7, 21], exercise: true },
   reception: { name: 'Reception', size: [3, 1], solid: true, spots: [[1, 1]], staff: true, duration: [200, 500] },
+  // The hangar (worlds/venues.ts): the workbench the mechanic and the pilot work at, and a tool chest.
+  workbench: { name: 'Workbench', size: [3, 1], solid: true, spots: [[1, 1]], staff: true, duration: [200, 500] },
+  toolChest: decor('Tool chest', [1, 1]),
   dinerCounter: {
     name: 'Diner counter',
     size: [4, 1],

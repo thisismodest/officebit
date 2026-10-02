@@ -64,6 +64,23 @@ export function buildLeisure(id: string, name: string): Venue {
   return { level: b.build(), entry: [11, 12] };
 }
 
+/** A hangar, 18×12: the plane in for a service, a workbench and tool chests along the wall, and a corner with a desk and a sofa for the crew between flights. */
+export function buildHangar(id: string, name: string): Venue {
+  const b = new LevelBuilder(id, name, 'venue', 18, 12)
+    .room(id, name, [0, 0, 18, 12], 'concrete', { walled: true })
+    .door([8, 11])
+    .put('plane', 3, 3)
+    .put('stand', 3, 3)
+    .put('workbench', 11, 1)
+    .put('toolChest', 15, 1)
+    .put('toolChest', 16, 1)
+    .put('opsDesk', 12, 6)
+    .put('sofa', 13, 9)
+    .put('cooler', 16, 6)
+    .put('plant', 1, 10);
+  return { level: b.build(), entry: [8, 10] };
+}
+
 /** A small supermarket, 16×12: three aisles, fruit and veg, chillers, three checkouts. Also a workplace. */
 export function buildShop(id: string, name: string, staff: string[]): Venue {
   const b = new LevelBuilder(id, name, 'venue', 16, 12)

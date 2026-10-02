@@ -97,7 +97,7 @@ export function relocate(world: WorldDef): void {
 function adopt(world: WorldDef, fresh: WorldDef, level: string): void {
   const company = fresh.companies.find((c) => c.levels.includes(level));
   if (company && !world.companies.some((c) => c.id === company.id)) world.companies.push(company);
-  for (const npc of fresh.npcs) if (npc.works === company?.id && !world.npcs.some((n) => n.id === npc.id)) world.npcs.push(npc);
+  for (const npc of fresh.npcs) if (npc.works && company?.levels.includes(npc.works) && !world.npcs.some((n) => n.id === npc.id)) world.npcs.push(npc);
 }
 
 /** A level that's an upper floor of a home (it moves with the home). */

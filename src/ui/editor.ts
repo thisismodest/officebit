@@ -43,13 +43,13 @@ const OUTSIDE_GROUPS: [string, string[]][] = [
   ['Nature', ['tree', 'bush', 'pond']],
   ['Street', ['bench', 'lamppost', 'busStop', 'billboard', 'lifebuoy']],
   ['Fields', ['fieldGate', 'goal']],
-  ['Airfield', ['stand', 'gate', 'hangar', 'windsock']],
+  ['Airfield', ['stand', 'gate', 'windsock']],
   ['Transport', ['plane', 'sailboat']],
 ];
 /** Everything only for out of doors (kept out of the indoor groups). */
 const OUTSIDE_ONLY = OUTSIDE_GROUPS.flatMap(([, types]) => types);
 /** Never in the picker: buildings, houses, lots and building sites (placed some other way), and what the story brings. */
-const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse', 'leisureCentre']);
+const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse', 'leisureCentre', 'hangar']);
 const INDOOR_GROUPS: [string, string[]][] = [
   ['Office', Object.keys(OFFICE)],
   ['Home', Object.keys(HOME)],

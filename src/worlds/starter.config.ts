@@ -96,6 +96,9 @@ export const STARTER_CONFIG: TownConfig = {
     { id: 'leisure', t: 'leisureCentre', label: 'Greenside Leisure Centre', at: [113, 59], door: 5, inside: { template: 'leisure' } },
     { id: 'school', t: 'school', label: 'Acacia Primary', at: [44, 119], faces: 'up', door: 5, inside: { template: 'school' } },
     { id: 'clubhouse', t: 'boathouse', label: 'Boating club', at: [84, 130], inside: { template: 'clubhouse' } },
+    // The airfields' hangars, where the crew work and wait between flights.
+    { id: 'hangar-west', t: 'hangar', label: 'West Field hangar', at: [8, 48], door: 3, inside: { template: 'hangar' } },
+    { id: 'hangar-east', t: 'hangar', label: 'East Field hangar', at: [144, 48], door: 3, inside: { template: 'hangar' } },
   ],
 
   homes: [
@@ -139,11 +142,9 @@ export const STARTER_CONFIG: TownConfig = {
     { t: 'plane', p: [28, 48], label: 'Dove Air' },
     { t: 'stand', p: [28, 48] },
     { t: 'gate', p: [30, 53], label: 'West Field' },
-    { t: 'hangar', p: [8, 48] },
     { t: 'windsock', p: [2, 41] },
     { t: 'stand', p: [128, 48] },
     { t: 'gate', p: [130, 53], label: 'East Field' },
-    { t: 'hangar', p: [144, 48] },
     { t: 'windsock', p: [157, 41] },
     // Bus stops (docs/TRAFFIC.md#buses) and billboards by the highway, each showing a spotlight.
     { t: 'busStop', p: [56, 66], label: 'Head office' },
@@ -285,6 +286,7 @@ export const STARTER_CONFIG: TownConfig = {
     { id: 'diner', name: 'The Night Owl Diner', icon: 'cup', walkIn: true, levels: ['diner'] },
     { id: 'leisure', name: 'Greenside Leisure Centre', icon: 'swim', walkIn: true, levels: ['leisure'] },
     { id: 'school', name: 'Acacia Primary', icon: 'school', walkIn: true, levels: ['school'] },
+    { id: 'dove-air', name: 'Dove Air', icon: 'plane', walkIn: true, levels: ['hangar-west', 'hangar-east'] },
   ],
 
   departments: [
@@ -344,6 +346,9 @@ export const STARTER_CONFIG: TownConfig = {
     { id: 'ray', name: 'Ray', species: 'human', look: [3, 5, 7, 0], own: true, preset: 'introvert', role: 'staff', works: 'diner', shift: [18, 6] },
     // The leisure centre's: Sol opens up, Bex closes.
     { id: 'sol', name: 'Sol', species: 'human', look: [2, 2, 0, 0], own: true, preset: 'regular', role: 'staff', works: 'leisure', shift: [7, 15] },
+    // Dove Air: Jo flies the plane (and works from whichever hangar it's at), Nat keeps it going at West Field.
+    { id: 'jo', name: 'Jo', species: 'human', look: [1, 4, 3, 1], own: true, preset: 'workhorse', role: 'staff', works: 'hangar-west', shift: [7, 21], flies: true },
+    { id: 'nat', name: 'Nat', species: 'human', look: [4, 2, 6, 0], own: true, preset: 'introvert', role: 'staff', works: 'hangar-west', shift: [8, 17] },
     { id: 'bex', name: 'Bex', species: 'human', look: [0, 5, 4, 2], own: true, preset: 'magnet', role: 'staff', works: 'leisure', shift: [14, 22] },
   ],
 };

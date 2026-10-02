@@ -18,6 +18,9 @@ export interface Routine {
 const LIE_IN = 1.5;
 /** Shift workers set off this many hours before their shift starts, so they're in on time: the town's a fair walk. */
 const SHIFT_LEAD = 1.25;
+/** Hours after a shift a shift worker goes to bed, unless that would leave less than this much sleep before they're up. */
+const SHIFT_UNWIND = 5;
+const LEAST_SLEEP = 6;
 
 /** What part of the day it is for someone. */
 export type DayPhase = 'sleep' | 'home' | 'work';
@@ -46,10 +49,12 @@ export function wakeHour(routine: Routine, weekend: boolean): number {
   return weekend ? routine.wake + LIE_IN : routine.wake;
 }
 
-/** A shift worker's day, built around their shift: up a couple of hours before, off in good time, bed a few hours after. */
+/** A shift worker's day, built around their shift: up a couple of hours before, off in good time, bed a few hours after (sooner after a long shift, so they still get a night's sleep). */
 export function shiftRoutine([start, end]: [number, number]): Routine {
   const at = (h: number) => (h + 24) % 24;
-  return { wake: at(start - SHIFT_LEAD - 1.5), commute: at(start - SHIFT_LEAD), leave: at(end), bed: at(end + 5) };
+  const wake = at(start - SHIFT_LEAD - 1.5);
+  const free = at(wake - end);
+  return { wake, commute: at(start - SHIFT_LEAD), leave: at(end), bed: at(end + Math.max(0, Math.min(SHIFT_UNWIND, free - LEAST_SLEEP))) };
 }
 
 /** School days: up before seven, out of the door by quarter to eight for the walk in, home time at quarter past three, bed by eight or so. */

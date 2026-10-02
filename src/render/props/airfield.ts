@@ -96,6 +96,29 @@ export const AIRFIELD: Record<string, Painter> = {
     },
   },
 
+  // In the hangar: a long bench with a vice and tools on a board above it, and a red tool chest.
+  workbench: {
+    up: 10,
+    paint(ctx, w, h, o) {
+      rect(ctx, 0, o - 10, w, 8, OUTLINE);
+      rect(ctx, 1, o - 9, w - 2, 6, '#8a7a5c');
+      for (let x = 4; x < w - 4; x += 6) rect(ctx, x, o - 8, 2, 4, METAL.mid);
+      rect(ctx, 0, o, w, h - 2, OUTLINE);
+      rect(ctx, 1, o + 1, w - 2, 4, '#b98452');
+      rect(ctx, 1, o + 5, w - 2, h - 8, '#7a5436');
+      rect(ctx, w - 10, o - 2, 6, 3, METAL.dark);
+    },
+  },
+  toolChest: {
+    up: 8,
+    paint(ctx, w, h, o) {
+      rect(ctx, 1, o - 8, w - 2, h + 6, OUTLINE);
+      rect(ctx, 2, o - 7, w - 4, h + 4, '#c8453a');
+      for (let y = o - 4; y < o + h - 2; y += 4) rect(ctx, 2, y, w - 4, 1, shade('#c8453a', -0.3));
+      for (let y = o - 6; y < o + h - 2; y += 4) rect(ctx, w / 2 - 2, y, 4, 1, METAL.light);
+    },
+  },
+
   // A windsock on its pole, streaming out.
   windsock: {
     up: 26,

@@ -65,8 +65,10 @@ export interface Person {
   /** On a bus (its car's id), out of sight till their stop (buses.ts). */
   riding?: string;
   readonly role?: NpcRole;
-  /** Staff: the venue they work at. */
-  readonly works?: string;
+  /** Staff: the venue they work at (the pilot's moves with the plane: planes.ts). */
+  works?: string;
+  /** Flies the plane. */
+  readonly flies?: boolean;
   /** Hours they work every day, weekends too, if they work shifts. */
   readonly shift?: [start: number, end: number];
   /** Has a car of their own (cars.ts). */

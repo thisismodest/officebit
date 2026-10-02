@@ -7,9 +7,9 @@ import { fresh, onMap } from './town.ts';
 
 test('flights leave the first airfield on the hour and the next on the half hour, by day', () => {
   const at = (hour: number) => Math.round((hour - 6) * TICKS_PER_HOUR);
-  assert.equal(hourOf(departure(at(7.5), 0)), 8);
-  assert.equal(hourOf(departure(at(7.6), 1)), 8.5);
-  assert.equal(hourOf(departure(at(21.75), 0)), 7, 'none at night: the first in the morning');
+  assert.equal(hourOf(departure(at(8.5), 0)), 9);
+  assert.equal(hourOf(departure(at(8.6), 1)), 9.5);
+  assert.equal(hourOf(departure(at(20.75), 0)), 8, 'none at night: the first in the morning');
 });
 
 test('the plane takes off, flies over, lands on the far stand, and its passengers walk on from the gate', () => {
@@ -17,8 +17,8 @@ test('the plane takes off, flies over, lands on the far stand, and its passenger
   const plane = () => sim.activeItems().find((i) => i.type.airfield === 'plane')!;
   const [west, east] = [onMap('West Field'), onMap('East Field')];
   assert.deepEqual(plane().def.p, [28, 48], 'on its stand at West Field');
-  // Someone at West Field's gate before the 07:00, flying to East Field.
-  while (hourOf(sim.tick) < 6.8) sim.step();
+  // Someone at West Field's gate before the 08:00, flying to East Field.
+  while (hourOf(sim.tick) < 7.8) sim.step();
   const p = sim.people.find((q) => !q.npc)!;
   // Steered, so they stick to it (it's early: left to themselves they'd go back to bed).
   sim.interactions.control(p, true);
@@ -42,4 +42,24 @@ test('the plane takes off, flies over, lands on the far stand, and its passenger
   assert.ok(Math.abs(p.x - (east[0] + 1)) + Math.abs(p.y - (east[1] + 1)) < 3, 'got off at East Field’s gate');
   assert.ok(sim.events.some((e) => e.text.includes('flew to East Field')));
   assert.deepEqual(validate(sim.world), []);
+});
+
+test('no pilot in, no flight: it says so in the News', () => {
+  const sim = fresh();
+  const plane = () => sim.activeItems().find((i) => i.type.airfield === 'plane')!;
+  sim.removePerson('jo');
+  let flew = false;
+  while (hourOf(sim.tick) < 9.5) {
+    sim.step();
+    flew ||= !!sim.planes.poseOf(plane());
+  }
+  assert.ok(!flew, 'the plane stayed on its stand');
+  assert.ok(sim.events.some((e) => /No flight from West Field: the pilot isn't in/.test(e.text)));
+});
+
+test('the pilot flies with the plane, and works from the hangar it lands at', () => {
+  const sim = fresh();
+  const jo = sim.person('jo')!;
+  while (hourOf(sim.tick) < 8.6) sim.step();
+  assert.equal(jo.works, 'hangar-east', 'over at East Field now');
 });
