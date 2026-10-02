@@ -17,7 +17,7 @@ import { PET_H, petSprite, type PetPose } from './pets.ts';
 import { TILE, canvas, dot, rect, type Ctx } from './pixels.ts';
 import { buildProps, type Prop } from './props/index.ts';
 import { vehicleAt } from '../sim/food-trucks.ts';
-import { paintStaticLayer } from './tiles.ts';
+import { paintDeck, paintStaticLayer } from './tiles.ts';
 import { paintSeasonal } from './seasonal.ts';
 import { paintSky, snowLayer } from './weather.ts';
 import { paintGames, paintLaptop } from './play.ts';
@@ -209,12 +209,19 @@ export class Renderer {
       if (pose && up !== undefined) return { sortY: up > 0 ? Infinity : sortY, draw: () => this.onMap(() => this.paintFlying(prop, { ...pose, up })) };
       return { sortY, draw: pose ? () => this.onMap(() => this.paintProp(prop, night, pose)) : () => this.paintProp(prop, night, pose) };
     });
+    // Footbridges: their decks go over the traffic under them, and the people on them over the decks.
+    const level = sim.levels.get(this.level);
+    const grid = sim.grids.get(this.level);
+    const decks = (level?.rooms ?? []).filter((r) => r.floor === 'overpass');
+    const onDeck = (x: number, y: number) => !!grid && !!level && grid.inBounds(Math.round(x), Math.round(y)) && level.rooms[grid.roomAt(Math.round(x), Math.round(y))]?.floor === 'overpass';
+    const overhead: (() => void)[] = [];
     for (const p of visible) {
       const pos = at(p);
       // Stepped aside, passing someone (collision.ts): drawn a little to their left.
       const [ax, ay] = asideOffset(p.facing, p.aside ?? 0);
       const drawn = { x: pos.x + ax, y: pos.y + ay };
-      drawables.push({ sortY: pos.y * TILE + TILE, draw: () => this.paintPerson(p, drawn) });
+      if (decks.length && onDeck(pos.x, pos.y)) overhead.push(() => this.paintPerson(p, drawn));
+      else drawables.push({ sortY: pos.y * TILE + TILE, draw: () => this.paintPerson(p, drawn) });
     }
     // Cars, and their headlights, which light the road ahead at night.
     const headlights: Light[] = [];
@@ -227,6 +234,8 @@ export class Renderer {
     }
     drawables.sort((a, b) => a.sortY - b.sortY);
     for (const d of drawables) d.draw();
+    for (const { rect: [rx, ry, rw, rh] } of decks) for (let y = ry; y < ry + rh; y++) for (let x = rx; x < rx + rw; x++) paintDeck(ctx, x, y, rh >= rw);
+    for (const draw of overhead) draw();
 
     this.paintLighting(props, night, headlights);
     // After dark, cars on the move show their lights, bright against the dark.

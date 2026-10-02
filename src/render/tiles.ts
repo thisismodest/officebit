@@ -45,6 +45,24 @@ export function paintStaticLayer(level: LevelDef, grid: Grid): HTMLCanvasElement
   return layer;
 }
 
+/** A footbridge's deck over a tile, railings either side, running `along` (down the screen) or across: drawn after the traffic under it, and before the people on it. */
+export function paintDeck(ctx: Ctx, tx: number, ty: number, along: boolean): void {
+  const [x0, y0] = [tx * TILE, ty * TILE];
+  const deck = '#b8b2a6';
+  const rail = '#6b6560';
+  if (along) {
+    rect(ctx, x0 + 2, y0, TILE - 4, TILE, deck);
+    rect(ctx, x0 + 1, y0, 2, TILE, rail);
+    rect(ctx, x0 + TILE - 3, y0, 2, TILE, rail);
+    for (let y = 1; y < TILE; y += 4) rect(ctx, x0 + 4, y0 + y, TILE - 8, 1, shade(deck, -0.08));
+    rect(ctx, x0 + 1, y0 + TILE - 1, TILE - 2, 1, 'rgba(20,14,30,0.25)');
+  } else {
+    rect(ctx, x0, y0 + 2, TILE, TILE - 4, deck);
+    rect(ctx, x0, y0 + 1, TILE, 2, rail);
+    rect(ctx, x0, y0 + TILE - 3, TILE, 2, rail);
+  }
+}
+
 /** Wall faces take a pale tint of the room they face. */
 function wallpaper(style: FloorStyle): string {
   const base = style.kind === 'tiles' || style.kind === 'wood' ? style.a : style.base;
@@ -177,20 +195,9 @@ function paintFloor(
       break;
     }
     case 'overpass': {
-      // The highway underneath, in the bridge's shadow; the deck across it, with railings either side.
+      // The road underneath, in the bridge's shadow: the deck itself is drawn over the traffic (`paintDeck`).
       rect(ctx, x0, y0, TILE, TILE, shade(style.base, -0.15));
-      const along = same(tx, ty - 1, 'overpass') || same(tx, ty + 1, 'overpass');
-      const deck = '#b8b2a6';
-      if (along) {
-        rect(ctx, x0 + 2, y0, TILE - 4, TILE, deck);
-        rect(ctx, x0 + 2, y0, 2, TILE, '#6b6560');
-        rect(ctx, x0 + TILE - 4, y0, 2, TILE, '#6b6560');
-        for (let y = 1; y < TILE; y += 4) rect(ctx, x0 + 4, y0 + y, TILE - 8, 1, shade(deck, -0.08));
-      } else {
-        rect(ctx, x0, y0 + 2, TILE, TILE - 4, deck);
-        rect(ctx, x0, y0 + 2, TILE, 2, '#6b6560');
-        rect(ctx, x0, y0 + TILE - 4, TILE, 2, '#6b6560');
-      }
+      speckle(style.base, 0.07, 0.04, 9);
       break;
     }
     case 'runway': {
