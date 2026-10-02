@@ -705,19 +705,6 @@ export class Simulation {
     this.rebuild(level);
   }
 
-  /** Lay a path from `from` straight down to the nearest pavement or road. */
-  addPath(level: string, from: Tile): void {
-    const target = this.levels.get(level);
-    const grid = this.grids.get(level);
-    if (!target || !grid) return;
-    let length = 0;
-    const isStreet = (y: number) => ['path', 'road'].includes(target.rooms[grid.roomAt(from[0], y)]?.floor ?? '');
-    while (from[1] + length < grid.h && !isStreet(from[1] + length)) length++;
-    if (length === 0) return;
-    target.rooms.push({ id: `${level}-path-${from.join('-')}`, name: 'Path', rect: [from[0], from[1], 1, length], floor: 'path' });
-    this.rebuild(level);
-  }
-
   addPortal(portal: PortalDef): void {
     this.world.portals.push(portal);
     this.renav();

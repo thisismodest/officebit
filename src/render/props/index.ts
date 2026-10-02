@@ -1,5 +1,6 @@
 // Turns furniture into drawable sprites (docs/FURNITURE.md#art). Every catalog
 // type needs a painter here; see common.ts for the Painter contract.
+import { CATALOG } from '../../sim/catalog.ts';
 import type { Item } from '../../sim/sim.ts';
 import { hash } from '../palette.ts';
 import { TILE, canvas } from '../pixels.ts';
@@ -34,8 +35,8 @@ export interface Prop {
 
 /** Pieces that join up with their neighbours in a row (terraces): drawn as one where they meet. */
 const JOINING = new Set(['terrace']);
-/** Tile-sized pieces that join up with their own kind on every side (a hedge, a fence and its gates), whichever way they run, by kind. */
-const TILED: Record<string, string> = { hedge: 'hedge', fence: 'fence', fieldGate: 'fence' };
+/** The line a tile-sized piece joins up with on every side, whichever way it runs (a hedge with hedge, a fence and its gates with fence): from the catalog. */
+const lineOf = (t: string): string | undefined => (CATALOG[t]?.line ? t : CATALOG[t]?.joinsWith);
 
 export function buildProps(items: readonly Item[]): Prop[] {
   // Which joining pieces have another of their kind right up against them, either side (same row, same way round).
@@ -49,8 +50,8 @@ export function buildProps(items: readonly Item[]): Prop[] {
         (o.def.faces ?? '') === (item.def.faces ?? '') &&
         (side < 0 ? o.def.p[0] + o.type.size[0] === item.def.p[0] : item.def.p[0] + item.type.size[0] === o.def.p[0]),
     );
-  const tiled = new Set(items.filter((i) => TILED[i.def.t] && !i.gone).map((i) => `${TILED[i.def.t]}:${i.def.p[0]},${i.def.p[1]}`));
-  const tiledAt = (item: Item, dx: number, dy: number) => tiled.has(`${TILED[item.def.t]}:${item.def.p[0] + dx},${item.def.p[1] + dy}`);
+  const tiled = new Set(items.filter((i) => lineOf(i.def.t) && !i.gone).map((i) => `${lineOf(i.def.t)}:${i.def.p[0]},${i.def.p[1]}`));
+  const tiledAt = (item: Item, dx: number, dy: number) => tiled.has(`${lineOf(item.def.t)}:${item.def.p[0] + dx},${item.def.p[1] + dy}`);
   return items.flatMap((item): Prop[] => {
     const painter = PAINTERS[item.def.t];
     if (!painter) return [];
@@ -59,7 +60,7 @@ export function buildProps(items: readonly Item[]): Prop[] {
     const seed = hash(item.def.p[0], item.def.p[1], item.index);
     const joins = JOINING.has(item.def.t)
       ? { left: touching(item, -1), right: touching(item, 1) }
-      : TILED[item.def.t]
+      : lineOf(item.def.t)
         ? { left: tiledAt(item, -1, 0), right: tiledAt(item, 1, 0), up: tiledAt(item, 0, -1), down: tiledAt(item, 0, 1) }
         : undefined;
     const paint = (lit: boolean, def = item.def) => {

@@ -213,14 +213,14 @@ export class Planes {
     }
   }
 
-  /** How high the plane is over a tile: on the ground over a runway or an apron, climbing to full height within a few tiles of one. */
+  /** How high the plane is over a tile: on the ground over a runway or concrete (its apron), climbing to full height within a few tiles of one. */
   private height(x: number, y: number): number {
-    const ground = (this.sim.levels.get(this.sim.traffic.level ?? '')?.rooms ?? []).filter((r) => r.floor === 'runway' || r.floor === 'apron').map((r) => r.rect);
+    const ground = (this.sim.levels.get(this.sim.traffic.level ?? '')?.rooms ?? []).filter((r) => r.floor === 'runway' || r.floor === 'forecourt').map((r) => r.rect);
     const off = Math.min(...ground.map(([rx, ry, rw, rh]) => Math.max(rx - x, x - (rx + rw - 1), ry - y, y - (ry + rh - 1), 0)));
     return Math.min(1, off / CLIMB);
   }
 
-  /** Where people wait at a gate: in front of it, on the apron. */
+  /** Where people wait at a gate: in front of it, on the concrete. */
   private waitAt(gate: Item): Tile {
     return [gate.def.p[0] + 1, gate.def.p[1] + 1];
   }

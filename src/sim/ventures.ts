@@ -266,7 +266,6 @@ export class Ventures {
     const office = buildOffice(1, venture.stem!, venture.name);
     const door = doorOf(venture.site!.p);
     sim.addLevel(office.level);
-    sim.addPath(venture.site!.level, door);
     sim.addPortal({ kind: 'door', a: { level: venture.site!.level, p: door }, b: { level: office.level.id, p: office.entry } });
     this.moveIn(venture, office.level.id);
     venture.stage = 'launched';

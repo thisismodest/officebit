@@ -19,8 +19,10 @@ export interface TownConfig {
   pavements?: boolean;
   /** Zebra crossings: `zebra` across a road running east–west, `zebraSide` one running north–south. */
   crossings: { floor: 'zebra' | 'zebraSide'; rect: Rect }[];
-  /** Footpaths (beyond the ones worked out from each door to its street). */
+  /** Footpaths. */
   paths: Rect[];
+  /** A path from every door straight out to its street, laid once as the town's built (paths like any other after). */
+  doorPaths?: boolean;
   /** Buildings you can go in, and what's inside. */
   buildings: Building[];
   /** Homes, in the order they're handed out (see `people`): a row of houses, or one, perhaps someone's in particular. */

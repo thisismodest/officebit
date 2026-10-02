@@ -35,7 +35,7 @@ const HIGHWAY = 0.9;
 const CREEP = 0.2;
 /** Tiles per step for a boat on the river. */
 const BOAT = 0.15;
-/** The little plane (planes.ts): taxiing on the apron, rolling down the runway, and in the air. */
+/** The little plane (planes.ts): taxiing on concrete, rolling down the runway, and in the air. */
 const TAXI = 0.3;
 const ROLL = 0.8;
 const FLY = 1.5;
@@ -59,7 +59,7 @@ export const MOVERS = {
   // A boat on the river: a gentle pace, rowed or under sail.
   boat: { on: "wheels", speed: BOAT, manners: DRIVING },
   // The plane: in the air at a good clip, slower rolling down the runway, slowest taxiing to its stand.
-  plane: { on: "wheels", speed: FLY, surfaces: { runway: ROLL, apron: TAXI }, manners: DRIVING }
+  plane: { on: "wheels", speed: FLY, surfaces: { runway: ROLL, forecourt: TAXI }, manners: DRIVING }
 } satisfies Record<string, Mover>;
 
 /**

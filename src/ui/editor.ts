@@ -23,21 +23,32 @@ import { LEISURE } from '../render/props/leisure.ts';
 import { VENUE } from '../render/props/venue.ts';
 import { buildingMoveProblem, flipHouse, isBuilding, moveBuilding, moveFurniture, placeFurniture, removeFurniture, snapshot, type Floor, type Snapshot } from '../worlds/edit.ts';
 import { CLEARABLE, addCrossing, brush, crossingAt, eraseAll, groundProblem, joinsUp, lay, strokeRects, type Surface } from '../worlds/ground.ts';
-import { isCovering, placementProblem } from '../worlds/placement.ts';
+import { aOrAn, isCovering, placementProblem } from '../worlds/placement.ts';
 import type { Grab } from './controls.ts';
 import { esc, narrow } from './html.ts';
-import { icon, iconButton } from './icons.ts';
+import { hasIcon, iconButton, type IconName } from './icons.ts';
 import { ROOM_HINTS, RoomTools, type RoomTool } from './room-tools.ts';
 
-type Tool = 'move' | 'add' | Surface | 'crossing' | 'grass' | RoomTool;
+type Tool = 'move' | 'add' | Surface | 'crossing' | 'grass' | RoomTool | LineTool;
+/** Putting up a line of something, a tile at a time (`line:hedge`). */
+type LineTool = `line:${string}`;
 /** Tools for the ground outside: they only work on the town map. */
-const GROUND_TOOLS = new Set<Tool>(['road', 'pavement', 'path', 'forecourt', 'water', 'sand', 'shallows', 'runway', 'apron', 'crossing', 'grass']);
+const GROUND_TOOLS = new Set<Tool>(['road', 'pavement', 'path', 'forecourt', 'water', 'sand', 'shallows', 'runway', 'crossing', 'grass']);
 /** Tools for walls, doorways and floors: they only work indoors (room-tools.ts). */
 const INDOOR_TOOLS = new Set<Tool>(['room', 'area', 'door', 'stairs']);
 const HOUSES = new Set(['terrace', 'house', 'detached']);
 
-/** What the picker offers indoors and out. Buildings, houses, lots and building sites are placed some other way. */
-const OUTSIDE_ONLY = ['tree', 'bush', 'hedge', 'fence', 'fieldGate', 'goal', 'plane', 'stand', 'gate', 'hangar', 'windsock', 'flowers', 'bench', 'lamppost', 'pond', 'busStop', 'billboard', 'sailboat', 'lifebuoy'];
+/** What the picker offers out of doors, by kind (hedges, fences and flowers are drawn in lines, beside the ground). */
+const OUTSIDE_GROUPS: [string, string[]][] = [
+  ['Nature', ['tree', 'bush', 'pond']],
+  ['Street', ['bench', 'lamppost', 'busStop', 'billboard', 'lifebuoy']],
+  ['Fields', ['fieldGate', 'goal']],
+  ['Airfield', ['stand', 'gate', 'hangar', 'windsock']],
+  ['Transport', ['plane', 'sailboat']],
+];
+/** Everything only for out of doors (kept out of the indoor groups). */
+const OUTSIDE_ONLY = OUTSIDE_GROUPS.flatMap(([, types]) => types);
+/** Never in the picker: buildings, houses, lots and building sites (placed some other way), and what the story brings. */
 const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse', 'leisureCentre']);
 const INDOOR_GROUPS: [string, string[]][] = [
   ['Office', Object.keys(OFFICE)],
@@ -52,26 +63,30 @@ const GROUND: Record<GroundTool, string> = {
   road: 'Road: drag to draw one',
   pavement: 'Pavement: drag to draw it beside a road',
   path: 'Path: drag to draw one',
-  forecourt: 'Forecourt: drag to draw hard standing cars can drive on',
+  forecourt: 'Concrete: drag to lay hard standing, for a forecourt, a car park or an airfield’s apron',
   water: 'Water: drag to draw a river, canal or pond',
   shallows: 'Shallows: drag to draw water shallow enough to paddle in',
   sand: 'Beach: drag to draw sand',
   runway: 'Runway: drag to draw one, for the plane',
-  apron: 'Apron: drag to draw an airfield’s apron, for stands and gates',
   crossing: 'Zebra crossing: click a road',
   grass: 'Grass: drag to lay grass over roads, paths, water, beach and pavement',
 };
+/** What's put up in lines, a tile at a time (`line` in the catalog: hedges, fences), each a tool beside the ground's. */
+const LINES = Object.keys(CATALOG).filter((t) => CATALOG[t]!.line);
+/** The catalog type a line tool puts up, if it's one. */
+const lineOf = (tool: Tool): string | null => (tool.startsWith('line:') ? tool.slice(5) : null);
+const lineLabel = (t: string) => `${CATALOG[t]!.name}: drag to put up a row, a tile at a time`;
+const lineIcon = (t: string): IconName => (hasIcon(t) ? t : 'add');
 /** What a stroke of each kind of ground says once it's down. */
 const LAID: Record<Surface | 'grass', string> = {
   road: 'Laid a road',
   pavement: 'Laid some pavement',
   path: 'Laid a path',
-  forecourt: 'Laid a forecourt',
+  forecourt: 'Laid some concrete',
   water: 'Drew some water',
   shallows: 'Drew some shallows',
   sand: 'Laid a stretch of beach',
   runway: 'Laid a runway',
-  apron: 'Laid an apron',
   grass: 'Laid grass',
 };
 /** How long (ms) to hold the ground button down for the others; and with a mouse, how long after leaving them they stay open. */
@@ -133,6 +148,14 @@ export class Editor {
           ${iconButton('road', GROUND.road, 'data-tool="road" data-face aria-haspopup="true" aria-expanded="false"')}
           <span class="flyout" role="menu" hidden>${(Object.keys(GROUND) as GroundTool[]).map((t) => iconButton(t, GROUND[t], `data-tool="${t}" role="menuitemradio"`)).join('')}</span>
         </span>
+        ${
+          LINES.length
+            ? `<span class="tool-set">
+          ${iconButton(lineIcon(LINES[0]!), lineLabel(LINES[0]!), `data-tool="line:${LINES[0]}" data-face aria-haspopup="true" aria-expanded="false"`)}
+          <span class="flyout" role="menu" hidden>${LINES.map((t) => iconButton(lineIcon(t), lineLabel(t), `data-tool="line:${t}" role="menuitemradio"`)).join('')}</span>
+        </span>`
+            : ''
+        }
       </span>
       <span class="group" data-scene="inside">
         <span class="divider"></span>
@@ -171,34 +194,35 @@ export class Editor {
       if (button?.dataset.action === 'undo') this.undo();
       if (button?.dataset.action === 'done') onDone();
     });
-    // Press and hold the ground button to see the others too; letting go after that isn't a click on it.
-    const face = this.bar.querySelector<HTMLElement>('[data-face]')!;
-    let hold: ReturnType<typeof setTimeout> | undefined;
-    let held = false;
-    face.addEventListener('pointerdown', () => {
-      held = false;
-      hold = setTimeout(() => {
-        held = true;
-        this.showFlyout(true);
-      }, HOLD_MS);
-    });
-    for (const type of ['pointerup', 'pointerleave', 'pointercancel']) face.addEventListener(type, () => clearTimeout(hold));
-    face.addEventListener('click', (event) => {
-      if (held) event.stopPropagation();
-      held = false;
-    });
-    face.addEventListener('contextmenu', (event) => event.preventDefault());
-    // With a mouse, hovering shows them too, and they go a moment after the pointer leaves.
-    const set = face.closest<HTMLElement>('.tool-set')!;
-    let linger: ReturnType<typeof setTimeout> | undefined;
-    set.addEventListener('pointerenter', (event) => {
-      if (event.pointerType !== 'mouse') return;
-      clearTimeout(linger);
-      this.showFlyout(true);
-    });
-    set.addEventListener('pointerleave', (event) => {
-      if (event.pointerType === 'mouse') linger = setTimeout(() => this.showFlyout(false), LINGER_MS);
-    });
+    // Press and hold a button with others beside it (the ground, lines) to see them too; letting go after that isn't a click on it.
+    for (const set of this.bar.querySelectorAll<HTMLElement>('.tool-set')) {
+      const face = set.querySelector<HTMLElement>('[data-face]')!;
+      let hold: ReturnType<typeof setTimeout> | undefined;
+      let held = false;
+      face.addEventListener('pointerdown', () => {
+        held = false;
+        hold = setTimeout(() => {
+          held = true;
+          this.showFlyout(set, true);
+        }, HOLD_MS);
+      });
+      for (const type of ['pointerup', 'pointerleave', 'pointercancel']) face.addEventListener(type, () => clearTimeout(hold));
+      face.addEventListener('click', (event) => {
+        if (held) event.stopPropagation();
+        held = false;
+      });
+      face.addEventListener('contextmenu', (event) => event.preventDefault());
+      // With a mouse, hovering shows them too, and they go a moment after the pointer leaves.
+      let linger: ReturnType<typeof setTimeout> | undefined;
+      set.addEventListener('pointerenter', (event) => {
+        if (event.pointerType !== 'mouse') return;
+        clearTimeout(linger);
+        this.showFlyout(set, true);
+      });
+      set.addEventListener('pointerleave', (event) => {
+        if (event.pointerType === 'mouse') linger = setTimeout(() => this.showFlyout(set, false), LINGER_MS);
+      });
+    }
     this.picker.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
       // Shrunk to what you've picked (small screens): Change opens it out again.
@@ -228,24 +252,25 @@ export class Editor {
 
   /** Esc puts away whatever's on top: the other kinds of ground, then what's selected, then the tool (back to Move), then the editor itself. */
   private escape(done: () => void): void {
-    if (this.flyoutOpen()) this.showFlyout(false);
+    if (this.flyoutOpen()) this.closeFlyouts();
     else if (this.selected) this.select(null);
     else if (this.tool !== 'move') this.setTool('move');
     else done();
   }
 
-  /** The other kinds of ground to lay, beside the ground button, or put away. */
-  private showFlyout(on: boolean): void {
-    this.flyout.hidden = !on;
-    this.bar.querySelector('[data-face]')!.setAttribute('aria-expanded', String(on));
+  /** The others beside a button (the other kinds of ground, the other lines), shown or put away; showing one puts the rest away. */
+  private showFlyout(set: HTMLElement, on: boolean): void {
+    if (on) this.closeFlyouts();
+    set.querySelector<HTMLElement>('.flyout')!.hidden = !on;
+    set.querySelector('[data-face]')!.setAttribute('aria-expanded', String(on));
+  }
+
+  private closeFlyouts(): void {
+    for (const set of this.bar.querySelectorAll<HTMLElement>('.tool-set')) this.showFlyout(set, false);
   }
 
   private flyoutOpen(): boolean {
-    return !this.flyout.hidden;
-  }
-
-  private get flyout(): HTMLElement {
-    return this.bar.querySelector<HTMLElement>('.flyout')!;
+    return [...this.bar.querySelectorAll<HTMLElement>('.flyout')].some((f) => !f.hidden);
   }
 
   /** Is this part of the editor (its toolbar, status line, picker or room card)? */
@@ -275,7 +300,7 @@ export class Editor {
 
   /** A click on the map while editing: place, or select. Clicking what's selected again picks what's underneath it. */
   click(x: number, y: number): void {
-    this.showFlyout(false);
+    this.closeFlyouts();
     const tile = this.host.tileAt(x, y);
     if (this.tool === 'add') {
       this.place(tile);
@@ -307,7 +332,7 @@ export class Editor {
       renderer.ghost = null;
       return false;
     }
-    if (GROUND_TOOLS.has(this.tool)) {
+    if (GROUND_TOOLS.has(this.tool) || lineOf(this.tool)) {
       renderer.ghost = this.groundPreview([this.host.tileAt(x, y)]);
       return true;
     }
@@ -361,7 +386,7 @@ export class Editor {
   grab(x: number, y: number): Grab | null {
     // Space held: the press moves the map, whatever the tool.
     if (this.hand) return null;
-    if (this.drawing() || this.tool === 'grass') return this.stroke(this.host.tileAt(x, y));
+    if (this.drawing() || this.tool === 'grass' || lineOf(this.tool)) return this.stroke(this.host.tileAt(x, y));
     if (this.tool === 'room' || this.tool === 'area') return this.rooms.grab(this.tool, this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
     if (this.tool === 'door') return this.rooms.grabDoor(this.host.tileAt(x, y), (cx, cy) => this.host.tileAt(cx, cy));
     if (this.tool !== 'move') return null;
@@ -407,7 +432,7 @@ export class Editor {
 
   /** Does the tool draw (or build) on every press, so dragging can't move the map? Then Space held does (`holdHand`). */
   drawsOnPress(): boolean {
-    return this.drawing() || this.tool === 'grass' || this.tool === 'room' || this.tool === 'area' || this.tool === 'door';
+    return this.drawing() || !!lineOf(this.tool) || this.tool === 'grass' || this.tool === 'room' || this.tool === 'area' || this.tool === 'door';
   }
 
   /** Space held, or let go: presses move the map while it's held (like Figma's hand), and draw again after. */
@@ -422,15 +447,16 @@ export class Editor {
   private setTool(tool: Tool): void {
     this.tool = tool;
     this.holdHand(false);
-    // The ground button takes the look of the kind of ground picked, for next time.
-    if (Object.hasOwn(GROUND, tool)) {
-      const face = this.bar.querySelector<HTMLElement>('[data-face]')!;
+    // The button with others beside it takes the look of the one picked, for next time.
+    const picked = this.bar.querySelector<HTMLElement>(`.flyout [data-tool="${tool}"]`);
+    const face = picked?.closest('.tool-set')?.querySelector<HTMLElement>('[data-face]');
+    if (picked && face) {
       face.dataset.tool = tool;
-      face.innerHTML = icon(tool as GroundTool);
-      face.title = GROUND[tool as GroundTool];
-      face.setAttribute('aria-label', GROUND[tool as GroundTool]);
+      face.innerHTML = picked.innerHTML;
+      face.title = picked.title;
+      face.setAttribute('aria-label', picked.getAttribute('aria-label') ?? '');
     }
-    this.showFlyout(false);
+    this.closeFlyouts();
     for (const b of this.bar.querySelectorAll<HTMLElement>('[data-tool]')) b.setAttribute('aria-pressed', String(b.dataset.tool === tool));
     this.picker.hidden = tool !== 'add';
     this.rooms.clear();
@@ -438,6 +464,9 @@ export class Editor {
       this.select(null);
       this.fillPicker();
       this.say(this.adding ? `Click the map to put down the ${CATALOG[this.adding]!.name.toLowerCase()}.` : 'Pick something to add.');
+    } else if (lineOf(tool)) {
+      this.select(null);
+      this.say(`Drag to put up a row of ${CATALOG[lineOf(tool)!]!.name.toLowerCase()}, a tile at a time (it leaves out tiles where something's in the way). Lay grass over it to take it down.${HAND_HINT}`);
     } else if (GROUND_TOOLS.has(tool)) {
       this.select(null);
       this.say(GROUND_HINTS[tool as keyof typeof GROUND_HINTS] + HAND_HINT);
@@ -453,7 +482,7 @@ export class Editor {
     const { renderer, sim } = this.host;
     this.pickerLevel = renderer.level;
     const outside = sim().levels.get(renderer.level)?.kind === 'outside';
-    const groups: [string, string[]][] = outside ? [['Outside', OUTSIDE_ONLY]] : INDOOR_GROUPS.map(([name, types]) => [name, types.filter((t) => !OUTSIDE_ONLY.includes(t))]);
+    const groups: [string, string[]][] = outside ? OUTSIDE_GROUPS : INDOOR_GROUPS.map(([name, types]) => [name, types.filter((t) => !OUTSIDE_ONLY.includes(t))]);
     if (this.adding && !groups.some(([, types]) => types.includes(this.adding!))) this.adding = null;
     delete this.picker.dataset.collapsed;
     this.picker.innerHTML =
@@ -480,6 +509,17 @@ export class Editor {
       return;
     }
     const level = this.host.renderer.level;
+    // A gate on a fence (anything that stands in a line, on that line): it takes that tile's place.
+    if (this.lineAt(t, tile)) {
+      const joins = CATALOG[t]!.joinsWith!;
+      const done = this.reshapeHere((map) => {
+        map.furniture = map.furniture.filter((f) => !(f.t === joins && f.p[0] === tile[0] && f.p[1] === tile[1]));
+        map.furniture.push({ t, p: [tile[0], tile[1]] });
+        return null;
+      });
+      if (done) this.say(`Put ${aOrAn(CATALOG[t]!.name.toLowerCase())} in the ${CATALOG[joins]!.name.toLowerCase()}.`);
+      return;
+    }
     const problem = this.problemAt(t, tile) ?? (this.designed(level) ? placeFurniture(this.host.design(), level, t, tile) : null);
     if (problem) {
       this.say(problem, true);
@@ -624,7 +664,7 @@ export class Editor {
           tiles.pop();
           continue;
         }
-        if (this.tool !== 'grass' && this.brushProblem(step)) {
+        if (this.tool !== 'grass' && !lineOf(this.tool) && this.brushProblem(step)) {
           blocked = step;
           return;
         }
@@ -649,6 +689,11 @@ export class Editor {
   /** Lay a stroke of road or path, or rub one out. */
   private paint(tiles: Tile[]): void {
     const tool = this.tool;
+    const line = lineOf(tool);
+    if (line) {
+      this.putUp(line, tiles);
+      return;
+    }
     if (tool !== 'grass' && !this.drawing(tool)) return;
     const problem = tool === 'grass' ? null : tiles.map((t) => this.brushProblem(t)).find(Boolean);
     if (problem) {
@@ -659,7 +704,10 @@ export class Editor {
     let erased = false;
     const done = this.reshapeHere((map, _world, live) => {
       if (tool === 'grass') {
-        erased = eraseAll(map, tiles);
+        // Lines on the ground come down too (a hedge, a fence and its gates).
+        const lines = map.furniture.length;
+        map.furniture = map.furniture.filter((f) => !((CATALOG[f.t]?.line || CATALOG[f.t]?.joinsWith) && tiles.some(([x, y]) => f.p[0] === x && f.p[1] === y)));
+        erased = eraseAll(map, tiles) || map.furniture.length < lines;
         return live && !erased ? 'That’s grass already.' : null;
       }
       const gone = lay(map, strokeRects(tiles, tool), tool);
@@ -670,6 +718,22 @@ export class Editor {
     this.host.renderer.ghost = null;
     const what = LAID[tool];
     this.say(`${what}.${cleared ? ` Cleared ${cleared === 1 ? 'a tree or bush' : `${cleared} trees, bushes and the like`} out of the way.` : ''}`);
+  }
+
+  /** Put up a line of `t` along a stroke: a piece on each tile where there's room (the rest left out). */
+  private putUp(t: string, tiles: Tile[]): void {
+    let put = 0;
+    const done = this.reshapeHere((map, world, live) => {
+      for (const tile of tiles) {
+        if (placementProblem(map, world.portals, t, tile)) continue;
+        map.furniture.push({ t, p: [tile[0], tile[1]] });
+        if (live) put++;
+      }
+      return live && put === 0 ? `There's no room for ${aOrAn(CATALOG[t]!.name.toLowerCase())} along there.` : null;
+    });
+    if (!done) return;
+    this.host.renderer.ghost = null;
+    this.say(`Put up ${put} ${put === 1 ? 'tile' : 'tiles'} of ${CATALOG[t]!.name.toLowerCase()}.`);
   }
 
   private crossing(tile: Tile): void {
@@ -690,6 +754,8 @@ export class Editor {
       return [{ rect: at ?? [last[0], last[1], 1, 1], tone: at ? 'ok' : 'bad' }];
     }
     if (this.tool === 'grass') return tiles.map((t) => ({ rect: [t[0], t[1], 1, 1], tone: 'ok' }));
+    const line = lineOf(this.tool);
+    if (line) return tiles.map((t): Ghost => ({ rect: [t[0], t[1], 1, 1], tone: this.problemAt(line, t) ? 'bad' : 'ok' }));
     const surface = this.tool as Surface;
     const rects = strokeRects(tiles, surface);
     const problem = tiles.length === 1 ? this.brushProblem(last) : null;
@@ -705,9 +771,9 @@ export class Editor {
     return this.drawing(tool) ? brush(tile, tool) : [tile[0], tile[1], 1, 1];
   }
 
-  /** Is the tool one that draws ground (a road, path or forecourt)? */
+  /** Is the tool one that draws ground (a road, path, concrete…)? */
   private drawing(tool: Tool = this.tool): tool is Surface {
-    return tool === 'road' || tool === 'pavement' || tool === 'path' || tool === 'forecourt' || tool === 'water' || tool === 'sand' || tool === 'shallows' || tool === 'runway' || tool === 'apron';
+    return tool === 'road' || tool === 'pavement' || tool === 'path' || tool === 'forecourt' || tool === 'water' || tool === 'sand' || tool === 'shallows' || tool === 'runway';
   }
 
   private brushProblem(tile: Tile): string | null {
@@ -831,7 +897,7 @@ export class Editor {
     this.host.renderer.ghost = this.selection();
     if (!item) return;
     const name = item.def.label ?? item.type.name;
-    if (building) this.say(`${name}: drag to move it (its door and front path come too)${house ? ', or turn it round' : ''}.`);
+    if (building) this.say(`${name}: drag to move it (its door comes too; draw a path to it with Path)${house ? ', or turn it round' : ''}.`);
     else this.say(`${name}: drag to move it, or delete it.`);
   }
 
@@ -844,7 +910,14 @@ export class Editor {
   private problemAt(t: string, tile: Tile, moving?: Item): string | null {
     const sim = this.host.sim();
     const level = sim.levels.get(this.host.renderer.level);
+    if (!moving && this.lineAt(t, tile)) return null;
     return level ? placementProblem(level, sim.world.portals, t, tile, moving?.def) : 'Nowhere to put it.';
+  }
+
+  /** Is there a line that `t` stands in (a fence, for a gate) at this tile, for it to take the place of? */
+  private lineAt(t: string, [x, y]: Tile): boolean {
+    const joins = CATALOG[t]?.joinsWith;
+    return !!joins && !!this.level()?.furniture.some((f) => f.t === joins && f.p[0] === x && f.p[1] === y);
   }
 
   /** What you'd pick up at a point: the selection if it's there, otherwise the top piece. */
@@ -911,13 +984,12 @@ const GROUND_HINTS = {
   road: 'Drag to draw a road: it follows you along the grid and turns where you turn. Trees and the like in the way are cleared. Draw pavement beside it with Pavement.',
   pavement: 'Drag to draw pavement along a road, for people to walk on (it stops at roads, and carries on the other side).',
   path: 'Drag to draw a path. Draw one to a front door so people keep to it.',
-  forecourt: 'Drag to draw a forecourt: paving cars can drive and park on, like the charging station’s.',
+  forecourt: 'Drag to lay concrete: hard standing cars can drive and park on (a forecourt, a car park), or an airfield’s apron for a stand and a gate.',
   water: 'Drag to draw water: a river, a canal or a pond. Draw a road or path across it afterwards and it’s bridged.',
   shallows: 'Drag to draw shallows: water shallow enough to paddle in, off a beach.',
   sand: 'Drag to draw a beach, any shape you like.',
   runway: 'Drag to draw a runway, three tiles wide: the plane takes off and lands on the one nearest each gate.',
-  apron: 'Drag to draw an apron: hard standing by a runway, for an aircraft stand and a gate.',
   crossing: 'Click a road to put in a zebra crossing, where you’d like people to cross.',
-  grass: 'Drag over roads, paths, forecourts, water, beach, pavements, crossings or bridges to lay grass.',
+  grass: 'Drag over roads, paths, concrete, water, beach, pavements, crossings or bridges to lay grass.',
 } as const;
 

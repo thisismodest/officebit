@@ -42,10 +42,15 @@ function house(): Painter {
       // Facing up, the roof sits lower so the path to the door (the row above) stays in view.
       const ridge = back ? o + 2 : o - 4;
       // Joined to the house next door (a terrace), it runs straight on: no end wall, no hip, on that side.
-      const [left, right] = [joins?.left ? 0 : 1, joins?.right ? 0 : 1];
-      rect(ctx, 1 - left, eaves, w - 2 + left + right, o + h - eaves, OUTLINE);
-      rect(ctx, 2 - left * 2, eaves, w - 4 + (left + right) * 2, o + h - eaves - 1, wall);
-      rect(ctx, 2 - left * 2, o + h - 3, w - 4 + (left + right) * 2, 2, shade(wall, -0.2));
+      // Walls: inset a pixel at an end of the row; joined to next door, right up to the edge, with one line between
+      // the two (this house draws it on its left; the house to its right draws the next).
+      const outerLeft = joins?.left ? 0 : 1;
+      const outerRight = joins?.right ? w : w - 1;
+      const fillLeft = outerLeft + 1;
+      const fillRight = joins?.right ? w : outerRight - 1;
+      rect(ctx, outerLeft, eaves, outerRight - outerLeft, o + h - eaves, OUTLINE);
+      rect(ctx, fillLeft, eaves, fillRight - fillLeft, o + h - eaves - 1, wall);
+      rect(ctx, fillLeft, o + h - 3, fillRight - fillLeft, 2, shade(wall, -0.2));
       // Pitched roof: narrow at the ridge, full width at the eaves (straight on where it joins next door).
       for (let y = ridge; y < eaves; y++) {
         const slope = Math.max(0, 8 - (y - ridge));
@@ -57,7 +62,7 @@ function house(): Painter {
       }
       rect(ctx, joins?.left ? 0 : 8, ridge, w - (joins?.left ? 0 : 8) - (joins?.right ? 0 : 8), 1, OUTLINE);
       rect(ctx, 0, eaves, w, 1, OUTLINE);
-      rect(ctx, 1, eaves + 1, w - 2, 1, shade(wall, -0.3));
+      rect(ctx, fillLeft, eaves + 1, fillRight - fillLeft, 1, shade(wall, -0.3));
       // Chimney
       const chimney = back ? 10 : w - 18;
       rect(ctx, chimney, ridge + 2, 7, 12, OUTLINE);
@@ -357,22 +362,38 @@ export const OUTDOOR: Record<string, Painter> = {
     },
   },
 
-  // A field gate, standing open: a post either side (the fence runs on into them), and the gate swung back along one.
+  // A field gate: a stout post either side (the fence runs on into them), and a white gate between them with three
+  // rails and a brace, pushed open a little so there's a gap at the latch end to walk through.
   fieldGate: {
-    up: 6,
+    up: 8,
     paint(ctx, w, h, o, _seed, _def, joins) {
-      const post = '#8a6446';
+      const post = '#7a5436';
+      const wood = '#f1eee6';
       const across = joins?.left || joins?.right || !(joins?.up || joins?.down);
-      const posts: [number, number][] = across ? [[0, o - 4], [w - 4, o - 4]] : [[w / 2 - 2, o - 6], [w / 2 - 2, o + h - 8]];
-      for (const [x, y] of posts) {
-        rect(ctx, x, y, 4, 14, OUTLINE);
-        rect(ctx, x + 1, y + 1, 2, 12, post);
+      const postAt = (x: number, y: number, tall: number) => {
+        rect(ctx, x, y, 4, tall, OUTLINE);
+        rect(ctx, x + 1, y + 1, 2, tall - 2, post);
+        rect(ctx, x + 1, y + 1, 2, 1, shade(post, 0.3));
+      };
+      if (across) {
+        postAt(0, o - 7, 17);
+        postAt(w - 4, o - 7, 17);
+        // The gate, hung on the left post, short of the right one.
+        const [x0, x1] = [4, w - 7];
+        for (const y of [o - 4, o, o + 4]) {
+          rect(ctx, x0, y, x1 - x0, 3, OUTLINE);
+          rect(ctx, x0, y + 1, x1 - x0, 1, wood);
+        }
+        rect(ctx, x1 - 1, o - 5, 3, 13, OUTLINE);
+        rect(ctx, x1, o - 4, 1, 11, wood);
+        for (let i = 0; i < x1 - x0 - 1; i++) dot(ctx, x0 + i, o + 5 - Math.round((i * 8) / (x1 - x0 - 1)), wood);
+      } else {
+        postAt(w / 2 - 2, o - 8, 7);
+        postAt(w / 2 - 2, o + h - 7, 7);
+        // Down the fence line: the gate swung back against the top post, seen end on as a narrow panel.
+        rect(ctx, w / 2 + 2, o - 4, 6, 11, OUTLINE);
+        for (const y of [o - 3, o + 1, o + 5]) rect(ctx, w / 2 + 3, y, 4, 1, wood);
       }
-      // The gate, swung open into the field: seen side on, its bars and a brace.
-      const [gx, gy] = across ? [2, o + 4] : [w / 2 + 2, o - 2];
-      rect(ctx, gx, gy, 3, 12, OUTLINE);
-      for (const dy of [1, 5, 9]) rect(ctx, gx + 1, gy + dy, 1, 2, '#c79a6a');
-      rect(ctx, gx + 1, gy, 1, 12, '#c79a6a');
     },
   },
 

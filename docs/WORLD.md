@@ -46,8 +46,9 @@ A world is a lot to write by hand, so the starter town is written as a config in
 `buildWorld` (`worlds/build.ts`) makes the world from it. It's plain data:
 
 - **The map:** `areas` (the highway, water, parks, the town `square`, forecourts, beaches),
-  `roads` by name (bridges laid over water), `pavements: true` for pavement along them all, laid
-  once as it's built, `crossings`, `paths`.
+  `roads` by name (bridges laid over water), `pavements: true` for pavement along them all and
+  `doorPaths: true` for a path from every door to its street, each laid once as it's built,
+  `crossings`, `paths`.
 - **`buildings`:** a catalog type, where it stands and faces, which tile its door is on, and
   what's inside: a template by name (`diner`, `shop`, `school`, `clubhouse`, `leisure`) or the
   town's own `floors` (the head office's two, as rooms, doors and furniture; `{ desks: 'eng', at }`
@@ -58,7 +59,7 @@ A world is a lot to write by hand, so the starter town is written as a config in
 - **Who's who:** `companies`, `departments`, `people`, and `npcs` (`home` is whose household
   they're in; `own: true` gets them a home of their own).
 
-The builder runs a path from every door to its street, hands out homes (families first),
+The builder hands out homes (families first),
 puts a home to let behind every spare house, and joins it all up with portals.
 
 ## Validation

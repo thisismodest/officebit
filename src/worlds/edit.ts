@@ -3,11 +3,11 @@
 // a problem (a sentence for the user) or null. Validate the world afterwards
 // for anything subtler.
 import { CATALOG } from '../sim/catalog.ts';
-import { atDoorOf, covers, doorOf, endsOn, footprint as footprintOf, inRect, overlap, sameTile as same, sides } from '../sim/geometry.ts';
+import { atDoorOf, covers, doorOf, endsOn, footprint as footprintOf, overlap, sameTile as same, sides } from '../sim/geometry.ts';
 import { TO_LET } from '../sim/housing.ts';
 import { PRESETS } from '../sim/personality.ts';
 import { hashOf } from '../sim/rng.ts';
-import type { DepartmentDef, FurnitureDef, LevelDef, NpcDef, PersonDef, PortalDef, Rect, RoomDef, Tile, WorldDef } from '../sim/world.ts';
+import type { DepartmentDef, FurnitureDef, LevelDef, NpcDef, PersonDef, PortalDef, Tile, WorldDef } from '../sim/world.ts';
 import { CLEARABLE, groundProblem } from './ground.ts';
 import { outerRoom } from './rooms.ts';
 import { buildToLet, type HomeStyle } from './homes.ts';
@@ -275,7 +275,6 @@ export function addHouse(world: WorldDef, map: string, t: HomeStyle, at: Tile, f
   const n = world.levels.filter((l) => l.id.startsWith('home-to-let-')).length + 1;
   const { level: inside, entry } = buildToLet(t, uniqueNumber(world, n), n);
   level.furniture.push(item);
-  level.rooms.push({ id: uniqueRoom(world, `path-${door[0]}-${door[1]}`), name: 'Path', rect: [door[0], door[1], 1, 1], floor: 'path' });
   world.levels.push(inside);
   world.portals.push({ kind: 'door', a: { level: map, p: door }, b: { level: inside.id, p: entry } });
   return null;
@@ -344,14 +343,12 @@ export function eraseAt(world: WorldDef, map: string, at: Tile): Problem {
 
 // ── Buildings ───────────────────────────────────────────────────────────────
 
-/** A building on the map moves with its doors and its front path. */
+/** A building on the map moves with its doors (its paths are ground of their own: they stay where they're laid). */
 interface Building {
   level: LevelDef;
   item: FurnitureDef;
   /** The portal ends on the map at its doors. */
   doors: PortalDef['a'][];
-  /** Paths that start at a door. */
-  paths: RoomDef[];
 }
 
 /** Can this piece be moved as a building: anything with a way in, and empty lots? */
@@ -364,58 +361,47 @@ export function buildingMoveProblem(world: WorldDef, map: string, item: Furnitur
   const b = buildingOf(world, map, item);
   if (!b) return 'Nothing like that there.';
   const [dx, dy] = [to[0] - item.p[0], to[1] - item.p[1]];
-  return landingProblem(world, b, { ...item, p: to }, b.doors.map((d) => shifted(d.p, dx, dy)), b.paths.map((r) => shiftedRect(r.rect, dx, dy)));
+  return landingProblem(world, b, { ...item, p: to }, b.doors.map((d) => shifted(d.p, dx, dy)));
 }
 
-/** Move a building, its doors and its front path. Returns the small things it cleared. Check `buildingMoveProblem` first. */
+/** Move a building and its doors. Returns the small things it cleared. Check `buildingMoveProblem` first. */
 export function moveBuilding(world: WorldDef, map: string, item: FurnitureDef, to: Tile): FurnitureDef[] {
   const b = buildingOf(world, map, item);
   if (!b) return [];
   const [dx, dy] = [to[0] - item.p[0], to[1] - item.p[1]];
   item.p = to;
   for (const door of b.doors) door.p = shifted(door.p, dx, dy);
-  for (const path of b.paths) path.rect = shiftedRect(path.rect, dx, dy);
-  return clearFor(b.level, item, b.paths.map((r) => r.rect));
+  return clearFor(b.level, item);
 }
 
-/** Turn a house round to face the other way: its door and front path go to the other side. */
+/** Turn a house round to face the other way: its door goes to the other side. */
 export function flipHouse(world: WorldDef, map: string, item: FurnitureDef): Problem | FurnitureDef[] {
   if (!HOUSES.has(item.t)) return 'Only houses turn round.';
   const b = buildingOf(world, map, item);
   if (!b) return 'Nothing like that there.';
   const flipped: FurnitureDef = { ...item, faces: item.faces === 'up' ? undefined : 'up' };
-  const [from, to] = [doorOf(item), doorOf(flipped)];
-  // Each path is mirrored through the house: as far past the new door as it ran past the old one.
-  const paths = b.paths.map(({ rect: [x, y, w, h] }): Rect => [x, to[1] - (y + h - 1 - from[1]), w, h]);
-  const problem = landingProblem(world, b, flipped, [to], paths);
+  const to = doorOf(flipped);
+  const problem = landingProblem(world, b, flipped, [to]);
   if (problem) return problem;
   if (flipped.faces) item.faces = 'up';
   else delete item.faces;
   for (const door of b.doors) door.p = to;
-  b.paths.forEach((path, i) => {
-    path.rect = paths[i]!;
-  });
-  return clearFor(b.level, item, paths);
+  return clearFor(b.level, item);
 }
 
 function buildingOf(world: WorldDef, map: string, item: FurnitureDef): Building | null {
   const level = world.levels.find((l) => l.id === map);
   if (!level?.furniture.includes(item)) return null;
   const doors = endsOn(world.portals, map).filter((end) => atDoorOf(item, end.p));
-  // Its front path: a strip a tile wide, straight out from the door (not a path running past it, like a riverside walk).
-  const paths = level.rooms.filter(
-    (r) => r.floor === 'path' && !r.id.startsWith('pavement-') && doors.some((d) => inRect(r.rect, ...d.p) && r.rect[2] === 1 && r.rect[0] === d.p[0]),
-  );
-  return { level, item, doors, paths };
+  return { level, item, doors };
 }
 
-/** Would the building fit here, with its doors and paths? Small things don't count: they'll be cleared. */
-function landingProblem(world: WorldDef, b: Building, placed: FurnitureDef, doors: Tile[], paths: Rect[]): Problem {
+/** Would the building fit here, with its doors? Small things don't count: they'll be cleared. */
+function landingProblem(world: WorldDef, b: Building, placed: FurnitureDef, doors: Tile[]): Problem {
   const footprint = footprintOf(placed);
-  const others = b.level.furniture.filter((f) => f !== b.item && !(CLEARABLE.has(f.t) && [footprint, ...paths].some((r) => overlap(footprintOf(f), r))));
-  // The building, its doors and its own paths move together: where they are now is never in their way.
-  const own = new Set(b.paths);
-  const without: LevelDef = { ...b.level, furniture: others, rooms: b.level.rooms.filter((r) => !own.has(r)) };
+  const others = b.level.furniture.filter((f) => f !== b.item && !(CLEARABLE.has(f.t) && overlap(footprintOf(f), footprint)));
+  // The building and its doors move together: where they are now is never in their way.
+  const without: LevelDef = { ...b.level, furniture: others };
   const ownDoors = new Set(b.doors);
   const portals = world.portals.filter((p) => !ownDoors.has(p.a) && !ownDoors.has(p.b));
   // Nothing but grass underfoot: not even a lot or a parking bay, which furniture can stand on.
@@ -426,27 +412,18 @@ function landingProblem(world: WorldDef, b: Building, placed: FurnitureDef, door
     const blocked = groundProblem(without, [door[0], door[1], 1, 1]);
     if (blocked) return `The front door: ${blocked.charAt(0).toLowerCase()}${blocked.slice(1)}`;
   }
-  for (const path of paths) {
-    const blocked = groundProblem(without, path);
-    if (blocked) return `The front path: ${blocked.charAt(0).toLowerCase()}${blocked.slice(1)}`;
-  }
   return null;
 }
 
-/** Clear small things from under a building and its paths. */
-function clearFor(level: LevelDef, item: FurnitureDef, paths: Rect[]): FurnitureDef[] {
-  const areas: Rect[] = [footprintOf(item), ...paths];
-  const cleared = level.furniture.filter((f) => f !== item && CLEARABLE.has(f.t) && areas.some((r) => overlap(footprintOf(f), r)));
+/** Clear small things from under a building. */
+function clearFor(level: LevelDef, item: FurnitureDef): FurnitureDef[] {
+  const cleared = level.furniture.filter((f) => f !== item && CLEARABLE.has(f.t) && overlap(footprintOf(f), footprintOf(item)));
   level.furniture = level.furniture.filter((f) => !cleared.includes(f));
   return cleared;
 }
 
 function shifted([x, y]: Tile, dx: number, dy: number): Tile {
   return [x + dx, y + dy];
-}
-
-function shiftedRect([x, y, w, h]: Rect, dx: number, dy: number): Rect {
-  return [x + dx, y + dy, w, h];
 }
 
 
@@ -610,6 +587,3 @@ function uniqueId(base: string, taken: Set<string>): string {
   return id;
 }
 
-function uniqueRoom(world: WorldDef, base: string): string {
-  return uniqueId(base, new Set(world.levels.flatMap((l) => l.rooms.map((r) => r.id))));
-}

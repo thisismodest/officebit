@@ -20,7 +20,7 @@ export const AIRFIELD: Record<string, Painter> = {
     },
   },
 
-  // Where the plane parks: a yellow box painted on the apron, with a line leading in.
+  // Where the plane parks: a yellow box painted on the concrete, with a line leading in.
   stand: {
     up: 0,
     flat: true,
@@ -62,12 +62,26 @@ export const AIRFIELD: Record<string, Painter> = {
     up: 14,
     paint(ctx, w, h, o) {
       const wall = '#b9c1c9';
-      rect(ctx, 0, o - 14, w, h + 14, OUTLINE);
-      for (let y = 0; y < 16; y++) {
-        const inset = Math.max(0, 6 - Math.floor(Math.sqrt(y * 3)));
-        rect(ctx, inset + 1, o - 13 + y, w - inset * 2 - 2, 1, y % 3 === 2 ? shade('#7d8791', -0.1) : '#7d8791');
+      const roof = '#7d8791';
+      // The curved roof, a row at a time: each row only as wide as the curve, its outline following the curve (with
+      // nothing drawn outside it), and across any step where the curve widens.
+      const top = o - 14;
+      const insetAt = (y: number) => (y < 0 ? w : Math.max(0, 6 - Math.floor(Math.sqrt(y * 3))));
+      for (let y = 0; y <= 16; y++) {
+        const inset = insetAt(y);
+        const above = Math.min(insetAt(y - 1), w / 2);
+        rect(ctx, inset, top + y, w - inset * 2, 1, y % 3 === 2 ? shade(roof, -0.1) : roof);
+        if (y === 0) {
+          rect(ctx, inset, top, w - inset * 2, 1, OUTLINE);
+          continue;
+        }
+        rect(ctx, inset, top + y, Math.max(1, above - inset + 1), 1, OUTLINE);
+        rect(ctx, w - Math.max(1, above - inset + 1) - inset, top + y, Math.max(1, above - inset + 1), 1, OUTLINE);
       }
+      // The walls under it, outlined.
+      rect(ctx, 0, o + 3, w, h - 3, OUTLINE);
       rect(ctx, 1, o + 3, w - 2, h - 4, wall);
+      rect(ctx, 0, o + 2, w, 1, OUTLINE);
       for (let x = 4; x < w - 2; x += 6) rect(ctx, x, o + 3, 1, h - 4, shade(wall, -0.12));
       rect(ctx, w / 2 - 14, o + 10, 28, h - 11, OUTLINE);
       rect(ctx, w / 2 - 13, o + 11, 26, h - 12, shade(wall, -0.2));

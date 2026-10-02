@@ -14,6 +14,9 @@ const PATHS = {
   move: 'M8 1.5v13M1.5 8h13M8 1.5 6 3.5M8 1.5l2 2M8 14.5l-2-2M8 14.5l2-2M1.5 8l2-2M1.5 8l2 2M14.5 8l-2-2M14.5 8l-2 2',
   add: 'M8 3v10M3 8h10',
   road: 'M5 2 3 14M11 2l2 12M8 2.5v2M8 7v2M8 11.5v2',
+  flowers: 'M8 13.5V8M8 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 10.5c-1.5-1.5-3.5-1.5-4 0M8 10.5c1.5-1.5 3.5-1.5 4 0',
+  hedge: 'M2 12.5h12M2.5 12.5c0-3 1.5-5 3-5s1.5 2 2.5 2 1-2 2.5-2 3 2 3 5M5 10h.01M10 9.5h.01',
+  fence: 'M3 3.5v10M8 3.5v10M13 3.5v10M1.5 6.5h13M1.5 10.5h13',
   pavement: 'M2 2.5v11M5.5 2.5v11M5.5 5h-3.5M5.5 9h-3.5M9 2.5l-1 11M14 2.5l1 11',
   path: 'M3.5 14c1-3 4.5-3 4.5-6S5 4 6 2M8.5 14c1-3 4.5-3 4.5-6s-3-4-2-6',
   crossing: 'M2.5 3.5h11v9h-11zM5 3.5v9M8 3.5v9M11 3.5v9',
@@ -21,7 +24,6 @@ const PATHS = {
   grass: 'M2 13.5h12M3.5 13.5l1-4M6 13.5l-.5-5M8 13.5l.5-6M10.5 13.5l-.5-4.5M12.5 13.5l.5-3.5',
   sand: 'M1.5 12.5c3-2 5-2 8 0s3.5 1 5-.5M4 9.5h.01M7 8h.01M10 9.5h.01M12 7.5h.01',
   runway: 'M5.5 1.5v13M10.5 1.5v13M8 2.5v2M8 7v2M8 11.5v2',
-  apron: 'M2.5 2.5h11v11h-11zM5 5h6v4H5z',
   shallows: 'M1.5 9.5c1.5-1.3 3-1.3 4.3 0s2.8 1.3 4.3 0 3-1.3 4.4 0M1.5 13h13M3 6h.01M8 5h.01M13 6h.01',
   water: 'M1.5 5.5c1.5-1.3 3-1.3 4.3 0s2.8 1.3 4.3 0 3-1.3 4.4 0M1.5 9.5c1.5-1.3 3-1.3 4.3 0s2.8 1.3 4.3 0 3-1.3 4.4 0M1.5 13c1.5-1.3 3-1.3 4.3 0s2.8 1.3 4.3 0 3-1.3 4.4 0',
   erase: 'M9.5 2.5l4 4-6.5 6.5H3.5l-1-1 7-9.5zM6 6l4 4M8 13.5h5.5',
@@ -74,6 +76,11 @@ export function isIcon(name: string | undefined): name is IconName {
 }
 
 /** An icon as inline SVG. Buttons carry the label (aria-label and title); the icon itself is decoration. */
+/** Is there an icon by this name? */
+export function hasIcon(name: string): name is IconName {
+  return Object.hasOwn(PATHS, name);
+}
+
 export function icon(name: IconName): string {
   return `<svg class="icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="${PATHS[name]}"/></svg>`;
 }

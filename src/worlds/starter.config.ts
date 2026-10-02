@@ -32,11 +32,11 @@ export const STARTER_CONFIG: TownConfig = {
     { name: 'The Green', floor: 'grass', rects: [[43, 71, 54, 42]], park: true, square: true },
     { name: 'Playing field', floor: 'grass', rects: [[57, 120, 12, 8]], park: true },
     { name: 'Charging station', floor: 'forecourt', rects: [[100, 63, 9, 5]] },
-    // The airfields, either side of town: a runway and an apron each.
+    // The airfields, either side of town: a runway each, and concrete for an apron.
     { name: 'West Field runway', floor: 'runway', rects: [[4, 43, 32, 3]] },
-    { name: 'West Field apron', floor: 'apron', rects: [[24, 46, 12, 9]] },
+    { name: 'West Field apron', floor: 'forecourt', rects: [[24, 46, 12, 9]] },
     { name: 'East Field runway', floor: 'runway', rects: [[124, 43, 32, 3]] },
-    { name: 'East Field apron', floor: 'apron', rects: [[124, 46, 12, 9]] },
+    { name: 'East Field apron', floor: 'forecourt', rects: [[124, 46, 12, 9]] },
     // Car parks for the homes and the office, and driveways between the cottages.
     { name: 'Back Lane car park', floor: 'forecourt', rects: [[3, 72, 7, 10]] },
     { name: 'Office car park', floor: 'forecourt', rects: [[47, 50, 13, 6]] },
@@ -48,6 +48,7 @@ export const STARTER_CONFIG: TownConfig = {
   ],
 
   pavements: true,
+  doorPaths: true,
   roads: [
     { name: 'Hill Road', rects: [[60, 38, 2, 30]] },
     { name: 'The Street', rects: [[10, STREET, 146, 2]] },

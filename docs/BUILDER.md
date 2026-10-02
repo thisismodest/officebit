@@ -19,9 +19,10 @@ indoors.
 | Tool | Does |
 |---|---|
 | **Move** | Drag a piece of furniture, or outside a building, somewhere else. Click it to select it. It keeps its owner, so a desk stays someone's. |
-| **Add** | Pick from the thumbnails (indoor things indoors, outdoor things outside), then click the map. Click again to add another. A bus stop goes beside a road (it's named after it), and the buses call there from the next one ([TRAFFIC](TRAFFIC.md#buses)). On a phone the thumbnails are a strip at the top, beside the toolbar, that shrinks to what you picked (Change opens it out again), so there's map to tap. |
-| **Ground** | Outside: road, pavement, path, forecourt, water, shallows, beach, zebra crossing or grass, whichever you used last. Hover over it, or press and hold it, for the others beside it (its corner mark says there are more); the one you pick takes its place. Drag to draw road, path or forecourt (see below); a tap lays one dab. A forecourt is paving cars can drive and park on, with no lanes (like the charging station's). A crossing: click a road, and it goes in two tiles wide, straight across it. |
-| **Grass** (under Ground) | Drag over roads, pavements, paths, forecourts, water, beach, crossings and bridges to lay grass over them. A whole stroke at once. Rubbing out a road leaves its pavements. |
+| **Add** | Pick from the thumbnails, in sections (outside: nature, street, fields, the airfield, transport; inside by kind of place), then click the map. Click again to add another. A bus stop goes beside a road (it's named after it), and the buses call there from the next one ([TRAFFIC](TRAFFIC.md#buses)). On a phone the thumbnails are a strip at the top, beside the toolbar, that shrinks to what you picked (Change opens it out again), so there's map to tap. |
+| **Ground** | Outside: road, pavement, path, concrete, runway, water, shallows, beach, zebra crossing or grass, whichever you used last. Hover over it, or press and hold it, for the others beside it (its corner mark says there are more); the one you pick takes its place. Drag to draw (see below); a tap lays one dab. Concrete is hard standing, for whatever needs it: cars drive and park on it with no lanes (a forecourt like the charging station's, a car park), and it's an airfield's apron. A crossing: click a road, and it goes in two tiles wide, straight across it. |
+| **Lines** (beside Ground) | Hedges, fences and flowers: drag to put up a row (or scribble a patch), a tile at a time; tiles with something in the way are left out. Whatever the catalog marks `line` is offered here, in a flyout like Ground's. A field gate (in the picker) put on a fence takes that tile's place. Grass takes them down. |
+| **Grass** (under Ground) | Drag over roads, pavements, paths, concrete, water, beach, crossings and bridges to lay grass over them. A whole stroke at once. Rubbing out a road leaves its pavements. |
 | **Turn round** | Turns the selected house to face the other way. |
 | **Room** | Indoors: drag a box to build a walled room; click a room to rename it, change its floor or delete it; drag a selected room's wall to move it (see below). |
 | **Area** | Indoors: drag a box to mark out a floor of its own with no walls, like a dining area; click one to change or delete it. |
@@ -44,13 +45,15 @@ lead nowhere).
 ## Buildings
 
 Outside, anything with a way in (houses, the office, the diner, the shop,
-the school) and empty lots move like furniture, with their front door and
-front path (`moveBuilding` in `src/worlds/edit.ts`). Where they land has to be
-safe (as below), and so do their door and path; trees and the like there are
-cleared. If the front door doesn't join up with a pavement afterwards, the
-editor says so: people walk across grass, but they'd rather keep to a path.
-Houses can also be turned round (`flipHouse`): the door and path go to the
-other side.
+the school) and empty lots move like furniture, with their front door
+(`moveBuilding` in `src/worlds/edit.ts`). A path is ground of its own: it stays
+where it was laid, and a building never lays one (draw one with Path). Where a
+building lands has to be safe (as below), and so does its door; trees and the
+like there are cleared. If the front door doesn't join up with a pavement
+afterwards, the editor says so: people walk across grass, but they'd rather keep
+to a path. Houses can also be turned round (`flipHouse`): the door goes to the
+other side. (The starter town's door paths were laid once, as it was built:
+`doorPaths` in its config.)
 
 ## Roads and paths
 
@@ -76,7 +79,7 @@ it runs.
   road, and rubbed out with the road or path.
 - **In the way:** trees, bushes, flowers, benches and lampposts are cleared
   (shown amber as you draw).
-  Buildings, ponds, lots, the highway and the forecourt stop the stroke (red).
+  Buildings, ponds, lots, the highway and concrete stop the stroke (red).
 - **Paths and roads:** a path stops at a road and carries on the other side; a
   road replaces any path it crosses.
 - **Crossing:** people can cross a road anywhere, but they prefer a zebra.
@@ -146,7 +149,7 @@ status line says why:
 - with the spots where people stand or sit to use it free (not on a wall, a
   doorway, or another piece people use);
 - outdoors, on grass (or, for the charging station's things, hard ground:
-  its canopy, chargers and bays go on a forecourt or paving);
+  its canopy, chargers and bays go on concrete or paving);
 - and never cutting anything off: every door, stair and spot that could be
   reached from the way in before can still be reached after.
 

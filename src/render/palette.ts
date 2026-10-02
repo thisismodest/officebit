@@ -47,7 +47,6 @@ export const FLOORS: Record<string, FloorStyle> = {
   road: { kind: 'road', base: '#55535c' },
   highway: { kind: 'highway', base: '#4a4852' },
   runway: { kind: 'runway', base: '#45434c' },
-  apron: { kind: 'slabs', base: '#9a9ea4', size: 32 },
   forecourt: { kind: 'slabs', base: '#8f9297', size: 32 },
   zebra: { kind: 'zebra', base: '#55535c', across: 'ns' },
   zebraSide: { kind: 'zebra', base: '#55535c', across: 'ew' },

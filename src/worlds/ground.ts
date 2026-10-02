@@ -9,12 +9,12 @@ import { footprint, freeRoomId, inRect, intersection, overlap } from '../sim/geo
 import type { FurnitureDef, LevelDef, Rect, RoomDef, Tile } from '../sim/world.ts';
 import { aOrAn, type Problem } from './placement.ts';
 
-export type Surface = 'road' | 'pavement' | 'path' | 'forecourt' | 'water' | 'sand' | 'shallows' | 'runway' | 'apron';
+export type Surface = 'road' | 'pavement' | 'path' | 'forecourt' | 'water' | 'sand' | 'shallows' | 'runway';
 
 /** How wide each surface is drawn, in tiles. */
-const WIDTH: Record<Surface, number> = { road: 2, pavement: 1, path: 1, forecourt: 1, water: 2, sand: 2, shallows: 2, runway: 3, apron: 2 };
+const WIDTH: Record<Surface, number> = { road: 2, pavement: 1, path: 1, forecourt: 1, water: 2, sand: 2, shallows: 2, runway: 3 };
 /** What each surface is called on the map. */
-const NAMES: Record<Surface, string> = { road: 'Road', pavement: 'Pavement', path: 'Path', forecourt: 'Forecourt', water: 'River', sand: 'Beach', shallows: 'Shallows', runway: 'Runway', apron: 'Apron' };
+const NAMES: Record<Surface, string> = { road: 'Road', pavement: 'Pavement', path: 'Path', forecourt: 'Concrete', water: 'River', sand: 'Beach', shallows: 'Shallows', runway: 'Runway' };
 /** The floor each surface lays, where it isn't its own name: pavement is paving, like a path. */
 const FLOOR: Partial<Record<Surface, string>> = { pavement: 'path' };
 /** Floors that are water: drawn across, a road or path becomes a bridge. */
@@ -224,8 +224,8 @@ export function joinsUp(level: LevelDef, [x, y]: Tile): boolean {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** A path or forecourt that was drawn (front paths, park paths, ones you drew), not a pavement laid from the roads. */
-/** Hard ground drawn on the map (paths, forecourts, an airfield's apron and runway), not pavement worked out from the roads. */
-const HARD = new Set(['path', 'forecourt', 'apron', 'runway']);
+/** Hard ground drawn on the map: paths and pavement, concrete (a forecourt, a car park, an airfield's apron) and runways. */
+const HARD = new Set(['path', 'forecourt', 'runway']);
 function isDrawnPath(room: RoomDef): boolean {
   return HARD.has(room.floor);
 }

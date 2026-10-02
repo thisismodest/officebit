@@ -87,7 +87,7 @@ export function buildWorld(config: TownConfig): WorldDef {
   for (const lot of config.lots) town.furniture.push({ t: 'lot', p: lot.at, ...(lot.faces ? { faces: lot.faces } : {}) });
 
   // Paths from every door to its street, then everything else on the map.
-  for (const { door, faces } of doors) pathFrom(town, door, faces);
+  if (config.doorPaths) for (const { door, faces } of doors) pathFrom(town, door, faces);
   for (const [i, thing] of config.things.entries()) place(town, thing, config.seed + i);
 
   return {

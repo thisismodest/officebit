@@ -72,7 +72,7 @@ export interface FurnitureType {
   game?: boolean;
   /** Something to play on (swings, hopscotch): grown-ups have a go too, when they're feeling playful. */
   play?: boolean;
-  /** Outdoors, it stands on hard ground (a forecourt or paving), not grass: chargers, bays, the canopy. */
+  /** Outdoors, it stands on hard ground (concrete or paving), not grass: chargers, bays, the canopy, the plane. */
   hardStanding?: boolean;
   /** A parking bay: somewhere to leave a car, or to charge it (see traffic.ts). */
   parking?: 'park' | 'charge';
@@ -80,6 +80,10 @@ export interface FurnitureType {
   pool?: boolean;
   /** A swim or a workout (the leisure centre): an outing the diligent and the driven make time for. */
   exercise?: boolean;
+  /** Put up in a line, a tile at a time (a hedge, a fence, a flowerbed): drawn like ground in the editor, and joined up with its neighbours. */
+  line?: boolean;
+  /** Joins up with a line of this kind, standing in it (a gate in a fence). */
+  joinsWith?: string;
   /** The airfields (planes.ts): a plane, the stand it parks on, and the gate passengers wait at. */
   airfield?: 'plane' | 'stand' | 'gate';
 }
@@ -358,13 +362,14 @@ export const CATALOG: Record<string, FurnitureType> = {
   tree: decor('Tree', [2, 2]),
   bush: decor('Bush', [1, 1]),
   // Field boundaries and gardens: a tile of hedge or fence, joining up with its neighbours.
-  hedge: decor('Hedge', [1, 1]),
-  fence: decor('Fence', [1, 1]),
-  // A gate in a fence, standing open: the way into a field.
-  fieldGate: decor('Field gate', [1, 1], false),
+  hedge: { ...decor('Hedge', [1, 1]), line: true },
+  fence: { ...decor('Fence', [1, 1]), line: true },
+  // A gate in a fence, standing open: the way into a field (put one on a fence and it takes its place).
+  fieldGate: { ...decor('Field gate', [1, 1], false), joinsWith: 'fence' },
   // A goal at each end of a playing field.
   goal: decor('Goal', [1, 2], false),
-  flowers: decor('Flowers', [1, 1], false),
+  // A flowerbed, planted in a row (or a patch) a tile at a time.
+  flowers: { ...decor('Flowers', [1, 1], false), line: true },
   // A park bench: sit, rest, or open a laptop (it's only in town, so it's for days out: docs/PLANS.md).
   bench: { ...decor('Bench', [2, 1]), spots: [[0, 0], [1, 0]], seat: true, worktop: true, offers: { energy: 0.1, social: 0.05 }, duration: [60, 120] },
   // Laid out on the grass for a picnic, and packed up after (docs/PLANS.md).

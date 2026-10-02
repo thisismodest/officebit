@@ -90,7 +90,7 @@ test('safe zones: off walls, clear of doorways and stairs, inside one room, and 
   // The charging station's things go on hard ground: the canopy can be moved and put back on the forecourt, but not the grass.
   const canopy = town.furniture.find((f) => f.t === 'chargingCanopy')!;
   assert.equal(placementProblem(town, w.portals, 'chargingCanopy', canopy.p, canopy), null, 'back where it was');
-  assert.match(placementProblem(town, w.portals, 'chargingCanopy', [canopy.p[0], canopy.p[1] - 3], canopy) ?? '', /forecourt or paving/);
+  assert.match(placementProblem(town, w.portals, 'chargingCanopy', [canopy.p[0], canopy.p[1] - 3], canopy) ?? '', /concrete or paving/);
 });
 
 test('rugs lie on the floor: things stand on them, and they slide under things', () => {

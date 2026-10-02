@@ -80,7 +80,7 @@ test('paths stop at roads; rubbing out a road cuts right across it; crossings go
   assert.equal(floorAt(town, 92, main - 1), 'path');
 });
 
-test('a house moves with its door and front path, and turns round', () => {
+test('a house moves with its door (its path stays where it was laid), and turns round', () => {
   const w = world();
   const town = townOf(w);
   const house = town.furniture.find((f) => f.t === 'detached' && !f.faces)!;
@@ -91,10 +91,12 @@ test('a house moves with its door and front path, and turns round', () => {
   const lot = town.furniture.find((f) => f.t === 'lot')!;
   assert.match(buildingMoveProblem(w, 'town', house, [lot.p[0] - 2, lot.p[1] + 2]) ?? '', /lot/, 'not onto an empty lot');
   assert.equal(buildingMoveProblem(w, 'town', house, to), null);
+  const [oldX, oldY] = door.p;
   moveBuilding(w, 'town', house, to);
   assert.deepEqual(house.p, to);
   assert.deepEqual(door.p, [to[0] + 1, to[1] + 3], 'the door came too');
-  assert.equal(floorAt(town, to[0] + 1, to[1] + 3), 'path', 'and its front path');
+  assert.equal(floorAt(town, to[0] + 1, to[1] + 3), 'grass', 'but no path: that’s laid separately');
+  assert.equal(floorAt(town, oldX, oldY), 'path', 'and the old one is still where it was');
   assert.equal(joinsUp(town, door.p), false, 'out in the fields, it doesn’t join up with anything');
   assert.deepEqual(validate(w), []);
 
