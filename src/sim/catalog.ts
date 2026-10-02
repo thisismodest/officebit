@@ -84,6 +84,8 @@ export interface FurnitureType {
   line?: boolean;
   /** Joins up with a line of this kind, standing in it (a gate in a fence). */
   joinsWith?: string;
+  /** Traffic lights (signals.ts): near each other, they control the road between them. */
+  signal?: boolean;
   /** A building: how many tiles in from its left its front door is (one, unless it says). */
   door?: number;
   /** Where the parcel van stands, at the depot (parcels.ts). */
@@ -392,6 +394,8 @@ export const CATALOG: Record<string, FurnitureType> = {
   // Laid out on the grass for a picnic, and packed up after (docs/PLANS.md).
   picnicBlanket: { name: 'Picnic blanket', size: [2, 2], solid: false, spots: around(2, 2), seat: true, offers: { hunger: 0.35, social: 0.3, fun: 0.25 }, duration: [80, 140], hangout: true },
   lamppost: decor('Lamppost', [1, 1]),
+  // Traffic lights: put them at the corners of a junction, and vehicles stop for them (signals.ts).
+  trafficLight: { ...decor('Traffic lights', [1, 1]), hardStanding: true, signal: true },
   // Spotlights round town (docs/FURNITURE.md#spotlights): a billboard up on posts, and a bus shelter with a bench and a poster.
   billboard: { ...decor('Billboard', [5, 1]), spotlight: true },
   // Its bench is for people waiting for the bus (buses.ts), so it offers nothing else.

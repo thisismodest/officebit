@@ -44,7 +44,7 @@ const HOUSES = new Set(['terrace', 'house', 'detached']);
 const OUTSIDE_GROUPS: [string, string[]][] = [
   ['Buildings', Object.keys(PLACEABLE)],
   ['Nature', ['tree', 'bush', 'pond']],
-  ['Street', ['bench', 'lamppost', 'busStop', 'billboard', 'lifebuoy']],
+  ['Street', ['bench', 'lamppost', 'trafficLight', 'busStop', 'billboard', 'lifebuoy']],
   ['Fields', ['fieldGate', 'goal']],
   ['Airfield', ['stand', 'gate', 'windsock']],
   ['Shops', ['plantStand', 'loadingBay']],

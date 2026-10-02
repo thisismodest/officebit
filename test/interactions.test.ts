@@ -91,10 +91,8 @@ test('talking to people while in control: keeping them from work grates, a free 
     assert.ok(talked, `talked to ${id}`);
     return atWork ? atTheirDesk : free;
   };
-  // Someone nearby, well into a spell at their desk, so they're still at it when Bea gets there.
-  const working = sim.people
-    .filter((p) => p !== bea && p.company === bea.company && p.level === bea.level && atDesk(p) && p.timer > 150)
-    .sort((a, b) => Math.hypot(a.x - bea.x, a.y - bea.y) - Math.hypot(b.x - bea.x, b.y - bea.y))[0]!;
+  // Someone on her floor with the longest spell at their desk still to go, so they're still at it when Bea gets there.
+  const working = sim.people.filter((p) => p !== bea && p.company === bea.company && p.level === bea.level && atDesk(p)).sort((a, b) => b.timer - a.timer)[0]!;
   assert.ok(chatWith(working.id, true) < 0, 'pulling someone off their work');
   sim.interactions.control(bea, false);
 

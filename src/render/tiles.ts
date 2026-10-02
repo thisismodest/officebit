@@ -187,7 +187,12 @@ function paintFloor(
       const [, ry, , rh] = room.rect;
       const middle = ry + rh / 2;
       // Like the town's roads, the lines sit on the lanes' edges, clear of the cars in them: solid lines along
-      // the outside edges, a solid stripe down the middle, and dashes between the lanes.
+      // the outside edges, a solid stripe down the middle, and dashes between the lanes; none across a junction.
+      if (road(tx, ry - 1) || road(tx, ry + rh)) {
+        if (ty === ry) rect(ctx, x0, y0, TILE, 1, '#ecebe4');
+        if (ty === ry + rh - 1) rect(ctx, x0, y0 + TILE - 1, TILE, 1, '#ecebe4');
+        break;
+      }
       if (ty === ry) rect(ctx, x0, y0, TILE, 1, '#ecebe4');
       if (ty === ry + rh - 1) rect(ctx, x0, y0 + TILE - 1, TILE, 1, '#ecebe4');
       if (ty === middle) rect(ctx, x0, y0 - 1, TILE, 2, '#e8dfae');

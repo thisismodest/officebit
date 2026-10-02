@@ -236,6 +236,12 @@ export class Traffic {
    * someone on the zebra crossing (or path) in front? The driving manners do the rest.
    */
   private blocked(car: Car): boolean {
+    // At a junction under lights: wait for the green before driving into it (the tile just ahead: through-traffic's path is only where it leaves the map).
+    if (car.path.length && !car.reversing) {
+      const from: Tile = [Math.round(car.x), Math.round(car.y)];
+      const to: Tile = [from[0] + AHEAD[car.facing][0], from[1] + AHEAD[car.facing][1]];
+      if (this.sim.signals.stop(from, to, car.facing)) return true;
+    }
     const facing = car.reversing ? OPPOSITE[car.facing] : car.facing;
     const [dx, dy] = AHEAD[facing];
     if (this.crossingAhead(car, dx, dy)) return true;

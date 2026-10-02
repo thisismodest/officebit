@@ -148,6 +148,11 @@ export const STARTER_CONFIG: TownConfig = {
     { t: 'plantStand', row: [50, 54], y: 4 },
     { t: 'plantStand', row: [50, 54], y: 7 },
     { t: 'loadingBay', p: [100, 18] },
+    // Traffic lights at the corners of the crossroads where Hill Road and Nursery Lane meet the highway.
+    { t: 'trafficLight', p: [59, 33] },
+    { t: 'trafficLight', p: [62, 33] },
+    { t: 'trafficLight', p: [59, 38] },
+    { t: 'trafficLight', p: [62, 38] },
     // Parking bays: people's own cars live in the ones nearest home (docs/TRAFFIC.md#own-cars).
     { t: 'parkingBay', column: [73, 75, 77, 79], x: 4 },
     { t: 'parkingBay', column: [73, 75, 77, 79], x: 8 },

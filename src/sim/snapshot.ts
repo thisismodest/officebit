@@ -25,6 +25,7 @@ import { Planes } from './planes.ts';
 import { Plans } from './plans.ts';
 import { Relationships } from './relationships.ts';
 import { Rng } from './rng.ts';
+import { Signals } from './signals.ts';
 import { RoadMap } from './roads.ts';
 import { ROLES } from './roles.ts';
 import { Simulation } from './sim.ts';
@@ -63,7 +64,7 @@ type Class = abstract new (...args: any[]) => object;
 const CLASSES: Record<string, Class> = Object.fromEntries(
   [
     Simulation, Rng, Grid, Heap, Navigator, RoadMap, Ventures, Construction, Careers, Relationships, Housing, Love, Interactions,
-    Social, Traffic, Visitors, OwnCars, Planes, Parcels, Arrivals, Festivities, Skies, Birthdays, Boats, Deliveries, FoodTrucks, Plans, Works, Buses,
+    Social, Traffic, Visitors, OwnCars, Planes, Parcels, Signals, Arrivals, Festivities, Skies, Birthdays, Boats, Deliveries, FoodTrucks, Plans, Works, Buses,
     PersonalityBrain, StaffBrain, CrewBrain, PetBrain, ControlledBrain, CourierBrain, HomewardBrain, VisitorBrain,
   ].map((c) => [c.name, c]),
 );
