@@ -242,7 +242,7 @@ export const CATALOG: Record<string, FurnitureType> = {
   // The parcel depot: shelves of parcels, the sorting table the drivers work at, and the bay the van stands in.
   parcelShelf: decor('Parcel shelves', [3, 1]),
   sortingTable: { name: 'Sorting table', size: [3, 1], solid: true, spots: [[1, 1]], staff: true, duration: [200, 500] },
-  loadingBay: { ...decor('Loading bay', [2, 1], false), hardStanding: true, loading: true },
+  loadingBay: { ...decor('Loading bay', [1, 2], false), hardStanding: true, loading: true },
   // The hangar (worlds/venues.ts): the workbench the mechanic and the pilot work at, and a tool chest.
   workbench: { name: 'Workbench', size: [3, 1], solid: true, spots: [[1, 1]], staff: true, duration: [200, 500] },
   toolChest: decor('Tool chest', [1, 1]),

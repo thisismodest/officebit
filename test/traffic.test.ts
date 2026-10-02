@@ -72,16 +72,20 @@ test('cars wait for someone on a zebra crossing, then carry on', () => {
 test('a parked car stays exactly where it is, nose in', () => {
   const sim = fresh();
   let parked = 0;
-  const bayAt = (x: number, y: number) => sim.activeItems().find((i) => (i.type.parking || i.type.loading) && i.def.p[0] === x && i.def.p[1] === y);
+  const bayAt = (x: number, y: number) =>
+    sim.activeItems().find((i) => (i.type.parking || i.type.loading) && Math.round(x) >= i.def.p[0] && Math.round(x) < i.def.p[0] + i.type.size[0] && Math.round(y) >= i.def.p[1] && Math.round(y) < i.def.p[1] + i.type.size[1]);
   for (let t = 0; t < 2 * TICKS_PER_DAY; t++) {
     sim.step();
     for (const c of sim.traffic.cars.filter((c) => c.parked)) {
       parked++;
       assert.deepEqual([c.px, c.py], [c.x, c.y]);
       // A food truck faces the pavement it serves; a car faces into its bay (the tile behind, where it pulled in from, isn't a bay).
-      const [bx, by] = [c.x - AHEAD[c.facing][0], c.y - AHEAD[c.facing][1]];
+      // Just behind it, past the bay's open end (half its length on from the middle, where the car stands).
+      const bay = bayAt(c.x, c.y);
+      const reach = bay ? (Math.max(...bay.type.size) + 1) / 2 : 1;
+      const [bx, by] = [c.x - AHEAD[c.facing][0] * reach, c.y - AHEAD[c.facing][1] * reach];
       if (c.truck !== undefined) assert.equal(c.facing, 'up', 'the truck faces the pavement');
-      else assert.ok(bayAt(c.x, c.y) && !bayAt(bx, by), 'nose in');
+      else assert.ok(bay && !bayAt(bx, by), 'nose in');
     }
   }
   assert.ok(parked > 0);

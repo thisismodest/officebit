@@ -6,7 +6,7 @@
 import { TICKS_PER_HOUR, hourOf } from './clock.ts';
 import { kerbOutside } from './deliveries.ts';
 import { atDoorOf, manhattan } from './geometry.ts';
-import { AHEAD, OPPOSITE, headingOf, type Heading } from './movement.ts';
+import { OPPOSITE, headingOf, type Heading } from './movement.ts';
 import { restore } from './needs.ts';
 import type { Person } from './person.ts';
 import { outsideDoor } from './places.ts';
@@ -99,13 +99,19 @@ export class Parcels {
     this.placed = true;
     const bay = this.bay();
     if (!bay) return;
-    const [x, y] = bay.def.p;
+    const [x, y] = this.inBay(bay);
     const front = this.frontOf(bay);
     const van = sim.traffic.add(sim.traffic.randomLook(), [x, y], []);
     van.van = true;
     van.parked = true;
     van.facing = headingOf(x - front[0], y - front[1], 'up');
     this.van = van;
+  }
+
+  /** Where the van stands in its bay: the middle of it (the bay's as long as the van). */
+  private inBay(bay: Item): Tile {
+    const [w, h] = bay.type.size;
+    return [bay.def.p[0] + (w - 1) / 2, bay.def.p[1] + (h - 1) / 2];
   }
 
   /** A round: a driver in, a few homes with someone in them, and off it goes. */
@@ -143,15 +149,12 @@ export class Parcels {
   private drive(van: Car, round: Round, bay: Item): void {
     const roads = this.sim.traffic.roads();
     if (!roads) return;
-    const [x, y] = [Math.round(van.x), Math.round(van.y)];
-    const fromBay = van.parked;
-    // Out of the bay backwards (it went in nose first), then off along the roads.
-    const back: Tile = [x - AHEAD[van.facing][0], y - AHEAD[van.facing][1]];
-    const reverse = fromBay && roads.drivable(...back);
-    const start: Tile = reverse ? back : [x, y];
+    const front = this.frontOf(bay);
+    // Out of the bay backwards to the tile in front of it (it went in nose first), then off along the roads.
+    const reverse = van.parked;
+    const start: Tile = reverse ? front : [Math.round(van.x), Math.round(van.y)];
     const heading: Heading = reverse ? OPPOSITE[van.facing] : van.facing;
     const stop = round.stops[round.next];
-    const front = this.frontOf(bay);
     const route = stop ? roads.route(start, stop.bay, heading, { arrive: stop.arrive }) : roads.route(start, front, heading);
     van.parked = false;
     van.reversing = reverse;
@@ -163,7 +166,7 @@ export class Parcels {
       }
       return;
     }
-    van.path = [...(reverse ? [back] : []), ...route, ...(stop ? [] : [bay.def.p])];
+    van.path = [...(reverse ? [front] : []), ...route, ...(stop ? [] : [this.inBay(bay)])];
     round.stage = stop ? 'driving' : 'returning';
   }
 
@@ -180,12 +183,13 @@ export class Parcels {
     return this.sim.activeItems().find((i) => i.type.loading && i.level === this.sim.traffic.level);
   }
 
-  /** The tile in front of the bay, where the van pulls in from and backs out to: the drivable one beside it. */
+  /** The tile in front of the bay, where the van pulls in from and backs out to: past its open end, the drivable one beyond either end. */
   private frontOf(bay: Item): Tile {
     const roads = this.sim.traffic.roads();
     const [x, y] = bay.def.p;
-    for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]] as const) if (roads?.drivable(x + dx, y + dy)) return [x + dx, y + dy];
-    return [x, y + 1];
+    const [w, h] = bay.type.size;
+    const ends: Tile[] = h >= w ? [[x, y - 1], [x, y + h]] : [[x - 1, y], [x + w, y]];
+    return ends.find((t) => roads?.drivable(...t)) ?? ends[0]!;
   }
 
   /** A driver on shift at the depot (the building nearest the bay): inside it, or out by the van. */

@@ -150,16 +150,16 @@ export const RETAIL: Record<string, Painter> = {
     },
   },
 
-  // Where the van stands: a box painted on the concrete.
+  // Where the van stands: a long box painted on the concrete, open at the top (where it drives in from), with a stop line at the far end.
   loadingBay: {
     up: 0,
     flat: true,
     paint(ctx, w, h, o) {
       const yellow = '#e7c14a';
-      rect(ctx, 1, o + 1, w - 2, 1, yellow);
-      rect(ctx, 1, o + 1, 1, h - 2, yellow);
-      rect(ctx, w - 2, o + 1, 1, h - 2, yellow);
-      for (let x = 4; x < w - 4; x += 4) dot(ctx, x, o + h - 3, yellow);
+      rect(ctx, 0, o, 1, h, yellow);
+      rect(ctx, w - 1, o, 1, h, yellow);
+      rect(ctx, 0, o + h - 2, w, 2, yellow);
+      for (let x = 3; x < w - 2; x += 4) dot(ctx, x, o + 1, yellow);
     },
   },
 };

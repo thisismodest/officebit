@@ -147,7 +147,7 @@ export const STARTER_CONFIG: TownConfig = {
     { t: 'parkingBay', row: [33, 35, 37, 39, 41, 43, 45, 47], y: 20 },
     { t: 'plantStand', row: [50, 54], y: 4 },
     { t: 'plantStand', row: [50, 54], y: 7 },
-    { t: 'loadingBay', p: [100, 19] },
+    { t: 'loadingBay', p: [100, 18] },
     // Parking bays: people's own cars live in the ones nearest home (docs/TRAFFIC.md#own-cars).
     { t: 'parkingBay', column: [73, 75, 77, 79], x: 4 },
     { t: 'parkingBay', column: [73, 75, 77, 79], x: 8 },
