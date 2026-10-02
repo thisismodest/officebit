@@ -578,7 +578,10 @@ export class Editor {
     return level && !joinsUp(level, doorOf(item.def)) ? ' Its front door doesn’t join up with a pavement yet: draw a path to it.' : '';
   }
 
-  /** Drag with a brush: the stroke follows the pointer along the grid, turning where you turn, and backs up if you go back over it. */
+  /**
+   * Drag with a brush: the stroke follows the pointer along the grid, turning where you turn. Going back the way you came
+   * backs it up; crossing it anywhere else carries on over it (a loop, a circle, scribbling to fill an area).
+   */
   private stroke(start: Tile): Grab {
     const tiles: Tile[] = [start];
     let blocked: Tile | null = null;
@@ -592,9 +595,8 @@ export class Editor {
         const before = tiles.at(-2);
         const alongX = before ? before[1] === last[1] : Math.abs(dx) >= Math.abs(dy);
         const step: Tile = (alongX && dx !== 0) || dy === 0 ? [last[0] + Math.sign(dx), last[1]] : [last[0], last[1] + Math.sign(dy)];
-        const back = tiles.findIndex((t) => t[0] === step[0] && t[1] === step[1]);
-        if (back >= 0) {
-          tiles.length = back + 1;
+        if (before && before[0] === step[0] && before[1] === step[1]) {
+          tiles.pop();
           continue;
         }
         if (this.tool !== 'grass' && this.brushProblem(step)) {

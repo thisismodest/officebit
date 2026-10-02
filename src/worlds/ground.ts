@@ -102,7 +102,8 @@ export function strokeRects(stroke: readonly Tile[], surface: Surface): Rect[] {
 export function lay(level: LevelDef, rects: readonly Rect[], surface: Surface, name = NAMES[surface]): FurnitureDef[] {
   const roads = level.rooms.filter((r) => r.floor === 'road' || r.floor === 'zebra' || r.floor === 'zebraSide');
   const onRoad = (x: number, y: number) => roads.some((r) => inRect(r.rect, x, y));
-  const pieces = surface === 'road' ? rects : rects.flatMap((rect) => cut(rect, onRoad));
+  // Water, shallows and beaches have no way they run: a stroke (a loop, a scribble) is stored as one strip per row it covers.
+  const pieces = surface === 'road' ? rects : SOFT.has(surface) ? rows(rects) : rects.flatMap((rect) => cut(rect, onRoad));
   level.rooms = level.rooms.flatMap((room) =>
     isDrawnPath(room) && room.floor !== surface ? pieces.reduce<RoomDef[]>((kept, rect) => kept.flatMap((r) => without(r, rect)), [room]) : [room],
   );
@@ -161,6 +162,13 @@ export function eraseAll(level: LevelDef, tiles: readonly Tile[]): boolean {
   }
   layPavements(level);
   return true;
+}
+
+/** Everything some rectangles cover, as one strip per row (overlaps counted once). */
+function rows(rects: readonly Rect[]): Rect[] {
+  const tiles = new Set<string>();
+  for (const [x, y, w, h] of rects) for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) tiles.add(`${i},${j}`);
+  return runs([...tiles].map((key): Rect => [...(key.split(',').map(Number) as [number, number]), 1, 1]));
 }
 
 /** Single tiles side by side in a row joined into runs (anything bigger, a road's width, kept as it is), duplicates dropped. */

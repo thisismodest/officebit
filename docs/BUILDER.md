@@ -55,8 +55,9 @@ other side.
 ## Roads and paths
 
 `src/worlds/ground.ts`. Drag to draw: the stroke follows the pointer along the
-grid, carrying on the way it's going until you turn, and backing up if you go
-back over it. Each straight run is stored as one rectangle (roads two tiles
+grid, carrying on the way it's going until you turn. Going back the way you came
+backs it up; crossing it anywhere else carries on over it, so a stroke can loop
+round, close a circle, or scribble over an area to fill it (water, say). Each straight run is stored as one rectangle (roads two tiles
 wide, paths one), overlapping at the corners, so a road always knows which way
 it runs.
 
