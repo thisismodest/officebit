@@ -65,6 +65,13 @@ export class Parcels {
     if (!van || !bay || van.removed) return;
     const round = this.round;
     if (!round) {
+      // Parked, it's in its bay, wherever that is now (moved in the editor, or laid out differently in a newer town).
+      const [bx, by] = this.inBay(bay);
+      if (van.parked && (van.x !== bx || van.y !== by)) {
+        const front = this.frontOf(bay);
+        [van.x, van.y, van.px, van.py] = [bx, by, bx, by];
+        van.facing = headingOf(bx - front[0], by - front[1], van.facing);
+      }
       const hour = Math.floor(hourOf(sim.tick));
       const key = `${Math.floor(sim.tick / (24 * TICKS_PER_HOUR))}:${hour}`;
       if (ROUNDS.includes(hour) && !sim.dayOff() && this.lastRound !== key) {
