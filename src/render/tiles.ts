@@ -7,6 +7,8 @@ import { TILE, canvas, dot, rect, type Ctx } from './pixels.ts';
 
 /** How tall a wall's cap is; the rest of the tile is its front face. */
 const CAP = 6;
+/** How far (tiles) a runway tile looks along it, each way, to tell which way it runs. */
+const RUNWAY_LOOK = 60;
 
 export function paintStaticLayer(level: LevelDef, grid: Grid): HTMLCanvasElement {
   const { canvas: layer, ctx } = canvas(grid.w * TILE, grid.h * TILE);
@@ -177,21 +179,26 @@ function paintFloor(
     case 'runway': {
       rect(ctx, x0, y0, TILE, TILE, style.base);
       speckle(style.base, 0.07, 0.04, 9);
-      if (!room) break;
-      const [rx, ry, rw, rh] = room.rect;
-      // Edge lines, a dashed centre line, and threshold stripes across each end (it runs the long way).
-      const along = rw >= rh;
-      const [first, last] = along ? [tx === rx, tx === rx + rw - 1] : [ty === ry, ty === ry + rh - 1];
-      if (along) {
-        if (ty === ry) rect(ctx, x0, y0, TILE, 1, '#ecebe4');
-        if (ty === ry + rh - 1) rect(ctx, x0, y0 + TILE - 1, TILE, 1, '#ecebe4');
-        if (first || last) for (let s = 2; s < TILE; s += 4) rect(ctx, x0 + 3, y0 + s, 10, 2, '#ecebe4');
-        else if (ty === ry + Math.floor(rh / 2) && tx % 2 === 0) rect(ctx, x0 + 2, y0 + 7, 10, 2, '#ecebe4');
+      // From the runway's shape, not how it was drawn: it runs the long way through this tile, with edge lines along
+      // its sides, threshold stripes across its ends, and a dashed line down its middle.
+      const on = (x: number, y: number) => same(x, y, 'runway');
+      const span = (dx: number, dy: number) => {
+        let n = 0;
+        while (n < RUNWAY_LOOK && on(tx + dx * (n + 1), ty + dy * (n + 1))) n++;
+        return n;
+      };
+      const [left, right, up, down] = [span(-1, 0), span(1, 0), span(0, -1), span(0, 1)];
+      const white = '#ecebe4';
+      if (left + right >= up + down) {
+        if (!on(tx, ty - 1)) rect(ctx, x0, y0, TILE, 1, white);
+        if (!on(tx, ty + 1)) rect(ctx, x0, y0 + TILE - 1, TILE, 1, white);
+        if (left === 0 || right === 0) for (let s = 2; s < TILE; s += 4) rect(ctx, x0 + 3, y0 + s, 10, 2, white);
+        else if (up === Math.floor((up + down + 1) / 2) && tx % 2 === 0) rect(ctx, x0 + 2, y0 + 7, 10, 2, white);
       } else {
-        if (tx === rx) rect(ctx, x0, y0, 1, TILE, '#ecebe4');
-        if (tx === rx + rw - 1) rect(ctx, x0 + TILE - 1, y0, 1, TILE, '#ecebe4');
-        if (first || last) for (let s = 2; s < TILE; s += 4) rect(ctx, x0 + s, y0 + 3, 2, 10, '#ecebe4');
-        else if (tx === rx + Math.floor(rw / 2) && ty % 2 === 0) rect(ctx, x0 + 7, y0 + 2, 2, 10, '#ecebe4');
+        if (!on(tx - 1, ty)) rect(ctx, x0, y0, 1, TILE, white);
+        if (!on(tx + 1, ty)) rect(ctx, x0 + TILE - 1, y0, 1, TILE, white);
+        if (up === 0 || down === 0) for (let s = 2; s < TILE; s += 4) rect(ctx, x0 + s, y0 + 3, 2, 10, white);
+        else if (left === Math.floor((left + right + 1) / 2) && ty % 2 === 0) rect(ctx, x0 + 7, y0 + 2, 2, 10, white);
       }
       break;
     }

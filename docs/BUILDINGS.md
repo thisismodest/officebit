@@ -63,7 +63,8 @@ A 160×160 village with countryside all round, all of it data: `worlds/starter.c
   Shop, a lot, the charging station and the leisure centre. Back Lane and Ferry Lane run
   round its ends, so the roads go in loops.
 - **The Green:** a park between Green Lane and Pond Lane, with its ponds; Orchard Close's
-  terraces and semis to the west, Acacia Primary (and its fenced playing field) and more
+  terraces and semis to the west, Acacia Primary (and its fenced playing field, a park too, with goals and a gate in from Green
+  Lane) and more
   semis on its south side.
 - **Mill Road:** east over the river to detached cottages, and the edge of town.
 

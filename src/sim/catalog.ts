@@ -360,6 +360,10 @@ export const CATALOG: Record<string, FurnitureType> = {
   // Field boundaries and gardens: a tile of hedge or fence, joining up with its neighbours.
   hedge: decor('Hedge', [1, 1]),
   fence: decor('Fence', [1, 1]),
+  // A gate in a fence, standing open: the way into a field.
+  fieldGate: decor('Field gate', [1, 1], false),
+  // A goal at each end of a playing field.
+  goal: decor('Goal', [1, 2], false),
   flowers: decor('Flowers', [1, 1], false),
   // A park bench: sit, rest, or open a laptop (it's only in town, so it's for days out: docs/PLANS.md).
   bench: { ...decor('Bench', [2, 1]), spots: [[0, 0], [1, 0]], seat: true, worktop: true, offers: { energy: 0.1, social: 0.05 }, duration: [60, 120] },

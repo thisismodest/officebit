@@ -6,6 +6,7 @@
 import { TICKS_PER_HOUR, hourOf } from './clock.ts';
 import type { VehiclePose } from './food-trucks.ts';
 import { manhattan } from './geometry.ts';
+import type { Grid } from './grid.ts';
 import { MOVERS, advance, speedOn, type Moving } from './movement.ts';
 import type { Leg } from './navigation.ts';
 import { faceTowards, type Intent, type Person } from './person.ts';
@@ -51,6 +52,8 @@ export interface PlanePose extends VehiclePose {
 }
 
 export class Planes {
+  /** Not saved with the town (snapshot.ts): worked out again when needed. */
+  static readonly unsaved = ['cache'];
   /** How long (ticks) anyone waits at a gate before walking instead. */
   readonly patience = MOST_WAIT * TICKS_PER_MINUTE;
   private readonly sim: Simulation;
@@ -140,26 +143,33 @@ export class Planes {
     return this.sim.activeItems().find((i) => i.type.airfield === 'plane' && i.level === this.sim.traffic.level);
   }
 
-  /** The airfields, west to east: each gate, with the stand and runway nearest it. */
+  /** The airfields, west to east: each gate, with the stand nearest it and the runway nearest that (the whole strip, however it was drawn). Worked out again only when the town changes. */
   private fields(): Field[] {
     const { sim } = this;
     const town = sim.traffic.level;
     const level = town ? sim.levels.get(town) : undefined;
-    if (!level) return [];
-    const items = sim.activeItems().filter((i) => i.level === town);
-    const stands = items.filter((i) => i.type.airfield === 'stand');
-    const runways = level.rooms.filter((r) => r.floor === 'runway').map((r) => r.rect);
-    const near = (t: Tile, ts: Tile[]) => ts.reduce((a, b) => (manhattan(a, t) <= manhattan(b, t) ? a : b));
-    return items
+    const grid = town ? sim.grids.get(town) : undefined;
+    const items = sim.activeItems();
+    if (!level || !grid) return [];
+    if (this.cache?.grid === grid && this.cache.items === items) return this.cache.fields;
+    const here = items.filter((i) => i.level === town);
+    const stands = here.filter((i) => i.type.airfield === 'stand');
+    const runway = (x: number, y: number) => grid.inBounds(x, y) && level.rooms[grid.roomAt(x, y)]?.floor === 'runway';
+    const tiles: Tile[] = [];
+    for (let y = 0; y < grid.h; y++) for (let x = 0; x < grid.w; x++) if (runway(x, y)) tiles.push([x, y]);
+    const fields = here
       .filter((i) => i.type.airfield === 'gate')
       .sort((a, b) => a.def.p[0] - b.def.p[0])
       .flatMap((gate): Field[] => {
-        if (!stands.length || !runways.length) return [];
+        if (!stands.length || !tiles.length) return [];
         const stand = stands.reduce((a, b) => (manhattan(a.def.p, gate.def.p) <= manhattan(b.def.p, gate.def.p) ? a : b));
-        const runway = runways.reduce((a, b) => (manhattan(near(gate.def.p, ends(a)), gate.def.p) <= manhattan(near(gate.def.p, ends(b)), gate.def.p) ? a : b));
-        return [{ gate, stand, runway }];
+        const start = tiles.reduce((a, b) => (manhattan(a, stand.def.p) <= manhattan(b, stand.def.p) ? a : b));
+        return [{ gate, stand, runway: strip(start, runway) }];
       });
+    this.cache = { grid, items, fields };
+    return fields;
   }
+  private cache: { grid: Grid; items: readonly Item[]; fields: Field[] } | null = null;
 
   /** Which field the plane's standing at (on its stand), or -1. */
   private fieldAt(plane: Item, fields: Field[]): number {
@@ -223,6 +233,23 @@ export function departure(tick: number, i: number): number {
     if (m % 60 === minute && hour >= DAY[0] && hour <= DAY[1]) return tick + (m - now) * TICKS_PER_MINUTE;
   }
   return tick + 24 * TICKS_PER_HOUR;
+}
+
+/** The runway joined up with a tile, as the rectangle round it. */
+function strip([sx, sy]: Tile, runway: (x: number, y: number) => boolean): Rect {
+  const seen = new Set([`${sx},${sy}`]);
+  const queue: Tile[] = [[sx, sy]];
+  let [x0, y0, x1, y1] = [sx, sy, sx, sy];
+  while (queue.length) {
+    const [x, y] = queue.pop()!;
+    [x0, y0, x1, y1] = [Math.min(x0, x), Math.min(y0, y), Math.max(x1, x), Math.max(y1, y)];
+    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+      if (seen.has(`${nx},${ny}`) || !runway(nx, ny)) continue;
+      seen.add(`${nx},${ny}`);
+      queue.push([nx, ny]);
+    }
+  }
+  return [x0, y0, x1 - x0 + 1, y1 - y0 + 1];
 }
 
 /** A runway's two ends, along its middle. */

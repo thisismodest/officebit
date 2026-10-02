@@ -357,6 +357,38 @@ export const OUTDOOR: Record<string, Painter> = {
     },
   },
 
+  // A field gate, standing open: a post either side (the fence runs on into them), and the gate swung back along one.
+  fieldGate: {
+    up: 6,
+    paint(ctx, w, h, o, _seed, _def, joins) {
+      const post = '#8a6446';
+      const across = joins?.left || joins?.right || !(joins?.up || joins?.down);
+      const posts: [number, number][] = across ? [[0, o - 4], [w - 4, o - 4]] : [[w / 2 - 2, o - 6], [w / 2 - 2, o + h - 8]];
+      for (const [x, y] of posts) {
+        rect(ctx, x, y, 4, 14, OUTLINE);
+        rect(ctx, x + 1, y + 1, 2, 12, post);
+      }
+      // The gate, swung open into the field: seen side on, its bars and a brace.
+      const [gx, gy] = across ? [2, o + 4] : [w / 2 + 2, o - 2];
+      rect(ctx, gx, gy, 3, 12, OUTLINE);
+      for (const dy of [1, 5, 9]) rect(ctx, gx + 1, gy + dy, 1, 2, '#c79a6a');
+      rect(ctx, gx + 1, gy, 1, 12, '#c79a6a');
+    },
+  },
+
+  // A goal: two white posts and a crossbar, with the net behind.
+  goal: {
+    up: 10,
+    paint(ctx, w, h, o) {
+      rect(ctx, 2, o - 8, w - 4, h + 6, 'rgba(255,255,255,0.18)');
+      for (let y = o - 6; y < o + h - 2; y += 3) rect(ctx, 3, y, w - 6, 1, 'rgba(255,255,255,0.35)');
+      rect(ctx, 1, o - 10, 2, h + 8, '#f4f4f4');
+      rect(ctx, w - 3, o - 10, 2, h + 8, '#f4f4f4');
+      rect(ctx, 1, o - 10, w - 2, 2, '#f4f4f4');
+      rect(ctx, 0, o + h - 2, w, 2, 'rgba(20,14,30,0.2)');
+    },
+  },
+
   flowers: {
     up: 0,
     flat: true,

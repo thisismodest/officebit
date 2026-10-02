@@ -37,7 +37,7 @@ const INDOOR_TOOLS = new Set<Tool>(['room', 'area', 'door', 'stairs']);
 const HOUSES = new Set(['terrace', 'house', 'detached']);
 
 /** What the picker offers indoors and out. Buildings, houses, lots and building sites are placed some other way. */
-const OUTSIDE_ONLY = ['tree', 'bush', 'hedge', 'fence', 'plane', 'stand', 'gate', 'hangar', 'windsock', 'flowers', 'bench', 'lamppost', 'pond', 'busStop', 'billboard', 'sailboat', 'lifebuoy'];
+const OUTSIDE_ONLY = ['tree', 'bush', 'hedge', 'fence', 'fieldGate', 'goal', 'plane', 'stand', 'gate', 'hangar', 'windsock', 'flowers', 'bench', 'lamppost', 'pond', 'busStop', 'billboard', 'sailboat', 'lifebuoy'];
 const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse', 'leisureCentre']);
 const INDOOR_GROUPS: [string, string[]][] = [
   ['Office', Object.keys(OFFICE)],
