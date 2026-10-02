@@ -11,7 +11,9 @@ const until = (sim: ReturnType<typeof fresh>, hour: number) => {
 
 test('the parcel van goes round homes in the morning, the driver aboard, and comes back to its bay', () => {
   const sim = fresh();
-  const van = sim.parcels.van ?? (sim.step(), sim.parcels.van)!;
+  // The van's in its bay from the first step.
+  sim.step();
+  const van = sim.parcels.van!;
   const home = [van.x, van.y];
   until(sim, 10.2);
   assert.ok(!van.parked && sim.person('kit')!.riding === van.id, 'out on its round, with Kit driving');
