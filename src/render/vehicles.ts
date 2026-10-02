@@ -90,7 +90,7 @@ const longSide = (middle: Part[]): Part[] => [
   [-14, -4, 7, 3, "tyre"],
 ];
 
-export type VehicleKind = "car" | "truck" | "bus" | "lorry";
+export type VehicleKind = "car" | "truck" | "bus" | "lorry" | "plane";
 
 /** Every kind of vehicle, by the same names as the sim's movers (movement.ts). In scale with people (21px tall). */
 export const VEHICLES: Record<VehicleKind, Look> = {
@@ -160,6 +160,52 @@ export const VEHICLES: Record<VehicleKind, Look> = {
       [2, -14, 4, 3, "door"],
     ]),
     end: LONG_END,
+  },
+  // The little plane (sim/planes.ts), seen from above, whichever way it's facing: wings across it, broad by the
+  // fuselage and slim to the tips, the tailplane and the fin (a line, from above) at the back, the propeller at the
+  // nose. It's furniture too, standing on its stand (render/props/airfield.ts draws it with this).
+  plane: {
+    size: { length: 56, height: 44, width: 56, wheelsBelow: 0 },
+    colours: { body: "#f2f1ec", band: "#c8453a" },
+    side: [
+      // Wings and tailplane, under the fuselage.
+      [22, 2, 9, -4, "outline"],
+      [20, 16, 13, 12, "outline"],
+      [23, 3, 7, -6, "#e6e4dc"],
+      [21, 17, 11, 10, "#e6e4dc"],
+      [23, 3, 1, -6, "highlight"],
+      [45, 13, 8, 18, "outline"],
+      [46, 14, 6, 16, "#e6e4dc"],
+      // The fuselage, its stripe and the cockpit, the nose and its propeller, and the fin along the tail.
+      [2, 18, -4, 8, "outline"],
+      [3, 19, -6, 6, "body"],
+      [3, 19, -6, 1, "highlight"],
+      [8, 22, -14, 2, "band"],
+      [6, 19, 5, 6, "darkGlass"],
+      [0, 20, 3, 4, "outline"],
+      [1, 21, 2, 2, "#9aa2ab"],
+      [0, 14, 1, 16, "#5b6270"],
+      [44, 21, 10, 2, "band"],
+    ],
+    end: [
+      [-6, 4, 12, -8, "shadow", { centred: true }],
+      // The fuselage, nose towards you (or away), the tail at the far end.
+      [-4, 2, 8, -4, "outline", { centred: true }],
+      [-3, 3, 6, -6, "body", { centred: true }],
+      [-1, [8, 10], 2, -20, "band", { centred: true }],
+      [-3, [4, -12], 6, 6, "darkGlass", { centred: true }],
+      // Wings across, broad by the fuselage and slim to the tips; the tailplane and fin at the back.
+      [0, [24, 28], 0, 4, "outline"],
+      [-15, [22, 26], 30, 8, "outline", { centred: true }],
+      [1, [25, 29], -2, 2, "#e6e4dc"],
+      [-14, [23, 27], 28, 6, "#e6e4dc", { centred: true }],
+      [1, [25, 29], -2, 1, "highlight"],
+      [-10, [46, 3], 20, 5, "outline", { centred: true }],
+      [-9, [47, 4], 18, 3, "#e6e4dc", { centred: true }],
+      [-1, [42, 2], 2, 12, "band", { centred: true }],
+      // The propeller across the nose.
+      [-8, [0, -2], 16, 2, "#5b6270", { centred: true }],
+    ],
   },
 };
 

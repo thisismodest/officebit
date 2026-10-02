@@ -113,7 +113,9 @@ forecourts with bays (pavements aren't laid over forecourts, so one opens straig
 flies between the airfields, west to east and back, by day (07:00 to 21:30): from the first on the
 hour, from the next on the half hour. It taxis off its stand, rolls down the runway towards where it's
 going, climbs, flies straight over, lands, rolls out and taxis to the far stand (`MOVERS.plane`: taxi,
-roll, fly), drawn higher the further it is from a runway, with its shadow below. Like the bus: anyone
+roll, fly; the same stepper as every vehicle), drawn higher the further it is from a runway or apron, with its
+shadow below. It's a look in `VEHICLES` (render/vehicles.ts), drawn by the one vehicle painter facing
+whichever way it's going, parked or moving. Like the bus: anyone
 with a long walk (70 tiles or more) that the gates at either end halve, and a flight leaving soon
 enough, walks to the gate and waits (40 minutes at most), flies ("✈️ Lou flew to West Field") and
 walks on from the other gate.

@@ -105,7 +105,7 @@ src/worlds/   starter.config.ts (the starter town as data: the map, buildings, h
               onto the new map), edit.ts (world edits: moving buildings, turning houses, floors, team), placement.ts (safe zones),
               rooms.ts (walled rooms and doorways)
 src/render/   renderer.ts (one level through a camera; y-sorted props+people; night lighting),
-              camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, vehicles.ts (every vehicle from its look in VEHICLES: cars, food trucks, the bus),
+              camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, vehicles.ts (every vehicle from its look in VEHICLES: cars, food trucks, the bus, the lorry, the plane),
               palette.ts, pixels.ts, seasonal.ts (fairy lights, pumpkins, fireworks), play.ts (frisbees, laptops),
               spotlights.ts (the spotlights on billboards and posters: which, when, pixelated), weather.ts (rain, snow, gloom, snow lying),
               props/leisure.ts (the leisure centre), props/airfield.ts (the plane, stands, gates, hangars),

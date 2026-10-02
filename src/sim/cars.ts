@@ -98,7 +98,10 @@ export class OwnCars {
     const own = this.of(p);
     const roads = sim.traffic.roads();
     const to = sim.items[intent.to];
-    if (!own || !roads || !to || (this.taken(to) && own.bay !== to)) return sim.walkOn(p, intent.after);
+    if (!own || !roads || !to || (this.taken(to) && own.bay !== to)) {
+      sim.walkOn(p, intent.after);
+      return;
+    }
     const { car } = own;
     const [x, y] = [Math.round(car.x), Math.round(car.y)];
     // Back out of the bay (it went in nose first), then off along the roads, and nose first into the other.
@@ -107,7 +110,10 @@ export class OwnCars {
     const away: Heading = reverse ? OPPOSITE[car.facing] : car.facing;
     const front = this.frontOf(to) ?? to.def.p;
     const there = roads.route(reverse ? back : [x, y], front, away);
-    if (!there) return sim.walkOn(p, intent.after);
+    if (!there) {
+      sim.walkOn(p, intent.after);
+      return;
+    }
     car.parked = false;
     car.reversing = reverse;
     car.path = [...(reverse ? [back] : []), ...there, to.def.p];
@@ -125,7 +131,10 @@ export class OwnCars {
     const from: Tile = [Math.round(car.x), Math.round(car.y)];
     const out = sim.traffic.ways('out').sort((a, b) => manhattan(a.edge, from) - manhattan(b.edge, from))[0];
     const route = out && roads?.route(this.frontOf(own.bay) ?? from, out.edge, car.facing);
-    if (!out || !route) return sim.traffic.remove(car);
+    if (!out || !route) {
+      sim.traffic.remove(car);
+      return;
+    }
     car.parked = false;
     car.through = true;
     car.path = [...route, out.off];

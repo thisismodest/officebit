@@ -1,45 +1,22 @@
 // Airfield art (docs/TRAFFIC.md#planes): the little plane, its stand, the gate passengers wait at, a hangar, a windsock.
 import { OUTLINE, shade } from '../palette.ts';
-import { dot, pill, rect, type Ctx } from '../pixels.ts';
+import { dot, rect } from '../pixels.ts';
+import { vehicleSprite } from '../vehicles.ts';
 import { METAL, WINDOW_LIT, type Painter } from './common.ts';
 
-const BODY = '#f2f1ec';
-const STRIPE = '#c8453a';
-const WING = '#d9d7cf';
-
-/** The plane facing right, a little from above: wings across its middle, the tail fin up at the back, the propeller at the nose. */
-export function paintPlane(ctx: Ctx, w: number, h: number, o: number): void {
-  const mid = o + Math.floor(h / 2);
-  // The far wing (up the screen), the fuselage, then the near wing over it.
-  rect(ctx, w / 2 - 6, o - 6, 12, 10, OUTLINE);
-  rect(ctx, w / 2 - 5, o - 5, 10, 8, WING);
-  pill(ctx, 6, mid - 6, w - 12, 12, BODY, OUTLINE);
-  rect(ctx, 8, mid, w - 18, 2, STRIPE);
-  // Windows along the cabin, the windscreen at the front.
-  for (let x = 20; x < w - 22; x += 6) rect(ctx, x, mid - 3, 3, 2, '#5d7a99');
-  rect(ctx, w - 18, mid - 4, 5, 3, '#8fb0cc');
-  // Tail: the fin up at the back, and the tailplane.
-  rect(ctx, 4, mid - 14, 8, 10, OUTLINE);
-  rect(ctx, 5, mid - 13, 6, 8, BODY);
-  rect(ctx, 5, mid - 9, 6, 2, STRIPE);
-  rect(ctx, 2, mid - 2, 10, 3, OUTLINE);
-  rect(ctx, 3, mid - 1, 8, 1, WING);
-  // The nose and its propeller.
-  rect(ctx, w - 7, mid - 2, 3, 4, METAL.dark);
-  rect(ctx, w - 4, mid - 7, 2, 14, shade(METAL.dark, -0.3));
-  rect(ctx, w / 2 - 7, mid + 4, 14, 10, OUTLINE);
-  rect(ctx, w / 2 - 6, mid + 5, 12, 8, shade(WING, -0.08));
-  rect(ctx, w / 2 - 6, mid + 5, 12, 1, shade(WING, 0.1));
-  // Wheels under it.
-  for (const x of [w / 2 - 6, w / 2 + 4, w - 12]) rect(ctx, x, o + h - 3, 3, 3, OUTLINE);
+/** Where the plane's drawn on its footprint (w×h, from `o`): centred on it (its wings reach past it). */
+export function planeAt(sprite: HTMLCanvasElement, w: number, h: number, o: number): [x: number, y: number] {
+  return [Math.round((w - sprite.width) / 2), Math.round(o + (h - sprite.height) / 2)];
 }
 
 export const AIRFIELD: Record<string, Painter> = {
+  // Standing on its stand, nose to the east: the same look it flies in (render/vehicles.ts).
   plane: {
-    up: 10,
+    up: 6,
+    down: 6,
     paint(ctx, w, h, o) {
-      rect(ctx, 8, o + h - 3, w - 16, 3, 'rgba(20,14,30,0.2)');
-      paintPlane(ctx, w, h, o);
+      const sprite = vehicleSprite('plane', 'right');
+      ctx.drawImage(sprite, ...planeAt(sprite, w, h, o));
     },
   },
 

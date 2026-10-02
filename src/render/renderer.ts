@@ -5,10 +5,11 @@ import { asleep, atDesk, seatedAtDesk, type Person, hasUmbrella } from '../sim/p
 import { interiorOf, occupants } from '../sim/places.ts';
 import type { Item, Simulation } from '../sim/sim.ts';
 import { asideOffset } from '../sim/collision.ts';
-import { AHEAD } from '../sim/movement.ts';
+import { AHEAD, type Heading } from '../sim/movement.ts';
 import { vehicleKind, type Car } from '../sim/traffic.ts';
 import { Camera } from './camera.ts';
 import { paintJob, paintVehicleLights, vehicleOrigin, vehicleSprite, type Colours } from './vehicles.ts';
+import { planeAt } from './props/airfield.ts';
 import { truckColours } from './props/outdoor.ts';
 import { characterSprite, type Facing, type Look, type Pose, SPRITE_H } from './characters.ts';
 import { BACKGROUND, NIGHT, OUTLINE, PANTS, hashString } from './palette.ts';
@@ -567,20 +568,18 @@ export class Renderer {
   }
 
   /** The plane where it's got to: lifted off the ground as high as it's flying, facing the way it's going, its shadow beneath. */
-  private paintFlying(prop: Prop, pose: { x: number; y: number; facing: string; up: number }): void {
+  private paintFlying(prop: Prop, pose: { x: number; y: number; facing: Heading; up: number }): void {
     const { ctx } = this;
     const [w, h] = [prop.item.type.size[0] * TILE, prop.item.type.size[1] * TILE];
     const [x, y] = [Math.round(pose.x * TILE), Math.round(pose.y * TILE)];
-    const lift = Math.round(pose.up * PLANE_HEIGHT);
-    ctx.fillStyle = `rgba(20,14,30,${0.25 - pose.up * 0.1})`;
-    ctx.fillRect(x + 8, y + h - 4, w - 16, 4);
-    // The image starts above the footprint (its tail fin), as it does standing.
-    const top = y - lift + (prop.y - prop.item.def.p[1] * TILE);
-    ctx.save();
-    ctx.translate(pose.facing === 'left' ? x + w : x, top);
-    if (pose.facing === 'left') ctx.scale(-1, 1);
-    ctx.drawImage(prop.img, 0, 0);
-    ctx.restore();
+    const sprite = vehicleSprite('plane', pose.facing);
+    const [sx, sy] = planeAt(sprite, w, h, y);
+    // Its shadow on the ground, fainter the higher it is; then the plane, lifted as high as it's flying.
+    if (pose.up > 0) {
+      ctx.fillStyle = `rgba(20,14,30,${0.25 - pose.up * 0.12})`;
+      ctx.fillRect(x + sx + 8, y + h - 3, sprite.width - 16, 3);
+    }
+    ctx.drawImage(sprite, x + sx, sy - Math.round(pose.up * PLANE_HEIGHT));
   }
 
   /** A boat out on the river, with whoever's aboard sitting in it (head and shoulders, along it). */

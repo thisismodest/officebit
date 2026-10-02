@@ -69,7 +69,7 @@ export class Planes {
     const flight = this.flight;
     if (!flight || item !== this.plane()) return undefined;
     const { x, y, px, py, facing } = flight.pose;
-    return { x, y, px, py, facing, moving: false, middle: [0, 0], up: this.height(x + 2, y + 1) };
+    return { x, y, px, py, facing, moving: false, middle: [0, 0], up: this.height(Math.round(x + 2), Math.round(y + 1)) };
   }
 
   /** Who's aboard the plane (for the click card, and following them follows the plane). */
@@ -188,12 +188,14 @@ export class Planes {
       riders.push({ id: p.id, after: intent.after });
       sim.board(p, PLANE, `✈️ ${p.name} flew to ${to.gate.def.label ?? 'the other airfield'}`);
     }
-    // Middle of the plane: off the stand, down the runway towards where it's going, up and over, and down on the far runway.
+    // Middle of the plane: straight off the stand onto the runway, along it to the far end, then down it towards where
+    // it's going, up and over, down on the far runway, rolled out, back along it and straight onto the stand.
     const [fx, fy] = middleOf(from.stand);
     const [tx, ty] = middleOf(to.stand);
     const [away, toward] = endsToward(from.runway, [tx, ty]);
     const [touch, rollTo] = endsToward(to.runway, [fx, fy]).reverse() as [Tile, Tile];
-    const course = [[fx, fy], away, toward, touch, rollTo, [tx, ty]] as Tile[];
+    const onto = (stand: Tile, end: Tile, runway: Rect): Tile => (eastWest(runway) ? [stand[0], end[1]] : [end[0], stand[1]]);
+    const course = [[fx, fy], onto([fx, fy], away, from.runway), away, toward, touch, rollTo, onto([tx, ty], rollTo, to.runway), [tx, ty]] as Tile[];
     const path = course.slice(1).flatMap((t, i) => line(course[i]!, t)).map(([x, y]): Tile => [x - 2, y - 1]);
     const [x, y] = plane.def.p;
     this.flight = { pose: { x, y, px: x, py: y, facing: 'right' }, path, to, riders };
@@ -211,10 +213,10 @@ export class Planes {
     }
   }
 
-  /** How high the plane is over a tile: on the ground over a runway, climbing to full height within a few tiles of one. */
+  /** How high the plane is over a tile: on the ground over a runway or an apron, climbing to full height within a few tiles of one. */
   private height(x: number, y: number): number {
-    const runways = (this.sim.levels.get(this.sim.traffic.level ?? '')?.rooms ?? []).filter((r) => r.floor === 'runway').map((r) => r.rect);
-    const off = Math.min(...runways.map(([rx, ry, rw, rh]) => Math.max(rx - x, x - (rx + rw - 1), ry - y, y - (ry + rh - 1), 0)));
+    const ground = (this.sim.levels.get(this.sim.traffic.level ?? '')?.rooms ?? []).filter((r) => r.floor === 'runway' || r.floor === 'apron').map((r) => r.rect);
+    const off = Math.min(...ground.map(([rx, ry, rw, rh]) => Math.max(rx - x, x - (rx + rw - 1), ry - y, y - (ry + rh - 1), 0)));
     return Math.min(1, off / CLIMB);
   }
 
@@ -264,6 +266,8 @@ function endsToward(runway: Rect, toward: Tile): [Tile, Tile] {
 }
 
 const middleOf = (item: Item): Tile => [item.def.p[0] + 2, item.def.p[1] + 1];
+/** Does a runway run east–west (its ends on one row)? */
+const eastWest = ([, , w, h]: Rect) => w >= h;
 
 /** The tiles along a straight line from one tile to another (not including the first): across first, then down. */
 function line([ax, ay]: Tile, [bx, by]: Tile): Tile[] {
