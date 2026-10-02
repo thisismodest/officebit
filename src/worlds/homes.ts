@@ -32,8 +32,8 @@ export function buildHome(style: HomeStyle, owner: string, name: string, variant
 }
 
 /** An empty home, to let: `to-let-n`, called "To let" throughout. */
-export function buildToLet(style: HomeStyle, n: number, variant: number): Home {
-  const home = buildHome(style, `to-let-${n}`, TO_LET, variant);
+export function buildToLet(style: HomeStyle | 'narrowboat', n: number, variant: number): Home {
+  const home = style === 'narrowboat' ? buildNarrowboat(`to-let-${n}`, TO_LET) : buildHome(style, `to-let-${n}`, TO_LET, variant);
   home.level.name = home.level.rooms[0]!.name = TO_LET;
   return home;
 }

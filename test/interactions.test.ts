@@ -44,7 +44,8 @@ test('pizza is brought in by a rider, eaten, cleared away, and the rider leaves'
 });
 
 test('taking control: they go where they are told, then their personality takes over again', () => {
-  const sim = until(fresh(), 10);
+  // Early enough that they're back at their desk before lunch (and the food trucks).
+  const sim = until(fresh(), 8.5);
   const bea = sim.person('bea')!;
   sim.interactions.control(bea, true);
   const green: [number, number] = [56, 80];

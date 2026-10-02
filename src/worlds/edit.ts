@@ -255,7 +255,8 @@ function moveInto(home: HouseOnMap, owner: string | undefined, name: string): vo
 }
 
 /** The level a building on `map` leads into, through a portal on the row in front of it (as sim/places.ts sees it). */
-function insideOf(world: WorldDef, map: string, item: FurnitureDef): string | undefined {
+/** The inside of a building on a map (the level through its door), if it has one. */
+export function insideOf(world: WorldDef, map: string, item: FurnitureDef): string | undefined {
   for (const { a, b } of world.portals) {
     if (a.level === map && atDoorOf(item, a.p)) return b.level;
     if (b.level === map && atDoorOf(item, b.p)) return a.level;

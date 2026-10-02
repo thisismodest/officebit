@@ -55,6 +55,17 @@ to a path. Houses can also be turned round (`flipHouse`): the door goes to the
 other side. (The starter town's door paths were laid once, as it was built:
 `doorPaths` in its config.)
 
+## New buildings
+
+Under **Buildings** in the picker (`src/worlds/buildings.ts`): houses (terrace, semi, detached) and a
+narrowboat come with a home inside, to let, for newcomers and anyone moving house; a shop, a diner,
+an office, a leisure centre, a garden centre, a parcel depot, a hangar, a school and a boating club come
+with their inside (the starter town's templates), a door, and a company of their own under a made-up
+name (Maple Stores, Hawthorn Diner…) that takes on anyone looking for work, if it has desks: the shop's
+checkouts, the diner's grill, the office's eight. Each goes up straight away; small things in the way
+are cleared. Select one to give it another name (on the map, inside and its company). Delete takes
+it down, everything it came with, unless someone lives or works there (it says who). Undo either way.
+
 ## Roads and paths
 
 `src/worlds/ground.ts`. Drag to draw (hold Space and drag to move the map meanwhile, as with
@@ -173,5 +184,4 @@ says why.
 ## Coming next
 
 Team editing (adding people, departments, paste-a-list) is written and tested
-in `src/worlds/edit.ts`, waiting for its dialog. New houses and lots from the
-picker, and naming roads.
+in `src/worlds/edit.ts`, waiting for its dialog. Lots from the picker, and naming roads.

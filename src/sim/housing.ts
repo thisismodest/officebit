@@ -7,7 +7,7 @@ import type { Item, Simulation } from './sim.ts';
 import type { LevelDef } from './world.ts';
 
 /** House types on a map, smallest first: a terrace is a one-bed, a semi a two-bed, detached a family home. */
-const SIZES: Record<string, number> = { terrace: 1, house: 2, detached: 3 };
+const SIZES: Record<string, number> = { narrowboat: 1, terrace: 1, house: 2, detached: 3 };
 export const TO_LET = 'To let';
 
 export interface Home {

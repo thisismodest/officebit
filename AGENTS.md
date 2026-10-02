@@ -87,7 +87,8 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   visitors.ts     cars that turn off the highway to eat or charge, and cars out for a drive round town
   buses.ts        the bus route (stops in the shortest order, timetable, night bus), and who rides instead of walking
   cars.ts         people's own cars: kept in the bay nearest home, driven a long way, parked near where they're going
-  planes.ts       the airfields and the plane between them, by timetable; who flies instead of walking
+  planes.ts       the airfields and the plane between them, by timetable, when the pilot's in; who flies instead of walking
+  parcels.ts      the depot's van taking parcels round homes on weekdays, with a driver on shift
   arrivals.ts     newcomers: a baby dropped off by car (it crawls in), family and new team members on foot from the edge of town
   weather.ts      clear, grey, rain or snow in spells, from the seed and the date; the wet keeps people in
   birthdays.ts    everyone's birthday: the News, a cheerier day, a party hat, a cake at work (or at home)
@@ -102,13 +103,13 @@ src/worlds/   starter.config.ts (the starter town as data: the map, buildings, h
               ground.ts (roads, pavements, paths, crossings, water: each its own piece; layPavements lays pavement along a new town's roads once), layout.ts (LevelBuilder),
               homes.ts (terrace/house/detached interiors), offices.ts (startup tier 1/2), venues.ts (diner, shop, clubhouse, leisure centre),
               school.ts, version.ts (VERSION), upgrades.ts (what each release adds to older towns), relocate.ts (moving pre-0.5 towns
-              onto the new map), edit.ts (world edits: moving buildings, turning houses, floors, team), placement.ts (safe zones),
+              onto the new map), buildings.ts (new buildings from the picker: homes to let, workplaces with companies), edit.ts (world edits: moving buildings, turning houses, floors, team), placement.ts (safe zones),
               rooms.ts (walled rooms and doorways)
 src/render/   renderer.ts (one level through a camera; y-sorted props+people; night lighting),
               camera.ts (DOM-free), tiles.ts, characters.ts (ASCII sprites), pets.ts, vehicles.ts (every vehicle from its look in VEHICLES: cars, food trucks, the bus, the lorry, the plane),
               palette.ts, pixels.ts, seasonal.ts (fairy lights, pumpkins, fireworks), play.ts (frisbees, laptops),
               spotlights.ts (the spotlights on billboards and posters: which, when, pixelated), weather.ts (rain, snow, gloom, snow lying),
-              props/leisure.ts (the leisure centre), props/airfield.ts (the plane, stands, gates, hangars),
+              props/leisure.ts (the leisure centre), props/airfield.ts (the plane, stands, gates, hangars), props/retail.ts (garden centre, depot),
               props/* (one painter per catalog type)
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
               editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (the cog: your town's name, save, share links, townfiles),
@@ -216,7 +217,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), an About page and a welcome card, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-183 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+192 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

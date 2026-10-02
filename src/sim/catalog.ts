@@ -84,6 +84,8 @@ export interface FurnitureType {
   line?: boolean;
   /** Joins up with a line of this kind, standing in it (a gate in a fence). */
   joinsWith?: string;
+  /** A building: how many tiles in from its left its front door is (one, unless it says). */
+  door?: number;
   /** Where the parcel van stands, at the depot (parcels.ts). */
   loading?: boolean;
   /** The airfields (planes.ts): a plane, the stand it parks on, and the gate passengers wait at. */
@@ -340,15 +342,15 @@ export const CATALOG: Record<string, FurnitureType> = {
   bookshelf: decor('Bookshelf', [2, 1]),
 
   // Outside
-  officeBuilding: decor('Office', [12, 6]),
-  diner: decor('Diner', [9, 6]),
-  supermarket: decor('Corner shop', [9, 6]),
-  leisureCentre: decor('Leisure centre', [12, 6]),
-  gardenCentre: decor('Garden centre', [14, 7]),
-  depot: decor('Parcel depot', [12, 6]),
-  school: decor('School', [11, 7]),
+  officeBuilding: { ...decor('Office', [12, 6]), door: 5 },
+  diner: { ...decor('Diner', [9, 6]), door: 4 },
+  supermarket: { ...decor('Corner shop', [9, 6]), door: 4 },
+  leisureCentre: { ...decor('Leisure centre', [12, 6]), door: 5 },
+  gardenCentre: { ...decor('Garden centre', [14, 7]), door: 6 },
+  depot: { ...decor('Parcel depot', [12, 6]), door: 5 },
+  school: { ...decor('School', [11, 7]), door: 5 },
   startupSmall: decor('Small office', [5, 4]),
-  startupLarge: decor('Office', [9, 6]),
+  startupLarge: { ...decor('Office', [9, 6]), door: 4 },
   terrace: decor('House', [3, 3]),
   house: decor('House', [4, 3]),
   detached: decor('House', [5, 3]),
@@ -402,6 +404,6 @@ export const CATALOG: Record<string, FurnitureType> = {
   plane: { ...decor('Plane', [4, 2]), hardStanding: true, airfield: 'plane', blocks: { wheels: false } },
   stand: { ...decor('Aircraft stand', [4, 2], false), hardStanding: true, airfield: 'stand' },
   gate: { ...decor('Gate', [3, 1], false), spots: [[0, 0], [1, 0]], seat: true, hardStanding: true, airfield: 'gate' },
-  hangar: decor('Hangar', [7, 4]),
+  hangar: { ...decor('Hangar', [7, 4]), door: 3 },
   windsock: decor('Windsock', [1, 1]),
 };

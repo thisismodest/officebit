@@ -108,8 +108,8 @@ export function buildWorld(config: TownConfig): WorldDef {
   };
 }
 
-/** The tile in front of a building's door: below it (or above, facing up), `door` tiles in from its left. */
-function doorTile(t: string, { at: [x, y], faces, door = 1 }: Placed): Tile {
+/** The tile in front of a building's door: below it (or above, facing up), `door` tiles in from its left (as the catalog has it, unless the config says). */
+function doorTile(t: string, { at: [x, y], faces, door = CATALOG[t]!.door ?? 1 }: Placed): Tile {
   const [, h] = CATALOG[t]!.size;
   return [x + door, faces === 'up' ? y - 1 : y + h];
 }

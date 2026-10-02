@@ -101,7 +101,7 @@ export class Birthdays {
     const atWork = !!company && !sim.dayOff() && company.levels.includes(p.level);
     const atHome = !atWork && !!p.home && p.level === p.home && hourOf(sim.tick) >= TEATIME;
     if (!atWork && !atHome) return;
-    const spot = kitchenIn(sim, atWork ? company!.levels : [p.home!]);
+    const spot = kitchenIn(sim, atWork ? company!.levels : [p.home!], 'birthdayCake');
     if (!spot) return;
     const item = sim.addItem(spot.level, { t: 'birthdayCake', p: spot.p, label: `${p.name}'s birthday cake` });
     if (!item) return;

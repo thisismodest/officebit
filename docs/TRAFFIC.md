@@ -110,7 +110,7 @@ forecourts with bays (pavements aren't laid over forecourts, so one opens straig
 
 `sim/planes.ts`. An airfield is a `gate` (a bench for passengers), the `stand` nearest it and the
 `runway` nearest that (the whole strip of runway joined to it, however it was drawn), on concrete (its apron); all of it can be drawn and placed in the editor. The `plane`
-flies between the airfields, west to east and back, by day (07:00 to 21:30): from the first on the
+flies between the airfields, west to east and back, by day (08:00 to 20:30), when the pilot's in: from the first on the
 hour, from the next on the half hour. It taxis off its stand, rolls down the runway towards where it's
 going, climbs, flies straight over, lands, rolls out and taxis to the far stand (`MOVERS.plane`: taxi,
 roll, fly; the same stepper as every vehicle), drawn higher the further it is from a runway or concrete, with its
@@ -118,7 +118,18 @@ shadow below. It's a look in `VEHICLES` (render/vehicles.ts), drawn by the one v
 whichever way it's going, parked or moving. Like the bus: anyone
 with a long walk (70 tiles or more) that the gates at either end halve, and a flight leaving soon
 enough, walks to the gate and waits (40 minutes at most), flies ("✈️ Lou flew to West Field") and
-walks on from the other gate.
+walks on from the other gate. Dove Air's pilot (`flies` in the world) works from the hangar at
+whichever field the plane's at, flies with it, and gets off at the other end; on shift and in that
+hangar (or out by the plane), or there's no flight ("No flight from West Field: the pilot isn't in").
+
+## Parcels
+
+`sim/parcels.ts`. The depot's van (`MOVERS.van`) stands in its `loadingBay` between rounds. On
+weekdays at 10:00 and 14:00 a driver on shift at the depot gets in, it backs out and calls at two to
+four homes with someone in them, nearest first, pulling up at the kerb outside each (the lorry's way of
+finding the kerb, `kerbOutside` in deliveries.ts) with its hazards on for a few minutes ("📦 A parcel
+for Ada's house": a little lift for whoever's at home), then comes back to its bay. No driver in, no
+round.
 
 ## Deliveries
 
@@ -133,7 +144,9 @@ Corner Shop's delivery is here".
 
 ## In the starter town
 
-West Field and East Field sit either side of town below the highway, each with a path down to the
+Above the highway, Nursery Lane comes up off it (straight across from Hill Road) to the retail park:
+the garden centre's car park, the depot's yard, and a footbridge (an `overpass`: walked over, driven
+under at highway speed) for people on foot. West Field and East Field sit either side of town below the highway, each with a path down to the
 Street. Car parks: off Back Lane by the western homes, behind the office on Hill Road, on Green Lane,
 and driveways between the cottages. The highway runs across the top of the map, with Hill Road down into the village, and
 Mill Road leaves by the east edge. Eight bus stops, where people go most: Head office,

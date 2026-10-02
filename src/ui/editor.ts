@@ -22,7 +22,8 @@ import { SCHOOL } from '../render/props/school.ts';
 import { LEISURE } from '../render/props/leisure.ts';
 import { RETAIL } from '../render/props/retail.ts';
 import { VENUE } from '../render/props/venue.ts';
-import { buildingMoveProblem, flipHouse, isBuilding, moveBuilding, moveFurniture, placeFurniture, removeFurniture, snapshot, type Floor, type Snapshot } from '../worlds/edit.ts';
+import { PLACEABLE, buildingProblem, existing, inUse, newBuilding, putUp as raiseIn, takeDown as lowerIn, type NewBuilding } from '../worlds/buildings.ts';
+import { buildingMoveProblem, flipHouse, insideOf, isBuilding, moveBuilding, moveFurniture, placeFurniture, removeFurniture, snapshot, type Floor, type Snapshot } from '../worlds/edit.ts';
 import { CLEARABLE, addCrossing, brush, crossingAt, eraseAll, groundProblem, joinsUp, lay, strokeRects, type Surface } from '../worlds/ground.ts';
 import { aOrAn, isCovering, placementProblem } from '../worlds/placement.ts';
 import type { Grab } from './controls.ts';
@@ -41,6 +42,7 @@ const HOUSES = new Set(['terrace', 'house', 'detached']);
 
 /** What the picker offers out of doors, by kind (hedges, fences and flowers are drawn in lines, beside the ground). */
 const OUTSIDE_GROUPS: [string, string[]][] = [
+  ['Buildings', Object.keys(PLACEABLE)],
   ['Nature', ['tree', 'bush', 'pond']],
   ['Street', ['bench', 'lamppost', 'busStop', 'billboard', 'lifebuoy']],
   ['Fields', ['fieldGate', 'goal']],
@@ -51,7 +53,7 @@ const OUTSIDE_GROUPS: [string, string[]][] = [
 /** Everything only for out of doors (kept out of the indoor groups). */
 const OUTSIDE_ONLY = OUTSIDE_GROUPS.flatMap(([, types]) => types);
 /** Never in the picker: buildings, houses, lots and building sites (placed some other way), and what the story brings. */
-const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse', 'leisureCentre', 'hangar', 'gardenCentre', 'depot']);
+const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse', 'leisureCentre', 'hangar', 'gardenCentre', 'depot'].filter((t) => !(t in PLACEABLE)));
 const INDOOR_GROUPS: [string, string[]][] = [
   ['Office', Object.keys(OFFICE)],
   ['Home', Object.keys(HOME)],
@@ -107,7 +109,9 @@ type Change =
   /** Roads, paths, buildings, rooms and doorways: the whole map as it was, in the town and in the design. */
   | { kind: 'map'; level: string; before: Snapshot[] }
   /** A floor built (`added`) or taken away (`removed`), with the stairs up to it from `level`. */
-  | { kind: 'floor'; level: string; added?: Floor; removed?: Floor };
+  | { kind: 'floor'; level: string; added?: Floor; removed?: Floor }
+  /** A building put up (`added`) or taken down (`removed`), with its inside, door and company. */
+  | { kind: 'building'; level: string; added?: NewBuilding; removed?: NewBuilding };
 
 export interface EditorHost {
   sim(): Simulation;
@@ -132,6 +136,8 @@ export class Editor {
   /** Rooms, doorways and floors, indoors. */
   private readonly rooms: RoomTools;
   private readonly status: HTMLElement;
+  /** The selected building's name, to change. */
+  private readonly nameCard: HTMLFormElement;
   private pickerLevel = '';
   private readonly undos: Change[] = [];
 
@@ -184,7 +190,16 @@ export class Editor {
     dock.className = 'editor-dock';
     const side = document.createElement('div');
     side.className = 'editor-side';
-    side.append(this.status, this.picker);
+    this.nameCard = document.createElement('form');
+    this.nameCard.className = 'editor-name mdst-card mdst-card--compact';
+    this.nameCard.hidden = true;
+    this.nameCard.innerHTML = '<label>Name <input type="text" name="name" maxlength="40" autocomplete="off"></label>';
+    this.nameCard.addEventListener('submit', (event) => {
+      event.preventDefault();
+      this.renameSelected();
+    });
+    this.nameCard.addEventListener('change', () => this.renameSelected());
+    side.append(this.status, this.picker, this.nameCard);
     dock.append(this.bar, side);
     stage.append(dock);
     this.rooms = new RoomTools(side, this);
@@ -378,6 +393,9 @@ export class Editor {
     } else if (change.kind === 'floor') {
       if (change.added) this.rooms.takeFloor(change.added);
       if (change.removed) this.rooms.buildFloor(change.removed);
+    } else if (change.kind === 'building') {
+      if (change.added) this.lower(change.added);
+      if (change.removed) this.raise(change.removed);
     }
     this.rooms.clear();
     this.keep(level);
@@ -512,6 +530,10 @@ export class Editor {
       return;
     }
     const level = this.host.renderer.level;
+    if (PLACEABLE[t]) {
+      this.addBuilding(t, tile);
+      return;
+    }
     // A gate on a fence (anything that stands in a line, on that line): it takes that tile's place.
     if (this.lineAt(t, tile)) {
       const joins = CATALOG[t]!.joinsWith!;
@@ -580,8 +602,12 @@ export class Editor {
       this.select(null);
       return;
     }
-    if (!item || this.building(item)) {
-      this.say(item ? 'Buildings stay: move them instead.' : 'Click something to select it first.', true);
+    if (item && this.building(item)) {
+      this.deleteBuilding(item);
+      return;
+    }
+    if (!item) {
+      this.say('Click something to select it first.', true);
       return;
     }
     const def = this.take(item);
@@ -591,6 +617,92 @@ export class Editor {
   }
 
   // ── Buildings, roads and paths ────────────────────────────────────────────
+
+  /** Put up a new building from the picker, straight away: in the running town and the design. */
+  private addBuilding(t: string, tile: Tile): void {
+    const sim = this.host.sim();
+    const map = this.host.renderer.level;
+    const problem = buildingProblem(sim.world, map, t, tile);
+    if (problem) {
+      this.say(problem, true);
+      return;
+    }
+    const b = newBuilding([sim.world, ...(this.designed(map) ? [this.host.design()] : [])], map, t, tile);
+    this.raise(b);
+    this.remember({ kind: 'building', level: map, added: b });
+    const name = b.item.label;
+    this.say(
+      b.company
+        ? `Put up ${name}: anyone looking for work might start there. Select it to give it another name.`
+        : name
+          ? `Put up ${name}.`
+          : `Put up ${aOrAn(CATALOG[t]!.name.toLowerCase())}, to let: newcomers and anyone moving can live there.`,
+    );
+  }
+
+  /** Take down the selected building, if nobody lives or works there. */
+  private deleteBuilding(item: Item): void {
+    const sim = this.host.sim();
+    const b = existing(sim.world, item.level, item.def);
+    if (!b) {
+      this.say('This one stays: move it instead.', true);
+      return;
+    }
+    const who = inUse(sim.world, b);
+    if (who.length) {
+      this.say(`${who.length === 1 ? who[0] : `${who.slice(0, -1).join(', ')} and ${who.at(-1)}`} ${who.length === 1 ? 'lives or works' : 'live or work'} there: they'd need to move first.`, true);
+      return;
+    }
+    this.lower(b);
+    this.remember({ kind: 'building', level: item.level, removed: b });
+    this.select(null);
+    this.say(`Took down ${b.item.label ?? `the ${item.type.name.toLowerCase()}`}.`);
+  }
+
+  /** A building up, with its inside, door and company: in the design, and through the sim in the running town. */
+  private raise(b: NewBuilding): void {
+    const sim = this.host.sim();
+    if (this.designed(b.map)) raiseIn(this.host.design(), b);
+    sim.addLevel(structuredClone(b.level));
+    sim.addPortal(structuredClone(b.portal));
+    if (b.company) sim.addCompany(structuredClone(b.company));
+    for (const f of b.cleared) {
+      const item = this.find(b.map, f.t, f.p);
+      if (item) sim.removeItem(item);
+    }
+    sim.addItem(b.map, structuredClone(b.item));
+  }
+
+  /** A building down, everything it came with too. */
+  private lower(b: NewBuilding): void {
+    const sim = this.host.sim();
+    if (this.designed(b.map)) lowerIn(this.host.design(), b);
+    const item = this.find(b.map, b.item.t, b.item.p);
+    if (item) sim.removeItem(item);
+    sim.removeLevel(b.level.id, b.portal.a.level === b.map ? b.portal.a : b.portal.b);
+    if (b.company) sim.removeCompany(b.company.id);
+    for (const f of b.cleared) sim.addItem(b.map, structuredClone(f));
+  }
+
+  /** The selected building's new name: on the map, on its inside, and its company's, in the town and the design. */
+  private renameSelected(): void {
+    const item = this.selected;
+    const input = this.nameCard.querySelector('input')!;
+    const name = input.value.trim();
+    if (!item || !name || name === item.def.label) return;
+    const sim = this.host.sim();
+    const inside = insideOf(sim.world, item.level, item.def);
+    for (const world of [sim.world, ...(this.designed(item.level) ? [this.host.design()] : [])]) {
+      const def = this.defIn(world, item, item.def.t, item.def.p);
+      if (def) def.label = name;
+      const level = world.levels.find((l) => l.id === inside);
+      if (level) level.name = name;
+      for (const company of world.companies) if (inside && company.levels.length === 1 && company.levels[0] === inside) company.name = name;
+    }
+    sim.edited(item.level);
+    this.keep(item.level);
+    this.say(`Renamed it ${name}.`);
+  }
 
   /** Is this a building that moves with its doors and path (rather than a piece of furniture)? */
   private building(item: Item): boolean {
@@ -895,7 +1007,10 @@ export class Editor {
     this.selected = item;
     const building = !!item && this.building(item);
     const house = building && HOUSES.has(item.def.t);
-    this.deletable(!!item && !building);
+    this.deletable(!!item && (!building || !!existing(this.host.sim().world, item.level, item.def)));
+    // A building with a name: its name, to change.
+    this.nameCard.hidden = !(building && item?.def.label);
+    if (building && item?.def.label) this.nameCard.querySelector('input')!.value = item.def.label;
     this.bar.querySelector<HTMLButtonElement>('[data-action="flip"]')!.disabled = !house;
     this.host.renderer.ghost = this.selection();
     if (!item) return;
@@ -914,6 +1029,7 @@ export class Editor {
     const sim = this.host.sim();
     const level = sim.levels.get(this.host.renderer.level);
     if (!moving && this.lineAt(t, tile)) return null;
+    if (!moving && PLACEABLE[t] && level) return buildingProblem(sim.world, level.id, t, tile);
     return level ? placementProblem(level, sim.world.portals, t, tile, moving?.def) : 'Nowhere to put it.';
   }
 

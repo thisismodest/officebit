@@ -4,6 +4,7 @@
 // not randomness, so replays stay true.
 import { TICKS_PER_HOUR } from './clock.ts';
 import type { Intent, Person } from './person.ts';
+import { placementProblem } from '../worlds/placement.ts';
 import { outsideDoor } from './places.ts';
 import type { Brain, Item, Simulation } from './sim.ts';
 import type { Place, Tile } from './world.ts';
@@ -228,8 +229,8 @@ export class CourierBrain implements Brain {
   }
 }
 
-/** A free floor tile beside a kitchen table, counter or any table on these levels, with room to stand round it: where pizza (or a cake) goes. */
-export function kitchenIn(sim: Simulation, levels: readonly string[]): Place | null {
+/** A free floor tile beside a kitchen table, counter or any table on these levels, with room to stand round it (and never in the way to anywhere): where pizza (or a cake, `t`) goes. */
+export function kitchenIn(sim: Simulation, levels: readonly string[], t = 'pizza'): Place | null {
   const items = sim.activeItems();
   const tables = items.filter((i) => levels.includes(i.level) && ['smallTable', 'table', 'counter'].includes(i.def.t));
   for (const table of tables) {
@@ -238,7 +239,8 @@ export function kitchenIn(sim: Simulation, levels: readonly string[]): Place | n
     for (let y = table.def.p[1] - 2; y <= table.def.p[1] + h + 1; y++) {
       for (let x = table.def.p[0] - 2; x <= table.def.p[0] + w + 1; x++) {
         const around = [[0, -1], [1, 0], [0, 1], [-1, 0]].filter(([dx, dy]) => grid.walkable(x + dx!, y + dy!)).length;
-        if (grid.walkable(x, y) && around >= 3 && !items.some((i) => i.level === table.level && i.def.p[0] === x && i.def.p[1] === y)) {
+        const ok = grid.walkable(x, y) && around >= 3 && !items.some((i) => i.level === table.level && i.def.p[0] === x && i.def.p[1] === y);
+        if (ok && !placementProblem(sim.levels.get(table.level)!, sim.world.portals, t, [x, y])) {
           return { level: table.level, p: [x, y] };
         }
       }

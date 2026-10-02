@@ -56,8 +56,11 @@ on both sides.
 A 160×160 village with countryside all round, all of it data: `worlds/starter.config.ts`
 (see [WORLD](WORLD.md#town-configs)).
 
+- **The retail park:** north of the highway, up Nursery Lane: Greenfingers Garden Centre, two shop
+  units (lots) and Dove Parcels; a footbridge carries people over the highway from Hill Road.
 - **The highway:** across the top, hedged both sides, with Hill Road coming down into the
   village (see [TRAFFIC](TRAFFIC.md)).
+- **The airfields:** West Field and East Field, with a hangar each (Dove Air).
 - **Kiln Lane:** off Hill Road, four empty lots for new companies.
 - **The Street:** terraces, the food trucks' pitches, the head office, the diner, the Corner
   Shop, a lot, the charging station and the leisure centre. Back Lane and Ferry Lane run
@@ -101,6 +104,12 @@ the desk. A swim or a workout (`exercise` in the catalog) is an outing the drive
 for: the pool draws the sociable, the gym the diligent (`EXERCISE_PULL` in `brain.ts`). The less
 diligent sometimes stretch it into working hours; workhorses leave on time.
 Swimmers in the `pool` are drawn in the water.
+
+**Greenfingers Garden Centre** is a glasshouse of plant tables to browse (09:00–17:00), seed racks
+and a café corner, with Flo on the till. **Dove Parcels** has parcel shelves and a sorting table; Kit
+drives the van (see [TRAFFIC](TRAFFIC.md#parcels)). The **hangars** are workshops (a plane in for a
+service, a workbench, tool chests, a desk): Nat the mechanic works at West Field, and Jo the pilot
+from whichever hangar the plane's at.
 
 A venue with staff of its own (the shop, the diner, the leisure centre) is only open while one of
 them is in and on shift (`sim.venueOpen`); when the last goes, it shuts and

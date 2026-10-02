@@ -47,6 +47,6 @@ test('nobody is in two plans at once, and plans go only where they belong', () =
   const { plans, doubleBooked } = watch();
   assert.equal(doubleBooked, 0, 'never in two plans at once');
   assert.ok(plans.every((p) => p.members.length >= 2 && p.members.length <= ACTIVITIES[p.activity].group[1]), 'no more than it takes, family and all');
-  // Parks for the games and picnics, the diner (or a bench) for the rest.
-  for (const plan of plans) assert.ok(plan.activity === 'catch' || plan.activity === 'picnic' ? plan.level === 'town' : ['diner', 'town'].includes(plan.level), `${plan.activity} at ${plan.level}`);
+  // Parks for the games and picnics; a café's booths (the diner's, the garden centre's) or a bench for the rest.
+  for (const plan of plans) assert.ok(plan.activity === 'catch' || plan.activity === 'picnic' ? plan.level === 'town' : ['diner', 'garden', 'town'].includes(plan.level), `${plan.activity} at ${plan.level}`);
 });

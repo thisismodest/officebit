@@ -59,10 +59,10 @@ export function atDoorOf(f: FurnitureDef, [x, y]: Tile): boolean {
   return y === (f.faces === 'up' ? fy - 1 : fy + h) && x >= fx && x < fx + w;
 }
 
-/** The tile in front of a building's door. */
+/** The tile in front of a building's door: the catalog says how far in from its left (one, unless it says). */
 export function doorOf(f: FurnitureDef): Tile {
   const [fx, fy, w, h] = footprint(f);
-  return [fx + Math.min(1, w - 1), f.faces === 'up' ? fy - 1 : fy + h];
+  return [fx + Math.min(CATALOG[f.t]?.door ?? 1, w - 1), f.faces === 'up' ? fy - 1 : fy + h];
 }
 
 /** The ends of doors and stairs that are on a level, in portal order. */

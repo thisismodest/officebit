@@ -72,7 +72,7 @@ test('cars wait for someone on a zebra crossing, then carry on', () => {
 test('a parked car stays exactly where it is, nose in', () => {
   const sim = fresh();
   let parked = 0;
-  const bayAt = (x: number, y: number) => sim.activeItems().find((i) => i.type.parking && i.def.p[0] === x && i.def.p[1] === y);
+  const bayAt = (x: number, y: number) => sim.activeItems().find((i) => (i.type.parking || i.type.loading) && i.def.p[0] === x && i.def.p[1] === y);
   for (let t = 0; t < 2 * TICKS_PER_DAY; t++) {
     sim.step();
     for (const c of sim.traffic.cars.filter((c) => c.parked)) {
