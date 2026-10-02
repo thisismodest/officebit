@@ -111,6 +111,14 @@ export class Interactions {
     this.sim.interrupt(p);
   }
 
+  /** What you've told someone you're steering to do that they haven't started yet (given while they were on a bus, say): taken, so they do it now. */
+  takeCommand(p: Person): Intent | null {
+    const brain = this.controlled.get(p.id);
+    const next = brain?.next ?? null;
+    if (brain) brain.next = null;
+    return next;
+  }
+
   // ── Every step ────────────────────────────────────────────────────────────
 
   step(): void {

@@ -40,6 +40,7 @@ import { bankHoliday, holidayOn, type Holiday } from './holidays.ts';
 import { Construction } from './construction.ts';
 import { Buses } from './buses.ts';
 import { OwnCars } from './cars.ts';
+import { Parcels } from './parcels.ts';
 import { Planes } from './planes.ts';
 import { Works } from './works.ts';
 import { Ventures } from './ventures.ts';
@@ -132,6 +133,7 @@ export class Simulation {
   readonly buses: Buses;
   readonly cars: OwnCars;
   readonly planes: Planes;
+  readonly parcels: Parcels;
   /** Where every body is, on foot and on wheels (collision.ts), for who's in whose way. */
   readonly space = new Space();
   /** Each person as a body in the space: live views, so always where the person is. */
@@ -209,6 +211,7 @@ export class Simulation {
     this.buses = new Buses(this);
     this.cars = new OwnCars(this);
     this.planes = new Planes(this);
+    this.parcels = new Parcels(this);
     this.mindVenues(false);
     // Households start out close.
     const humans = this.people.filter((p) => p.species === 'human' && p.home);
@@ -568,6 +571,7 @@ export class Simulation {
     if (!this.brisk) {
       this.boats.step();
       this.deliveries.step();
+      this.parcels.step();
     }
     const gone: Person[] = [];
     for (const [i, p] of this.people.entries()) {
@@ -1183,7 +1187,8 @@ export class Simulation {
     p.riding = undefined;
     this.setLevel(p, at.level);
     [p.x, p.y] = [p.px, p.py] = at.p;
-    this.begin(p, after, true);
+    // Told to do something else on the way (steered): that, not what they set off to do.
+    this.begin(p, this.interactions.takeCommand(p) ?? after, true);
   }
 
   /** Waited long enough (the bus: buses.ts): on with it, on foot. */

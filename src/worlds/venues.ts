@@ -81,6 +81,43 @@ export function buildHangar(id: string, name: string): Venue {
   return { level: b.build(), entry: [8, 10] };
 }
 
+/** A garden centre, 24×14, under glass: tables of plants to browse, seed racks, a café corner, and the till. */
+export function buildGardenCentre(id: string, name: string): Venue {
+  const b = new LevelBuilder(id, name, 'venue', 24, 14)
+    .room(id, name, [0, 0, 24, 14], 'tiles', { walled: true })
+    .room(`${id}-cafe`, 'Café', [16, 0, 8, 9], 'wood')
+    .door([12, 13])
+    .put('plantTable', 2, 2)
+    .put('plantTable', 7, 2)
+    .put('plantTable', 2, 5)
+    .put('plantTable', 7, 5)
+    .put('plantTable', 2, 8)
+    .put('plantTable', 7, 8)
+    .put('seedRack', 12, 1)
+    .put('seedRack', 12, 4)
+    .put('booth', 17, 2)
+    .put('booth', 20, 2)
+    .put('till', 15, 10)
+    .put('plant', 1, 12)
+    .put('plant', 22, 12)
+    .put('plant', 22, 7);
+  return { level: b.build(), entry: [12, 12] };
+}
+
+/** The parcel depot, 20×12: shelves of parcels, the sorting table, and the drivers' desk. */
+export function buildDepot(id: string, name: string): Venue {
+  const b = new LevelBuilder(id, name, 'venue', 20, 12)
+    .room(id, name, [0, 0, 20, 12], 'concrete', { walled: true })
+    .door([10, 11])
+    .row('parcelShelf', [2, 6, 10], 1)
+    .row('parcelShelf', [2, 6], 4)
+    .put('sortingTable', 12, 5)
+    .put('opsDesk', 16, 2)
+    .put('cooler', 17, 8)
+    .put('plant', 1, 10);
+  return { level: b.build(), entry: [10, 10] };
+}
+
 /** A small supermarket, 16×12: three aisles, fruit and veg, chillers, three checkouts. Also a workplace. */
 export function buildShop(id: string, name: string, staff: string[]): Venue {
   const b = new LevelBuilder(id, name, 'venue', 16, 12)

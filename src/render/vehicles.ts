@@ -90,7 +90,7 @@ const longSide = (middle: Part[]): Part[] => [
   [-14, -4, 7, 3, "tyre"],
 ];
 
-export type VehicleKind = "car" | "truck" | "bus" | "lorry" | "plane";
+export type VehicleKind = "car" | "truck" | "bus" | "lorry" | "van" | "plane";
 
 /** Every kind of vehicle, by the same names as the sim's movers (movement.ts). In scale with people (21px tall). */
 export const VEHICLES: Record<VehicleKind, Look> = {
@@ -160,6 +160,36 @@ export const VEHICLES: Record<VehicleKind, Look> = {
       [2, -14, 4, 3, "door"],
     ]),
     end: LONG_END,
+  },
+  // The parcel van (sim/parcels.ts): a white panel van with the depot's red stripe, taller than a car.
+  van: {
+    size: { length: 28, height: 18, width: 13, wheelsBelow: -2 },
+    colours: { body: "#f1eee6", band: "#c8453a" },
+    side: [
+      SHADOW,
+      [0, 0, 0, -3, "outline"],
+      [1, 1, -2, -5, "body"],
+      [1, 1, -2, 1, "highlight"],
+      [1, -9, -2, 2, "band"],
+      [1, 3, 6, 5, "glass"],
+      [8, 1, 1, -5, "outline"],
+      [1, -6, 2, 2, "headlamp"],
+      [-3, -6, 2, 2, "taillamp"],
+      [3, -3, 5, 2, "tyre"],
+      [-8, -3, 5, 2, "tyre"],
+    ],
+    end: [
+      SHADOW,
+      [0, 0, 0, -2, "outline"],
+      [1, 1, -2, -4, "body"],
+      [1, 1, 1, -4, "highlight"],
+      [-1, 4, 2, -10, "band", { centred: true }],
+      [2, [2, -9], -4, 4, "glass"],
+      [1, [1, -5], 2, 2, "headlamp"],
+      [-3, [1, -5], 2, 2, "headlamp"],
+      [1, [-5, 1], 2, 2, "taillamp"],
+      [-3, [-5, 1], 2, 2, "taillamp"],
+    ],
   },
   // The little plane (sim/planes.ts), seen from above, whichever way it's facing: wings across it, broad by the
   // fuselage and slim to the tips, the tailplane and the fin (a line, from above) at the back, the propeller at the

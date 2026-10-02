@@ -84,6 +84,8 @@ export interface FurnitureType {
   line?: boolean;
   /** Joins up with a line of this kind, standing in it (a gate in a fence). */
   joinsWith?: string;
+  /** Where the parcel van stands, at the depot (parcels.ts). */
+  loading?: boolean;
   /** The airfields (planes.ts): a plane, the stand it parks on, and the gate passengers wait at. */
   airfield?: 'plane' | 'stand' | 'gate';
 }
@@ -231,6 +233,14 @@ export const CATALOG: Record<string, FurnitureType> = {
   treadmill: { name: 'Treadmill', size: [1, 2], solid: true, spots: [[0, 1]], offers: { fun: 0.25 }, duration: [100, 200], hours: [7, 21], standing: true, exercise: true },
   weightBench: { name: 'Weight bench', size: [2, 1], solid: true, spots: [[0, 1]], offers: { fun: 0.2, social: 0.05 }, duration: [80, 160], hours: [7, 21], exercise: true },
   reception: { name: 'Reception', size: [3, 1], solid: true, spots: [[1, 1]], staff: true, duration: [200, 500] },
+  // The garden centre (worlds/venues.ts): tables of plants to browse, seed racks; and outside, plants on stands.
+  plantTable: { name: 'Plant table', size: [3, 1], solid: true, spots: [[0, 1], [1, 1], [2, 1]], offers: { fun: 0.2, social: 0.05 }, duration: [60, 140], hours: [9, 17], hangout: true },
+  seedRack: decor('Seed rack', [2, 1]),
+  plantStand: { ...decor('Plant stand', [2, 1]), hardStanding: true },
+  // The parcel depot: shelves of parcels, the sorting table the drivers work at, and the bay the van stands in.
+  parcelShelf: decor('Parcel shelves', [3, 1]),
+  sortingTable: { name: 'Sorting table', size: [3, 1], solid: true, spots: [[1, 1]], staff: true, duration: [200, 500] },
+  loadingBay: { ...decor('Loading bay', [2, 1], false), hardStanding: true, loading: true },
   // The hangar (worlds/venues.ts): the workbench the mechanic and the pilot work at, and a tool chest.
   workbench: { name: 'Workbench', size: [3, 1], solid: true, spots: [[1, 1]], staff: true, duration: [200, 500] },
   toolChest: decor('Tool chest', [1, 1]),
@@ -334,6 +344,8 @@ export const CATALOG: Record<string, FurnitureType> = {
   diner: decor('Diner', [9, 6]),
   supermarket: decor('Corner shop', [9, 6]),
   leisureCentre: decor('Leisure centre', [12, 6]),
+  gardenCentre: decor('Garden centre', [14, 7]),
+  depot: decor('Parcel depot', [12, 6]),
   school: decor('School', [11, 7]),
   startupSmall: decor('Small office', [5, 4]),
   startupLarge: decor('Office', [9, 6]),

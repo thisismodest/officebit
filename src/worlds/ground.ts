@@ -40,7 +40,7 @@ const VERGE = 'verge-';
  */
 export function layPavements(level: LevelDef): void {
   const roads = level.rooms.filter((r) => r.floor === 'road').map((r) => r.rect);
-  const keepOff = level.rooms.filter((r) => r.floor === 'highway' || r.floor === 'forecourt' || SOFT.has(r.floor) || isBridge(r)).map((r) => r.rect);
+  const keepOff = level.rooms.filter((r) => r.floor === 'highway' || r.floor === 'overpass' || r.floor === 'forecourt' || SOFT.has(r.floor) || isBridge(r)).map((r) => r.rect);
   const [w, h] = level.size;
   const isRoad = (x: number, y: number) => inAny(roads, x, y);
   const verges = level.rooms.filter((r) => r.id.startsWith(VERGE)).map((r) => r.rect);

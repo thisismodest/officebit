@@ -7,7 +7,7 @@ import { VEHICLES, partsOf, type VehicleKind } from '../src/render/vehicles.ts';
 const HEADINGS: Heading[] = ['left', 'right', 'up', 'down'];
 
 test('every kind of vehicle has a mover and a look by the same name', () => {
-  assert.deepEqual(Object.keys(VEHICLES).sort(), ['bus', 'car', 'lorry', 'plane', 'truck']);
+  assert.deepEqual(Object.keys(VEHICLES).sort(), ['bus', 'car', 'lorry', 'plane', 'truck', 'van']);
   for (const kind of Object.keys(VEHICLES)) assert.ok(kind in MOVERS, `${kind} moves`);
 });
 

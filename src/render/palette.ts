@@ -22,6 +22,7 @@ export type FloorStyle =
   /** Two carriageways, each two lanes wide, with a central reservation. */
   | { kind: 'highway'; base: string }
   | { kind: 'runway'; base: string }
+  | { kind: 'overpass'; base: string }
   /** A zebra crossing: stripes run with the traffic, so `across` is the way people walk over it. */
   | { kind: 'zebra'; base: string; across: 'ns' | 'ew' }
   /** Sand on a beach. */
@@ -47,6 +48,8 @@ export const FLOORS: Record<string, FloorStyle> = {
   road: { kind: 'road', base: '#55535c' },
   highway: { kind: 'highway', base: '#4a4852' },
   runway: { kind: 'runway', base: '#45434c' },
+  // A footbridge over the highway: the carriageway under it, the deck across.
+  overpass: { kind: 'overpass', base: '#4a4852' },
   forecourt: { kind: 'slabs', base: '#8f9297', size: 32 },
   zebra: { kind: 'zebra', base: '#55535c', across: 'ns' },
   zebraSide: { kind: 'zebra', base: '#55535c', across: 'ew' },

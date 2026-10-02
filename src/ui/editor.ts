@@ -20,6 +20,7 @@ import { OFFICE } from '../render/props/office.ts';
 import { PAINTERS } from '../render/props/index.ts';
 import { SCHOOL } from '../render/props/school.ts';
 import { LEISURE } from '../render/props/leisure.ts';
+import { RETAIL } from '../render/props/retail.ts';
 import { VENUE } from '../render/props/venue.ts';
 import { buildingMoveProblem, flipHouse, isBuilding, moveBuilding, moveFurniture, placeFurniture, removeFurniture, snapshot, type Floor, type Snapshot } from '../worlds/edit.ts';
 import { CLEARABLE, addCrossing, brush, crossingAt, eraseAll, groundProblem, joinsUp, lay, strokeRects, type Surface } from '../worlds/ground.ts';
@@ -44,18 +45,20 @@ const OUTSIDE_GROUPS: [string, string[]][] = [
   ['Street', ['bench', 'lamppost', 'busStop', 'billboard', 'lifebuoy']],
   ['Fields', ['fieldGate', 'goal']],
   ['Airfield', ['stand', 'gate', 'windsock']],
+  ['Shops', ['plantStand', 'loadingBay']],
   ['Transport', ['plane', 'sailboat']],
 ];
 /** Everything only for out of doors (kept out of the indoor groups). */
 const OUTSIDE_ONLY = OUTSIDE_GROUPS.flatMap(([, types]) => types);
 /** Never in the picker: buildings, houses, lots and building sites (placed some other way), and what the story brings. */
-const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse', 'leisureCentre', 'hangar']);
+const NOT_PLACEABLE = new Set(['stairs', 'officeBuilding', 'diner', 'supermarket', 'school', 'house', 'terrace', 'detached', 'lot', 'siteTiny', 'siteSmall', 'siteLarge', 'christmasTree', 'homeTree', 'bonfire', 'picnicBlanket', 'startupSmall', 'startupLarge', 'foodTruck', 'pizza', 'birthdayCake', 'rowboat', 'narrowboat', 'boathouse', 'leisureCentre', 'hangar', 'gardenCentre', 'depot']);
 const INDOOR_GROUPS: [string, string[]][] = [
   ['Office', Object.keys(OFFICE)],
   ['Home', Object.keys(HOME)],
   ['Venues', Object.keys(VENUE)],
   ['School', Object.keys(SCHOOL)],
   ['Leisure', Object.keys(LEISURE)],
+  ['Shops and depots', Object.keys(RETAIL)],
 ];
 /** What the ground button lays (the kinds of ground, and zebra crossings on the roads), as its label says each. */
 type GroundTool = Surface | 'crossing' | 'grass';

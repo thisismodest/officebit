@@ -43,6 +43,8 @@ export interface Car extends Driver {
   bus?: boolean;
   /** The delivery lorry (deliveries.ts). */
   lorry?: boolean;
+  /** The parcel van (parcels.ts). */
+  van?: boolean;
   /** Gone from the roads (off the map, done). */
   removed?: boolean;
 }
@@ -283,8 +285,8 @@ export class Traffic {
 }
 
 /** What kind of vehicle it is: a car, a food truck or the bus (the same names as its mover, movement.ts, and its look, render/vehicles.ts). */
-export function vehicleKind(car: Car): 'car' | 'truck' | 'bus' | 'lorry' {
-  return car.bus ? 'bus' : car.lorry ? 'lorry' : car.truck === undefined ? 'car' : 'truck';
+export function vehicleKind(car: Car): 'car' | 'truck' | 'bus' | 'lorry' | 'van' {
+  return car.bus ? 'bus' : car.lorry ? 'lorry' : car.van ? 'van' : car.truck === undefined ? 'car' : 'truck';
 }
 
 function moverOf(car: Car): Mover {

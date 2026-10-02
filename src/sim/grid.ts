@@ -10,7 +10,7 @@ const DIRS: readonly Tile[] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
  * cheapest route, not the shortest, so outdoors they keep to the paths and
  * only cut across roads and grass when it really saves them a walk. Nobody
  * walks on the highway or in deep water; the shallows are for wading (slowly),
- * and a bridge is as good as a pavement.
+ * and a bridge (a footbridge over the highway too) is as good as a pavement.
  */
 const WALK_COST: Record<string, number> = {
   path: 1,
@@ -19,6 +19,7 @@ const WALK_COST: Record<string, number> = {
   forecourt: 1,
   bridge: 1,
   bridgeSide: 1,
+  overpass: 1,
   jetty: 1,
   road: 3,
   grass: 4,

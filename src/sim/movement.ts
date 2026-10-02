@@ -49,15 +49,17 @@ export const MOVERS = {
   walker: { on: "foot", speed: WALK, manners: WALKING },
   crawler: { on: "foot", speed: WALK * CRAWL, manners: WALKING },
   hurrying: { on: "foot", speed: WALK * HURRY, manners: WALKING },
-  car: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, manners: DRIVING },
+  car: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, manners: DRIVING },
   // A food truck: a car's pace, three tiles wide.
-  truck: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
+  truck: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
   // A bus: a car's pace, three tiles long.
-  bus: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
+  bus: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
   // The delivery lorry: a car's pace, about a food truck's size.
-  lorry: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
+  lorry: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
   // A boat on the river: a gentle pace, rowed or under sail.
   boat: { on: "wheels", speed: BOAT, manners: DRIVING },
+  // The parcel van: a car's pace.
+  van: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, manners: DRIVING },
   // The plane: in the air at a good clip, slower rolling down the runway, slowest taxiing to its stand.
   plane: { on: "wheels", speed: FLY, surfaces: { runway: ROLL, forecourt: TAXI }, manners: DRIVING }
 } satisfies Record<string, Mover>;

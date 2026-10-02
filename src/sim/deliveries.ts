@@ -14,7 +14,7 @@ const DAY = 0;
 const HOUR = 7;
 /** How long it stays, unloading (game minutes). */
 const UNLOAD_MINUTES = 15;
-/** How far along the kerb (tiles, either way) it looks for somewhere to pull up, if the shop's door faces a crossing. */
+/** How far along the kerb (tiles, either way) to look for somewhere to pull up, if a door faces a crossing. */
 const KERB_SEARCH = 8;
 
 interface Delivery {
@@ -75,26 +75,9 @@ export class Deliveries {
     const { sim } = this;
     const roads = sim.traffic.roads();
     const door = outsideDoor(sim, new Set([shop]));
-    if (!roads || !door) return;
-    // The lane outside: straight out from the door to the road (or a crossing on it), then along the kerb to the nearest
-    // stretch of plain road the lorry's whole length fits on: never on a zebra crossing.
-    const carriageway = (x: number, y: number) => roads.drivable(x, y) && roads.floorAt(x, y) !== 'path';
-    const out = ([[0, 1], [0, -1], [1, 0], [-1, 0]] as const)
-      .flatMap(([dx, dy]) => [1, 2, 3].map((r) => ({ dx, dy, r })))
-      .find(({ dx, dy, r }) => carriageway(door.p[0] + dx * r, door.p[1] + dy * r));
-    if (!out) return;
-    const toShop: [number, number] = [-out.dx, -out.dy];
-    const lane: Tile = [door.p[0] + out.dx * out.r, door.p[1] + out.dy * out.r];
-    const along: Tile = [Math.abs(out.dy), Math.abs(out.dx)];
-    const plain = (x: number, y: number) => roads.floorAt(x, y) === 'road' && roads.drivable(x, y);
-    // Its length, and a tile clear at either end (well back from a crossing).
-    const fits = ([x, y]: Tile) => [-2, -1, 0, 1, 2].every((k) => plain(x + along[0] * k, y + along[1] * k));
-    const bay = Array.from({ length: KERB_SEARCH * 2 + 1 }, (_, i) => (i % 2 ? 1 : -1) * Math.ceil(i / 2))
-      .map((k): Tile => [lane[0] + along[0] * k, lane[1] + along[1] * k])
-      .find(fits);
-    if (!bay) return;
-    // We drive on the left, so the shop's on its left: your left, going (ux, uy), is (uy, -ux).
-    const arrive: Heading = headingOf(-toShop[1], toShop[0], 'right');
+    const kerb = door && kerbOutside(sim, door.p);
+    if (!roads || !kerb) return;
+    const { bay, arrive } = kerb;
     const fit = { mover: MOVERS.lorry };
     const best = (ways: Way[], route: (way: Way) => Tile[] | null) =>
       ways.map((way) => ({ way, path: route(way) })).filter((w): w is { way: Way; path: Tile[] } => !!w.path).sort((a, b) => a.path.length - b.path.length)[0];
@@ -106,4 +89,30 @@ export class Deliveries {
     car.lorry = true;
     this.deliveries.push({ car, shop, stage: 'arriving', until: 0, out: away.way, leave: away.path });
   }
+}
+
+/**
+ * Where a van or lorry pulls up outside a door: straight out from the door to the road (or a crossing on it), then
+ * along the kerb to the nearest stretch of plain road its whole length fits on (never on a zebra crossing), facing so
+ * the door's on its left (we drive on the left). Null if there's no road near.
+ */
+export function kerbOutside(sim: Simulation, door: Tile): { bay: Tile; arrive: Heading } | null {
+  const roads = sim.traffic.roads();
+  if (!roads) return null;
+  const carriageway = (x: number, y: number) => roads.drivable(x, y) && roads.floorAt(x, y) !== 'path';
+  const out = ([[0, 1], [0, -1], [1, 0], [-1, 0]] as const)
+    .flatMap(([dx, dy]) => [1, 2, 3].map((r) => ({ dx, dy, r })))
+    .find(({ dx, dy, r }) => carriageway(door[0] + dx * r, door[1] + dy * r));
+  if (!out) return null;
+  const toDoor: [number, number] = [-out.dx, -out.dy];
+  const lane: Tile = [door[0] + out.dx * out.r, door[1] + out.dy * out.r];
+  const along: Tile = [Math.abs(out.dy), Math.abs(out.dx)];
+  const plain = (x: number, y: number) => roads.floorAt(x, y) === 'road' && roads.drivable(x, y);
+  // Its length, and a tile clear at either end (well back from a crossing).
+  const fits = ([x, y]: Tile) => [-2, -1, 0, 1, 2].every((k) => plain(x + along[0] * k, y + along[1] * k));
+  const bay = Array.from({ length: KERB_SEARCH * 2 + 1 }, (_, i) => (i % 2 ? 1 : -1) * Math.ceil(i / 2))
+    .map((k): Tile => [lane[0] + along[0] * k, lane[1] + along[1] * k])
+    .find(fits);
+  // Your left, going (ux, uy), is (uy, -ux): the door's there.
+  return bay ? { bay, arrive: headingOf(-toDoor[1], toDoor[0], 'right') } : null;
 }

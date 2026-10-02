@@ -12,7 +12,7 @@ import { portal } from './layout.ts';
 import { roomAt } from './rooms.ts';
 import { buildSchool } from './school.ts';
 import { VERSION } from './version.ts';
-import { buildClubhouse, buildDiner, buildHangar, buildLeisure, buildShop, type Venue } from './venues.ts';
+import { buildClubhouse, buildDepot, buildDiner, buildGardenCentre, buildHangar, buildLeisure, buildShop, type Venue } from './venues.ts';
 
 const TOWN = 'town';
 /** How far a path from a door goes looking for its street (tiles). */
@@ -28,6 +28,8 @@ const TEMPLATES: Record<string, (b: Building, config: TownConfig) => Venue> = {
   clubhouse: (b) => buildClubhouse(b.id, b.label),
   leisure: (b) => buildLeisure(b.id, b.label),
   hangar: (b) => buildHangar(b.id, b.label),
+  gardenCentre: (b) => buildGardenCentre(b.id, b.label),
+  depot: (b) => buildDepot(b.id, b.label),
 };
 
 const homeOf = (id: string) => `home-${id}`;

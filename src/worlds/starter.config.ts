@@ -1,5 +1,7 @@
 // The starter town, as data (docs/WORLD.md#town-configs): built into a world by build.ts. From north to south:
 //
+//   The retail park — up Nursery Lane, north of the highway: the garden centre, shop units, the parcel depot; a
+//                  footbridge carries people over the highway from Hill Road.
 //   The highway  — through-traffic, hedged on both sides; Hill Road comes down off it into the village.
 //   The airfields — West Field and East Field, either side of town, below the highway: a plane flies between them.
 //   Kiln Lane    — off Hill Road: lots for new companies.
@@ -32,6 +34,11 @@ export const STARTER_CONFIG: TownConfig = {
     { name: 'The Green', floor: 'grass', rects: [[43, 71, 54, 42]], park: true, square: true },
     { name: 'Playing field', floor: 'grass', rects: [[57, 120, 12, 8]], park: true },
     { name: 'Charging station', floor: 'forecourt', rects: [[100, 63, 9, 5]] },
+    // The retail park: the garden centre's car park and plant yard, the depot's yard, and the footbridge over the highway.
+    { name: 'Garden centre car park', floor: 'forecourt', rects: [[32, 14, 18, 7]] },
+    { name: 'Plant yard', floor: 'forecourt', rects: [[49, 3, 9, 6]] },
+    { name: 'Depot yard', floor: 'forecourt', rects: [[94, 14, 14, 6]] },
+    { name: 'Footbridge', floor: 'overpass', rects: [[58, 34, 1, 4]] },
     // The airfields, either side of town: a runway each, and concrete for an apron.
     { name: 'West Field runway', floor: 'runway', rects: [[4, 43, 32, 3]] },
     { name: 'West Field apron', floor: 'forecourt', rects: [[24, 46, 12, 9]] },
@@ -51,6 +58,7 @@ export const STARTER_CONFIG: TownConfig = {
   doorPaths: true,
   roads: [
     { name: 'Hill Road', rects: [[60, 38, 2, 30]] },
+    { name: 'Nursery Lane', rects: [[60, 14, 2, 20], [30, 12, 90, 2]] },
     { name: 'The Street', rects: [[10, STREET, 146, 2]] },
     // Round the ends of the Street, so it runs in loops: Back Lane down to Orchard Close, Ferry Lane over the river to Mill Road.
     { name: 'Back Lane', rects: [[10, 70, 2, 24]] },
@@ -82,6 +90,9 @@ export const STARTER_CONFIG: TownConfig = {
     [43, 91, 54, 1],
     [31, 55, 1, 12],
     [131, 55, 1, 12],
+    // Onto the footbridge, either side of the highway.
+    [58, 31, 1, 3],
+    [58, 38, 1, 2],
     // In through the playing field's gate.
     [62, 117, 1, 2],
     [69, 71, 1, 42],
@@ -96,6 +107,9 @@ export const STARTER_CONFIG: TownConfig = {
     { id: 'leisure', t: 'leisureCentre', label: 'Greenside Leisure Centre', at: [113, 59], door: 5, inside: { template: 'leisure' } },
     { id: 'school', t: 'school', label: 'Acacia Primary', at: [44, 119], faces: 'up', door: 5, inside: { template: 'school' } },
     { id: 'clubhouse', t: 'boathouse', label: 'Boating club', at: [84, 130], inside: { template: 'clubhouse' } },
+    // The retail park: the garden centre and the parcel depot.
+    { id: 'garden', t: 'gardenCentre', label: 'Greenfingers Garden Centre', at: [34, 2], door: 6, inside: { template: 'gardenCentre' } },
+    { id: 'depot', t: 'depot', label: 'Dove Parcels', at: [96, 3], door: 5, inside: { template: 'depot' } },
     // The airfields' hangars, where the crew work and wait between flights.
     { id: 'hangar-west', t: 'hangar', label: 'West Field hangar', at: [8, 48], door: 3, inside: { template: 'hangar' } },
     { id: 'hangar-east', t: 'hangar', label: 'East Field hangar', at: [144, 48], door: 3, inside: { template: 'hangar' } },
@@ -116,7 +130,7 @@ export const STARTER_CONFIG: TownConfig = {
     { t: 'narrowboat', at: [46, 142], faces: 'up', owner: 'fen' },
   ],
 
-  lots: [{ at: [66, 43] }, { at: [77, 43] }, { at: [88, 43] }, { at: [99, 43] }, { at: [88, 59] }, { at: [136, 59] }, { at: [101, 95] }],
+  lots: [{ at: [64, 3] }, { at: [76, 3] }, { at: [66, 43] }, { at: [77, 43] }, { at: [88, 43] }, { at: [99, 43] }, { at: [88, 59] }, { at: [136, 59] }, { at: [101, 95] }],
 
   things: [
     // The food trucks' pitches beside the Street: they pull up off the road and serve onto the pavement.
@@ -129,6 +143,11 @@ export const STARTER_CONFIG: TownConfig = {
     { t: 'parkingBay', row: [101, 103], y: 65 },
     { t: 'chargingBay', row: [105, 107], y: 65 },
     { t: 'bench', p: [110, 62] },
+    // The garden centre's car park and its plants out in the yard; the parcel van's loading bay.
+    { t: 'parkingBay', row: [33, 35, 37, 39, 41, 43, 45, 47], y: 20 },
+    { t: 'plantStand', row: [50, 54], y: 4 },
+    { t: 'plantStand', row: [50, 54], y: 7 },
+    { t: 'loadingBay', p: [100, 19] },
     // Parking bays: people's own cars live in the ones nearest home (docs/TRAFFIC.md#own-cars).
     { t: 'parkingBay', column: [73, 75, 77, 79], x: 4 },
     { t: 'parkingBay', column: [73, 75, 77, 79], x: 8 },
@@ -174,8 +193,8 @@ export const STARTER_CONFIG: TownConfig = {
     { t: 'sailboat', p: [97, 140] },
     { t: 'lifebuoy', p: [74, 136] },
     // Hedges along the highway (a gap for Hill Road) and round the fields; fences round the playing field and gardens.
-    { t: 'hedge', from: [0, 32], to: [159, 32], step: 1 },
-    { t: 'hedge', from: [0, 39], to: [159, 39], step: 1, gaps: [[59, 39, 4, 1]] },
+    { t: 'hedge', from: [0, 32], to: [159, 32], step: 1, gaps: [[58, 32, 4, 1]] },
+    { t: 'hedge', from: [0, 39], to: [159, 39], step: 1, gaps: [[58, 39, 5, 1]] },
     { t: 'hedge', from: [0, 128], to: [54, 128], step: 1 },
     { t: 'hedge', from: [30, 129], to: [30, 144], step: 1 },
     { t: 'hedge', from: [124, 124], to: [159, 124], step: 1 },
@@ -287,6 +306,8 @@ export const STARTER_CONFIG: TownConfig = {
     { id: 'leisure', name: 'Greenside Leisure Centre', icon: 'swim', walkIn: true, levels: ['leisure'] },
     { id: 'school', name: 'Acacia Primary', icon: 'school', walkIn: true, levels: ['school'] },
     { id: 'dove-air', name: 'Dove Air', icon: 'plane', walkIn: true, levels: ['hangar-west', 'hangar-east'] },
+    { id: 'garden', name: 'Greenfingers Garden Centre', icon: 'flowers', walkIn: true, levels: ['garden'] },
+    { id: 'parcels', name: 'Dove Parcels', icon: 'parcel', walkIn: true, levels: ['depot'] },
   ],
 
   departments: [
@@ -346,6 +367,9 @@ export const STARTER_CONFIG: TownConfig = {
     { id: 'ray', name: 'Ray', species: 'human', look: [3, 5, 7, 0], own: true, preset: 'introvert', role: 'staff', works: 'diner', shift: [18, 6] },
     // The leisure centre's: Sol opens up, Bex closes.
     { id: 'sol', name: 'Sol', species: 'human', look: [2, 2, 0, 0], own: true, preset: 'regular', role: 'staff', works: 'leisure', shift: [7, 15] },
+    // Flo runs the garden centre; Kit drives the parcel van.
+    { id: 'flo', name: 'Flo', species: 'human', look: [0, 6, 5, 1], own: true, preset: 'magnet', role: 'staff', works: 'garden', shift: [9, 17] },
+    { id: 'kit', name: 'Kit', species: 'human', look: [2, 1, 1, 0], own: true, preset: 'regular', role: 'staff', works: 'depot', shift: [8, 16] },
     // Dove Air: Jo flies the plane (and works from whichever hangar it's at), Nat keeps it going at West Field.
     { id: 'jo', name: 'Jo', species: 'human', look: [1, 4, 3, 1], own: true, preset: 'workhorse', role: 'staff', works: 'hangar-west', shift: [7, 21], flies: true },
     { id: 'nat', name: 'Nat', species: 'human', look: [4, 2, 6, 0], own: true, preset: 'introvert', role: 'staff', works: 'hangar-west', shift: [8, 17] },

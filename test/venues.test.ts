@@ -32,7 +32,7 @@ test('the shop is only open while someone is minding it, and customers leave whe
   // Everyone minding it walks out.
   for (const p of sim.staffOf('shop')) {
     sim.interactions.control(p, true);
-    sim.interactions.command(p, { kind: 'wander', to: { level: 'town', p: [110, 49] } });
+    sim.interactions.command(p, { kind: 'wander', to: { level: 'town', p: [56, 80] } });
   }
   for (let t = 0; t < TICKS_PER_HOUR && sim.venueOpen('shop'); t++) sim.step();
   assert.ok(!sim.venueOpen('shop'), 'shut once they’ve gone');

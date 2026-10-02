@@ -176,6 +176,23 @@ function paintFloor(
       else if (ty !== ry && tx % 3 === 0) rect(ctx, x0 + 2, y0 - 1, 8, 2, '#ecebe4');
       break;
     }
+    case 'overpass': {
+      // The highway underneath, in the bridge's shadow; the deck across it, with railings either side.
+      rect(ctx, x0, y0, TILE, TILE, shade(style.base, -0.15));
+      const along = same(tx, ty - 1, 'overpass') || same(tx, ty + 1, 'overpass');
+      const deck = '#b8b2a6';
+      if (along) {
+        rect(ctx, x0 + 2, y0, TILE - 4, TILE, deck);
+        rect(ctx, x0 + 2, y0, 2, TILE, '#6b6560');
+        rect(ctx, x0 + TILE - 4, y0, 2, TILE, '#6b6560');
+        for (let y = 1; y < TILE; y += 4) rect(ctx, x0 + 4, y0 + y, TILE - 8, 1, shade(deck, -0.08));
+      } else {
+        rect(ctx, x0, y0 + 2, TILE, TILE - 4, deck);
+        rect(ctx, x0, y0 + 2, TILE, 2, '#6b6560');
+        rect(ctx, x0, y0 + TILE - 4, TILE, 2, '#6b6560');
+      }
+      break;
+    }
     case 'runway': {
       rect(ctx, x0, y0, TILE, TILE, style.base);
       speckle(style.base, 0.07, 0.04, 9);
