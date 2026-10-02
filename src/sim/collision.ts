@@ -27,6 +27,8 @@ export interface Body {
   readonly level: string;
   /** Settled at its own spot (a desk, a seat, a bed): in nobody's way. */
   readonly settled?: boolean;
+  /** Held up, waiting to go (a car at the kerb waiting for a gap): nobody gives way to it. */
+  readonly held?: boolean;
   /** The tiles it stands on, if more than the one under its middle (a parked truck: its pitch). */
   readonly rect?: Rect;
   /** How far it reaches from its middle (tiles), front and back: a bus or a food truck on the road, one. */
@@ -129,7 +131,7 @@ export function inTheWay(me: Body, facing: Heading, others: readonly Body[], man
   let passing = false;
   for (const q of others) {
     if (q.id === me.id || q.settled) continue;
-    if (manners.crossing === 'junction' && q.moving && q.facing !== facing && q.facing !== OPPOSITE[facing]) {
+    if (manners.crossing === 'junction' && q.moving && !q.held && q.facing !== facing && q.facing !== OPPOSITE[facing]) {
       if (givesWay(me, facing, q, manners)) step = 0;
       continue;
     }

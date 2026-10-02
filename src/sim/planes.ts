@@ -1,8 +1,9 @@
-// The airfields (docs/TRAFFIC.md#planes): little airfields either side of town, each a runway, a stand and a gate, and a
-// plane that flies between them like a bus, by day: from the first on the hour, from the next on the half hour. It
-// taxis out, rolls down the runway, takes off, flies straight there, lands and taxis to the stand. Anyone with a long
-// way across town that a flight cuts right down may fly (when the pilot's on: no pilot at that end, no flight): they walk to the gate nearest them, wait (not for ever), fly
-// (out of sight inside), and walk on from the other gate.
+// The airfields (docs/TRAFFIC.md#planes): little airfields round town, each a runway, a stand and a gate, and a plane
+// that flies round them in a loop like a bus, by day, leaving each a little while after it lands. It taxis out, rolls
+// down the runway, takes off, flies straight to the next, lands and taxis to the stand. Anyone with a long way across
+// town that a flight cuts right down may fly (when the pilot's on: no pilot, no flight): they walk to the gate nearest
+// them, wait (not for ever), fly (out of sight inside, staying aboard for any stops on the way), and walk on from the
+// gate nearest where they're going.
 import { TICKS_PER_DAY, TICKS_PER_HOUR, hourOf } from './clock.ts';
 import type { VehiclePose } from './food-trucks.ts';
 import { atDoorOf, manhattan } from './geometry.ts';
@@ -14,9 +15,9 @@ import { kindOf } from './roles.ts';
 import type { Item, Simulation } from './sim.ts';
 import type { Place, Rect, Tile } from './world.ts';
 
-/** The first and last departures of the day (hours), and the minutes past each hour that each airfield's flight leaves. */
-const DAY: [from: number, to: number] = [8, 20];
-const MINUTES_APART = 30;
+/** The first and last departures of the day (hours), and how long the plane stays on its stand after it lands (game minutes). */
+const DAY: [from: number, to: number] = [8, 20.5];
+const TURNAROUND = 20;
 /** A walk through town at least this long (tiles) might be worth a flight, if the walks to and from the gates save this share of it. */
 const FLY_FROM = 70;
 const SAVES = 0.5;
@@ -30,6 +31,8 @@ const JOURNEYS = new Set<Intent['kind']>(['use', 'work', 'hustle', 'wander', 'pl
 const TICKS_PER_MINUTE = TICKS_PER_HOUR / 60;
 /** How near the plane's stand (tiles) the pilot can be, out on the field, to fly it. */
 const NEAR_THE_PLANE = 12;
+/** A hangar this near a field's gate (tiles, along and across) is its hangar. */
+const HANGAR_NEAR = 30;
 /** What a passenger is riding (`p.riding`): the plane. */
 export const PLANE = 'plane';
 
@@ -45,11 +48,17 @@ interface Field {
 interface Flight {
   pose: Moving;
   path: Tile[];
-  /** The field it's flying to (an index into the fields as they were when it took off), and who's aboard. */
+  /** The field it's flying to (as the fields were when it took off). */
   to: Field;
-  riders: { id: string; after: Intent }[];
   /** Who's flying it. */
   pilot: string;
+}
+
+/** A passenger: the gate they're flying to (an item), and what they're off to do after. */
+interface Rider {
+  id: string;
+  to: number;
+  after: Intent;
 }
 
 /** Where the plane is, and the height it's at: 0 on the ground, 1 at full height. */
@@ -64,6 +73,8 @@ export class Planes {
   readonly patience = MOST_WAIT * TICKS_PER_MINUTE;
   private readonly sim: Simulation;
   private flight: Flight | null = null;
+  /** Who's aboard, flying or on a stand between flights (staying on for a stop that isn't theirs). */
+  private readonly passengers: Rider[] = [];
   private nextFlight = -1;
 
   constructor(sim: Simulation) {
@@ -78,9 +89,21 @@ export class Planes {
     return { x, y, px, py, facing, moving: false, middle: [0, 0], up: this.height(Math.round(x + 2), Math.round(y + 1)) };
   }
 
-  /** Who's aboard the plane, the pilot first (for the click card, and following them follows the plane). */
+  /** Who's aboard the plane, the pilot first if it's flying (for the click card, and following them follows the plane). */
   aboard(): string[] {
-    return this.flight ? [this.flight.pilot, ...this.flight.riders.map((r) => r.id)] : [];
+    return [...(this.flight ? [this.flight.pilot] : []), ...this.passengers.map((r) => r.id)];
+  }
+
+  /**
+   * Where the pilot waits for the plane, on shift: at a field with a hangar, there (their workplace, kept up to date as
+   * the plane goes round); at one without, by its gate. Null while it's flying (they're aboard), or with no plane.
+   */
+  crewPost(): Place | null {
+    const plane = this.plane();
+    const fields = this.fields();
+    if (!plane || this.flight) return null;
+    const field = fields[this.fieldAt(plane, fields)];
+    return field && !field.hangar ? { level: field.gate.level, p: this.waitAt(field.gate) } : null;
   }
 
   /** Every step: the plane takes off on time, flies, and lands; its passengers go with it. */
@@ -96,16 +119,24 @@ export class Planes {
       const [cx, cy] = [Math.round(flight.pose.x + 2), Math.round(flight.pose.y + 1)];
       const floor = grid.inBounds(cx, cy) ? level.rooms[grid.roomAt(cx, cy)]?.floor : undefined;
       const done = advance(flight.pose, flight.path, speedOn(MOVERS.plane, floor));
-      for (const id of [flight.pilot, ...flight.riders.map((r) => r.id)]) {
+      for (const id of [flight.pilot, ...this.passengers.map((r) => r.id)]) {
         const p = sim.person(id);
         if (p) [p.px, p.py, p.x, p.y] = [flight.pose.px + 2, flight.pose.py + 1, flight.pose.x + 2, flight.pose.y + 1];
       }
-      if (done) this.land(plane, flight);
+      if (done) this.land(plane, flight, fields);
       return;
     }
     const at = this.fieldAt(plane, fields);
     if (at < 0) return;
-    if (this.nextFlight < 0) this.nextFlight = departure(sim.tick, at);
+    // On the stand: anyone staying aboard is in it; the pilot's workplace is this field's hangar, if it has one.
+    const [mx, my] = middleOf(plane);
+    for (const r of this.passengers) {
+      const p = sim.person(r.id);
+      if (p) [p.px, p.py, p.x, p.y] = [mx, my, mx, my];
+    }
+    const hangar = fields[at]!.hangar;
+    if (hangar) for (const p of sim.people) if (p.flies && p.works !== hangar) p.works = hangar;
+    if (this.nextFlight < 0) this.nextFlight = nextDeparture(sim.tick);
     if (sim.tick >= this.nextFlight) this.takeOff(plane, fields, at);
   }
 
@@ -126,9 +157,13 @@ export class Planes {
     if (from === to) return null;
     const walk = manhattan(start, this.waitAt(from.gate)) + manhattan(this.waitAt(to.gate), end);
     if (walk > leg.tiles.length * (1 - SAVES)) return null;
-    // Leaving from there soon enough to be worth the wait.
-    const leaves = departure(sim.tick, fields.indexOf(from));
-    if (leaves - sim.tick > this.patience * 0.75) return null;
+    // The plane's calling there soon: on its stand there leaving before long, or the next stop on its way round.
+    const plane = this.plane()!;
+    const at = this.flight ? fields.findIndex((f) => f.gate === this.flight!.to.gate) : this.fieldAt(plane, fields);
+    const here = fields.indexOf(from);
+    const soon = this.nextFlight < 0 || this.nextFlight - sim.tick <= this.patience * 0.75;
+    const calling = this.flight ? at === here : (at === here || (at + 1) % fields.length === here) && soon;
+    if (!calling) return null;
     return { kind: 'fly', from: from.gate.index, to: to.gate.index, after: intent };
   }
 
@@ -149,7 +184,7 @@ export class Planes {
     return this.sim.activeItems().find((i) => i.type.airfield === 'plane' && i.level === this.sim.traffic.level);
   }
 
-  /** The airfields, west to east: each gate, with the stand nearest it and the runway nearest that (the whole strip, however it was drawn). Worked out again only when the town changes. */
+  /** The airfields, in a loop round the middle of them: each gate, with the stand nearest it and the runway nearest that (the whole strip, however it was drawn). Worked out again only when the town changes. */
   private fields(): Field[] {
     const { sim } = this;
     const town = sim.traffic.level;
@@ -163,9 +198,10 @@ export class Planes {
     const runway = (x: number, y: number) => grid.inBounds(x, y) && level.rooms[grid.roomAt(x, y)]?.floor === 'runway';
     const tiles: Tile[] = [];
     for (let y = 0; y < grid.h; y++) for (let x = 0; x < grid.w; x++) if (runway(x, y)) tiles.push([x, y]);
-    const fields = here
-      .filter((i) => i.type.airfield === 'gate')
-      .sort((a, b) => a.def.p[0] - b.def.p[0])
+    const gates = here.filter((i) => i.type.airfield === 'gate');
+    const [cx, cy] = [gates.reduce((s, g) => s + g.def.p[0], 0) / (gates.length || 1), gates.reduce((s, g) => s + g.def.p[1], 0) / (gates.length || 1)];
+    const fields = gates
+      .sort((a, b) => Math.atan2(a.def.p[1] - cy, a.def.p[0] - cx) - Math.atan2(b.def.p[1] - cy, b.def.p[0] - cx))
       .flatMap((gate): Field[] => {
         if (!stands.length || !tiles.length) return [];
         const stand = stands.reduce((a, b) => (manhattan(a.def.p, gate.def.p) <= manhattan(b.def.p, gate.def.p) ? a : b));
@@ -182,7 +218,7 @@ export class Planes {
     return fields.findIndex((f) => f.stand.def.p[0] === plane.def.p[0] && f.stand.def.p[1] === plane.def.p[1]);
   }
 
-  /** Time to go: everyone waiting at the gate aboard, and off to the next field round. */
+  /** Time to go: everyone waiting at the gate aboard (for anywhere else on the round), and off to the next field. */
   private takeOff(plane: Item, fields: Field[], at: number): void {
     const { sim } = this;
     const from = fields[at]!;
@@ -190,19 +226,19 @@ export class Planes {
     // No pilot here, on shift: no flight (and passengers wait, or give up and walk). In the News once a day.
     const pilot = sim.people.find((p) => p.flies && this.onDuty(p, from));
     if (!pilot) {
-      this.nextFlight = departure(sim.tick, at);
+      this.nextFlight = nextDeparture(sim.tick + TURNAROUND * TICKS_PER_MINUTE);
       const day = Math.floor(sim.tick / TICKS_PER_DAY);
       if (this.grounded !== day) sim.log(`✈️ No flight from ${from.gate.def.label ?? 'the airfield'}: the pilot isn't in`, []);
       this.grounded = day;
       return;
     }
     sim.board(pilot, PLANE, null);
-    const riders: Flight['riders'] = [];
+    const gates = new Set(fields.map((f) => f.gate.index));
     for (const p of sim.people) {
       const intent = p.intent;
-      if (intent?.kind !== 'fly' || intent.from !== from.gate.index || intent.to !== to.gate.index || p.phase !== 'doing' || p.riding) continue;
-      riders.push({ id: p.id, after: intent.after });
-      sim.board(p, PLANE, `✈️ ${p.name} flew to ${to.gate.def.label ?? 'the other airfield'}`);
+      if (intent?.kind !== 'fly' || intent.from !== from.gate.index || intent.to === intent.from || !gates.has(intent.to) || p.phase !== 'doing' || p.riding) continue;
+      this.passengers.push({ id: p.id, to: intent.to, after: intent.after });
+      sim.board(p, PLANE, `✈️ ${p.name} flew to ${sim.items[intent.to]?.def.label ?? 'the other airfield'}`);
     }
     // Middle of the plane: straight off the stand onto the runway, along it to the far end, then down it towards where
     // it's going, up and over, down on the far runway, rolled out, back along it and straight onto the stand.
@@ -214,25 +250,30 @@ export class Planes {
     const course = [[fx, fy], onto([fx, fy], away, from.runway), away, toward, touch, rollTo, onto([tx, ty], rollTo, to.runway), [tx, ty]] as Tile[];
     const path = course.slice(1).flatMap((t, i) => line(course[i]!, t)).map(([x, y]): Tile => [x - 2, y - 1]);
     const [x, y] = plane.def.p;
-    this.flight = { pose: { x, y, px: x, py: y, facing: 'right' }, path, to, riders, pilot: pilot.id };
+    this.flight = { pose: { x, y, px: x, py: y, facing: 'right' }, path, to, pilot: pilot.id };
     this.nextFlight = -1;
   }
 
-  /** On the far stand: the plane parks, and its passengers get off at the gate and go on their way. */
-  private land(plane: Item, flight: Flight): void {
+  /** On the next stand: the plane parks; whoever's flying here gets off at the gate (anyone going further stays aboard), and so does the pilot, till the next flight. */
+  private land(plane: Item, flight: Flight, fields: Field[]): void {
     const { sim } = this;
     this.flight = null;
     sim.moveItem(plane, flight.to.stand.def.p);
-    for (const r of flight.riders) {
+    const gate = { level: flight.to.gate.level, p: this.waitAt(flight.to.gate) };
+    const gates = new Set(fields.map((f) => f.gate.index));
+    // Off here: those flying here, and anyone whose gate isn't on the round any more.
+    for (const r of [...this.passengers]) {
+      if (r.to !== flight.to.gate.index && gates.has(r.to)) continue;
+      this.passengers.splice(this.passengers.indexOf(r), 1);
       const p = sim.person(r.id);
-      if (p) sim.alight(p, { level: flight.to.gate.level, p: this.waitAt(flight.to.gate) }, r.after);
+      if (p) sim.alight(p, gate, r.after);
     }
-    // The pilot's off too, and works from this end's hangar now, till the next flight takes them back.
     const pilot = sim.person(flight.pilot);
     if (pilot) {
       if (flight.to.hangar) pilot.works = flight.to.hangar;
-      sim.alight(pilot, { level: flight.to.gate.level, p: this.waitAt(flight.to.gate) }, { kind: 'wander', to: { level: flight.to.gate.level, p: this.waitAt(flight.to.gate) } });
+      sim.alight(pilot, gate, { kind: 'wander', to: gate });
     }
+    this.nextFlight = nextDeparture(sim.tick + TURNAROUND * TICKS_PER_MINUTE);
   }
 
   /** Is the pilot here for this field's flight: on shift, and in its hangar or out by the plane? */
@@ -250,7 +291,7 @@ export class Planes {
     const town = sim.traffic.level;
     const hangars = sim.activeItems().filter((i) => i.level === town && i.def.t === 'hangar');
     const hangar = hangars.sort((a, b) => manhattan(a.def.p, at) - manhattan(b.def.p, at))[0];
-    if (!hangar) return undefined;
+    if (!hangar || manhattan(hangar.def.p, at) > HANGAR_NEAR) return undefined;
     for (const portal of sim.world.portals) {
       for (const [end, other] of [[portal.a, portal.b], [portal.b, portal.a]] as const) if (end.level === town && atDoorOf(hangar.def, end.p)) return other.level;
     }
@@ -270,15 +311,12 @@ export class Planes {
   }
 }
 
-/** The tick the next flight leaves field `i` (the first on the hour, the next on the half hour…), by day. */
-export function departure(tick: number, i: number): number {
-  const minute = (i * MINUTES_APART) % 60;
-  const now = hourOf(tick) * 60;
-  for (let m = Math.floor(now) + 1; m <= now + 24 * 60; m++) {
-    const hour = Math.floor(m / 60) % 24;
-    if (m % 60 === minute && hour >= DAY[0] && hour <= DAY[1]) return tick + (m - now) * TICKS_PER_MINUTE;
-  }
-  return tick + 24 * TICKS_PER_HOUR;
+/** The first tick from `tick` a flight may leave: then, by day; otherwise the first flight of the morning. */
+export function nextDeparture(tick: number): number {
+  const hour = hourOf(tick);
+  if (hour >= DAY[0] && hour <= DAY[1]) return tick;
+  const wait = (DAY[0] - hour + 24) % 24;
+  return tick + Math.ceil(wait * TICKS_PER_HOUR);
 }
 
 /** The runway joined up with a tile, as the rectangle round it. */

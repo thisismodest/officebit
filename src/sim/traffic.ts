@@ -24,6 +24,9 @@ const ZEBRAS = new Set(['zebra', 'zebraSide']);
 const CROSSING_REACH = 2.5;
 /** How long (steps) a vehicle waits at a junction before going anyway (so a ring of cars each waiting for the next can't jam for good). */
 const JUNCTION_PATIENCE = 40;
+/** Onto the highway (to cross or join it): how clear (tiles) every lane must be upstream, and how long (steps) a vehicle waits for that before going anyway. */
+const GAP = 12;
+const GAP_PATIENCE = 300;
 /** Mixing the world's seed for traffic's own random stream. */
 const TRAFFIC_SEED = 0x7ea0c0de;
 
@@ -188,7 +191,7 @@ export class Traffic {
   private bodyOf(car: Car): Body {
     let body = this.bodies.get(car);
     if (!body) {
-      const { sim } = this;
+      const { sim, waited } = this;
       body = {
         id: car.id,
         reach: moverOf(car).reach ?? 0,
@@ -204,6 +207,9 @@ export class Traffic {
         },
         get moving() {
           return !car.parked;
+        },
+        get held() {
+          return waited.has(car);
         },
         get here() {
           return !car.removed;
@@ -236,20 +242,42 @@ export class Traffic {
    * someone on the zebra crossing (or path) in front? The driving manners do the rest.
    */
   private blocked(car: Car): boolean {
-    // At a junction under lights: wait for the green before driving into it (the tile just ahead: through-traffic's path is only where it leaves the map).
-    if (car.path.length && !car.reversing) {
-      const from: Tile = [Math.round(car.x), Math.round(car.y)];
-      const to: Tile = [from[0] + AHEAD[car.facing][0], from[1] + AHEAD[car.facing][1]];
-      if (this.sim.signals.stop(from, to, car.facing)) return true;
-    }
+    if (this.waitingForGap(car)) return true;
     const facing = car.reversing ? OPPOSITE[car.facing] : car.facing;
     const [dx, dy] = AHEAD[facing];
     if (this.crossingAhead(car, dx, dy)) return true;
     const patient = (this.waited.get(car) ?? 0) < JUNCTION_PATIENCE;
     const manners = patient ? MOVERS.car.manners : { ...MOVERS.car.manners, crossing: 'ignore' as const };
     // Far enough to see past a long vehicle's middle to its back.
-    const others = this.sim.space.near(this.level!, 'wheels', car.x, car.y, manners.slow + 3);
+    let others = this.sim.space.near(this.level!, 'wheels', car.x, car.y, manners.slow + 3);
+    // Backing out of a bay: only as far as the aisle, so a car parked beyond that (in the next bay) is no matter.
+    const to = car.path[0];
+    if (car.reversing && to) {
+      const room = Math.abs(to[0] - car.x) + Math.abs(to[1] - car.y) + 1;
+      others = others.filter((q) => q.moving || (q.x - car.x) * dx + (q.y - car.y) * dy < room);
+    }
     return inTheWay(this.bodyOf(car), facing, others, manners).step === 0;
+  }
+
+  /** About to drive onto the highway from a road: is anything coming along it, or on the crossing, too near to go? */
+  private waitingForGap(car: Car): boolean {
+    const roads = this.roads();
+    // Roads meet the highway end on: only something driving up or down onto it (not along it) waits.
+    if (!roads || car.reversing || !car.path.length || car.facing === 'left' || car.facing === 'right' || (this.waited.get(car) ?? 0) >= GAP_PATIENCE) return false;
+    const [x, y] = [Math.round(car.x), Math.round(car.y)];
+    const [nx, ny] = [x + AHEAD[car.facing][0], y + AHEAD[car.facing][1]];
+    if (roads.floorAt(x, y) === 'highway' || roads.floorAt(nx, ny) !== 'highway') return false;
+    // The lanes of this highway: the rows next to the one it's driving onto.
+    const lanes = this.lanes().filter((lane) => Math.abs(lane.y - ny) < 4 && nx >= Math.min(lane.first[0], lane.last[0]) && nx <= Math.max(lane.first[0], lane.last[0]));
+    return this.cars.some((other) => {
+      // Parked, or held up itself: it's not coming.
+      if (other === car || other.parked || this.waited.has(other)) return false;
+      const lane = lanes.find((l) => l.y === Math.round(other.y));
+      if (!lane) return false;
+      // Coming its way along the lane, or already on the crossing.
+      const upstream = lane.heading === 'right' ? nx - other.x : other.x - nx;
+      return upstream > -1.5 && upstream < GAP;
+    });
   }
 
   /** Someone on a zebra just ahead of the car, anywhere across the road. */

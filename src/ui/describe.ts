@@ -97,6 +97,8 @@ export function describe(p: Person, sim: Simulation): string {
       return moving ? 'Wandering' : 'Pottering about';
     case 'swim':
       return moving ? 'Off for a swim 🏊' : 'Swimming in the river 🏊';
+    case 'stroll':
+      return moving ? 'Off for a walk in the park 🌳' : 'Out for a walk in the park 🌳';
     case 'retreat':
       if (sim.levels.get(p.level)?.kind === 'home') return 'Having some time alone';
       return moving ? 'Escaping the crowd' : 'Hiding somewhere quiet';

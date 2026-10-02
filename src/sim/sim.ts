@@ -41,7 +41,6 @@ import { Construction } from './construction.ts';
 import { Buses } from './buses.ts';
 import { OwnCars } from './cars.ts';
 import { Parcels } from './parcels.ts';
-import { Signals } from './signals.ts';
 import { Planes } from './planes.ts';
 import { Works } from './works.ts';
 import { Ventures } from './ventures.ts';
@@ -135,7 +134,6 @@ export class Simulation {
   readonly cars: OwnCars;
   readonly planes: Planes;
   readonly parcels: Parcels;
-  readonly signals: Signals;
   /** Where every body is, on foot and on wheels (collision.ts), for who's in whose way. */
   readonly space = new Space();
   /** Each person as a body in the space: live views, so always where the person is. */
@@ -214,7 +212,6 @@ export class Simulation {
     this.cars = new OwnCars(this);
     this.planes = new Planes(this);
     this.parcels = new Parcels(this);
-    this.signals = new Signals(this);
     this.mindVenues(false);
     // Households start out close.
     const humans = this.people.filter((p) => p.species === 'human' && p.home);

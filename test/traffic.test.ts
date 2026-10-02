@@ -126,3 +126,25 @@ test('cars come in by any road for a drive round town, and leave again by day’
   assert.ok(inTown > 0, 'they drive through town');
   assert.equal(sim.visitors.touring.filter((c) => !c.removed).length, 0, 'and all gone by the small hours');
 });
+
+test('cars wait for a gap before driving onto the highway', () => {
+  const sim = fresh();
+  const highway = (x: number, y: number) => sim.traffic.roads()!.floorAt(Math.round(x), Math.round(y)) === 'highway';
+  const was = new Map<string, boolean>();
+  let joins = 0;
+  for (let t = 0; t < TICKS_PER_DAY; t++) {
+    sim.step();
+    for (const car of sim.traffic.cars) {
+      const on = highway(car.x, car.y);
+      // From a road (not on along the highway from the edge of the map, or over the footbridge's deck).
+      if (on && was.get(car.id) === false && (car.facing === 'up' || car.facing === 'down')) {
+        joins++;
+        // Nothing bearing down on it along any lane, close by.
+        const near = sim.traffic.cars.filter((o) => o !== car && highway(o.x, o.y) && o.facing !== car.facing && Math.abs(o.y - car.y) < 4 && (o.facing === 'right' ? car.x - o.x : o.x - car.x) > 0.5 && Math.abs(o.x - car.x) < 4);
+        assert.deepEqual(near.map((o) => o.id), [], `${car.id} pulled out in front of traffic`);
+      }
+      was.set(car.id, on);
+    }
+  }
+  assert.ok(joins > 3, `${joins} cars onto the highway`);
+});

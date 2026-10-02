@@ -87,6 +87,8 @@ export function optionLabel(intent: Intent, sim: Simulation, p?: Person): string
       return 'Somewhere quiet';
     case 'swim':
       return 'The river';
+    case 'stroll':
+      return 'A walk in the park';
     case 'meeting':
       return 'A meeting';
     case 'sleep':

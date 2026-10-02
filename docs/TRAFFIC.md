@@ -95,15 +95,11 @@ visitors' own random stream, so they don't change the story.
   rest. Waiting 30 minutes with no bus (or having just missed one at night),
   they give up and walk.
 
-## Traffic lights
+## Junctions
 
-`sim/signals.ts`. Put `trafficLight`s at the corners of a junction: lights within eight tiles of
-each other are one junction, controlling the road strictly between them. A vehicle about to drive
-into it (the tile just ahead) waits unless its way has a green. The cycle: east–west green (the
-longer), amber, north–south green, amber; worked out from the clock, each junction a little out of
-step, so nothing to save. Every light has two heads: the left for traffic going up and down the
-screen, the right for traffic going across. The highway's markings stop across a junction. The starter town has four
-at the crossroads where Hill Road and Nursery Lane meet the highway.
+A vehicle about to drive onto the highway from a road (to cross it, or join it) waits for a gap: nothing on any of
+its lanes within 12 tiles coming its way (and moving), nor on the crossing itself. After half an hour it goes anyway
+(a jam can't last for ever). The highway's markings stop across a junction.
 
 ## Own cars
 
@@ -120,17 +116,17 @@ forecourts with bays (pavements aren't laid over forecourts, so one opens straig
 
 `sim/planes.ts`. An airfield is a `gate` (a bench for passengers), the `stand` nearest it and the
 `runway` nearest that (the whole strip of runway joined to it, however it was drawn), on concrete (its apron); all of it can be drawn and placed in the editor. The `plane`
-flies between the airfields, west to east and back, by day (08:00 to 20:30), when the pilot's in: from the first on the
-hour, from the next on the half hour. It taxis off its stand, rolls down the runway towards where it's
-going, climbs, flies straight over, lands, rolls out and taxis to the far stand (`MOVERS.plane`: taxi,
-roll, fly; the same stepper as every vehicle), drawn higher the further it is from a runway or concrete, with its
-shadow below. It's a look in `VEHICLES` (render/vehicles.ts), drawn by the one vehicle painter facing
-whichever way it's going, parked or moving. Like the bus: anyone
-with a long walk (70 tiles or more) that the gates at either end halve, and a flight leaving soon
-enough, walks to the gate and waits (40 minutes at most), flies ("✈️ Lou flew to West Field") and
-walks on from the other gate. Dove Air's pilot (`flies` in the world) works from the hangar at
-whichever field the plane's at, flies with it, and gets off at the other end; on shift and in that
-hangar (or out by the plane), or there's no flight ("No flight from West Field: the pilot isn't in").
+flies round the airfields in a loop (ordered round the middle of them, so a new airfield anywhere joins the round), by
+day (first flight 08:00, last 20:30), when the pilot's in: it leaves each 20 minutes after it lands. It taxis off its
+stand, rolls down the runway towards where it's going, climbs, flies straight over, lands, rolls out and taxis to the
+next stand (`MOVERS.plane`: taxi, roll, fly; the same stepper as every vehicle), drawn higher the further it is from a
+runway or concrete, with its shadow below. It's a look in `VEHICLES` (render/vehicles.ts), drawn by the one vehicle
+painter facing whichever way it's going, parked or moving. Like the bus: anyone with a long walk (70 tiles or more)
+that the gates nearest each end halve, and the plane on its stand there leaving soon or calling there next, walks to
+the gate and waits (40 minutes at most), flies ("✈️ Lou flew to West Field"), staying aboard for any stops on the way,
+and walks on from their own gate. Dove Air's pilot (`flies` in the world) works from the hangar at whichever field the
+plane's at (a hangar within 30 tiles of its gate), or waits by the gate at a field without one, and flies with it; on
+shift and in that hangar (or out by the plane), or there's no flight ("No flight from West Field: the pilot isn't in").
 
 ## Parcels
 

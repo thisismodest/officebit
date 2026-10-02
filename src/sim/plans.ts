@@ -217,9 +217,9 @@ export class Plans {
       ACTIVITIES[id].where === 'river'
         ? sim.weather.wet(start) === 0 && month >= BOATING[0] && month <= BOATING[1]
         : ACTIVITIES[id].where !== 'park' || sim.weather.wet(start) === 0 || sim.rng.next() < WET_PARK;
-    // On a day off, a picnic's the likeliest thing to suggest; on an evening, something to eat.
-    const likely: ActivityId[] = dayOff ? ['catch', 'picnic', 'picnic', 'picnic', 'picnic', 'meetup', 'meal', 'boat', 'boat'] : ['catch', 'meetup', 'meal', 'meal', 'boat'];
-    const options = likely.filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (!outdoors(id) || light(id)) && dry(id));
+    // Anything that suits the day as likely as anything else: a coin flip, not a balancing act.
+    const fun: ActivityId[] = ['catch', 'picnic', 'meetup', 'meal', 'boat'];
+    const options = fun.filter((id) => (!ACTIVITIES[id].daysOffOnly || dayOff) && (!outdoors(id) || light(id)) && dry(id));
     return options[sim.rng.int(0, options.length - 1)];
   }
 

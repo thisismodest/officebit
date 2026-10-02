@@ -29,11 +29,6 @@ const FEET = 14;
 const ALWAYS_LIT = new Set(['lamppost', 'chargingCanopy', 'christmasTree', 'homeTree', 'billboard', 'busStop']);
 /** Headlights: how far ahead of a car (tiles) they light the road, and how wide (pixels). */
 const HEADLIGHT_REACH = 1.5;
-/** Traffic lights: which lamp (from the top) is which, and how it looks lit. */
-const LAMPS = { red: 0, amber: 1, green: 2 } as const;
-const LAMP_COLOURS = { red: '#ff4a3a', amber: '#ffb43a', green: '#5fe37a' } as const;
-/** A traffic light's two heads: which way each is for, and where its lamps are across from the pole (px). */
-const HEADS = [['ns', -7], ['ew', 3]] as const;
 /** How high the plane flies, in pixels up the screen at full height. */
 const PLANE_HEIGHT = 40;
 const HEADLIGHT_RADIUS = 26;
@@ -240,14 +235,6 @@ export class Renderer {
     drawables.sort((a, b) => a.sortY - b.sortY);
     for (const d of drawables) d.draw();
     for (const { rect: [rx, ry, rw, rh] } of decks) for (let y = ry; y < ry + rh; y++) for (let x = rx; x < rx + rw; x++) paintDeck(ctx, x, y, rh >= rw);
-    // Traffic lights: on each head (up and down the screen, and across), the lamp that's lit now.
-    for (const prop of props) {
-      if (!prop.item.type.signal) continue;
-      for (const [way, dx] of HEADS) {
-        const lamp = sim.signals.lampOf(prop.item, way);
-        rect(ctx, prop.item.def.p[0] * TILE + TILE / 2 + dx, prop.item.def.p[1] * TILE - 21 + LAMPS[lamp] * 5, 4, 4, LAMP_COLOURS[lamp]);
-      }
-    }
     for (const draw of overhead) draw();
 
     this.paintLighting(props, night, headlights);

@@ -8,7 +8,7 @@ import { outsideDoor } from './places.ts';
 import { roleOf } from './roles.ts';
 import { DISLIKE } from './relationships.ts';
 import type { Brain, Item, Simulation } from './sim.ts';
-import type { Place } from './world.ts';
+import type { Place, Tile } from './world.ts';
 
 const NEED_WEIGHT: Record<Need, number> = { energy: 1, hunger: 1.1, social: 1, fun: 1 };
 /** Score lost per tile of walking. */
@@ -69,6 +69,8 @@ const WET_INSIDE = 0.06;
 const CELEBRATION_PULL = 0.35;
 /** A swim on a summer's day (once a day at most, as an outing): worth the walk down to the river, more so for the sociable and the playful. */
 const SWIM_PULL = 0.9;
+/** A walk in the park on a dry day (the day's outing): for anyone short of fun, more so for the sociable. */
+const STROLL_PULL = 0.9;
 /** Taking a rowing boat out from the club (days off and fine evenings, April to October). */
 const ROW_PULL = 1.2;
 /** A swim at the pool or a workout at the gym (some stretch it into working hours): the day's outing, for the driven; the pool more for the sociable, the gym for the diligent. */
@@ -190,6 +192,12 @@ export class PersonalityBrain implements Brain {
       if (spot) options.push({ intent: { kind: 'swim', to: spot }, score: SWIM_PULL * (0.6 + t.social * 0.4 + t.chaos * 0.3) - cost(spot) + noise() });
     }
 
+    // A walk in the park, by day when it's dry: somewhere on the grass.
+    if (phase === 'home' && !wentOutToday && roleOf(p).goesOut && p.species === 'human' && sim.daylight() > 0.6 && sim.weather.wet() === 0) {
+      const spot = parkSpot(sim);
+      if (spot) options.push({ intent: { kind: 'stroll', to: spot }, score: STROLL_PULL * (0.6 + t.social * 0.3 + u('fun')) - cost(spot) + noise() });
+    }
+
     // A plan with friends: off to it, and at it till it's over.
     const plan = phase === 'home' ? sim.plans.due(p) : undefined;
     if (plan) {
@@ -290,6 +298,9 @@ export class StaffBrain implements Brain {
   decide(p: Person, sim: Simulation): Intent {
     const venue = p.works;
     if (!venue || sim.phaseOf(p) !== 'work') return this.offShift.decide(p, sim);
+    // The pilot, with the plane at a field with no hangar: waiting by its gate.
+    const post = p.flies ? sim.planes.crewPost() : null;
+    if (post) return { kind: 'wander', to: post };
     const till = sim.activeItems().find((item) => item.level === venue && item.type.staff && sim.freeSpots(item.index) > 0);
     if (p.level !== venue) return till ? { kind: 'use', item: till.index } : idle(p);
 
@@ -371,6 +382,21 @@ function stroll(p: Person, sim: Simulation, area: readonly string[]): Intent | n
   return to ? { kind: 'wander', to } : null;
 }
 
+/** A free bit of grass in one of the town's parks, if it has any. */
+function parkSpot(sim: Simulation): Place | null {
+  const level = sim.traffic.level;
+  const def = level ? sim.levels.get(level) : undefined;
+  const grid = level ? sim.grids.get(level) : undefined;
+  const parks = def?.rooms.filter((r) => r.park) ?? [];
+  if (!level || !def || !grid || parks.length === 0) return null;
+  const [x, y, w, h] = parks[sim.rng.int(0, parks.length - 1)]!.rect;
+  for (let tries = 0; tries < 10; tries++) {
+    const at: Tile = [sim.rng.int(x, x + w - 1), sim.rng.int(y, y + h - 1)];
+    if (grid.free(...at) && def.rooms[grid.roomAt(...at)]?.floor === 'grass') return { level, p: at };
+  }
+  return null;
+}
+
 /** Their bed at home (pets: a basket or the sofa), until `until` or their next wake-up. */
 function sleep(p: Person, sim: Simulation, until = sim.nextWake(p)): Intent | null {
   const pet = p.species !== 'human';
@@ -407,7 +433,7 @@ function quietest(p: Person, sim: Simulation): Place | null {
 /** How the weather sways an option, at its wettest: outdoors less, indoor fun more, anything else no different. */
 function weatherPull(sim: Simulation, intent: Intent): number {
   const item = intent.kind === 'use' || intent.kind === 'hustle' ? sim.items[intent.item] : undefined;
-  const level = item?.level ?? (intent.kind === 'wander' || intent.kind === 'retreat' ? intent.to.level : intent.kind === 'play' ? sim.traffic.level : undefined);
+  const level = item?.level ?? (intent.kind === 'wander' || intent.kind === 'retreat' || intent.kind === 'stroll' ? intent.to.level : intent.kind === 'play' ? sim.traffic.level : undefined);
   if (!level) return 0;
   if (sim.levels.get(level)?.kind === 'outside') return -WET_OUTSIDE;
   return (item?.type.offers?.fun ?? 0) > 0 ? WET_INSIDE : 0;

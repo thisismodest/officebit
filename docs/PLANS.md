@@ -17,6 +17,9 @@ from late morning, and on weekday evenings after work.
 | ⛵ A boat trip | 2–4 friends | The jetty: a rowing boat for two, a sailing boat for more ([RIVER](RIVER.md#boats)) | 1½ h |
 
 Park plans need daylight. Boat trips need daylight, a dry day, April to October, and no other trip on the river then. A park is any room with `park: true` (the Green).
+Whoever suggests something picks evenly from what suits the day (a coin flip, not weights). Without a plan, anyone
+free on a dry day may take a walk in the park instead (the `stroll` intent: a spot on the grass for a while, the day's
+outing), more likely when they're short of fun or sociable.
 Any venue, or new furniture, joins in by having the catalog flags
 ([FURNITURE](FURNITURE.md)). The venue has to be open the whole time.
 

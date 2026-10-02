@@ -89,7 +89,6 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   cars.ts         people's own cars: kept in the bay nearest home, driven a long way, parked near where they're going
   planes.ts       the airfields and the plane between them, by timetable, when the pilot's in; who flies instead of walking
   parcels.ts      the depot's van taking parcels round homes on weekdays, with a driver on shift
-  signals.ts      traffic lights: lights near each other control the junction between them, by the clock
   arrivals.ts     newcomers: a baby dropped off by car (it crawls in), family and new team members on foot from the edge of town
   weather.ts      clear, grey, rain or snow in spells, from the seed and the date; the wet keeps people in
   birthdays.ts    everyone's birthday: the News, a cheerier day, a party hat, a cake at work (or at home)

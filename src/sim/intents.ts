@@ -18,6 +18,9 @@ const RETREAT: [number, number] = [80, 160];
 /** A swim, and the fun and company it gives every tick. */
 const SWIM: [number, number] = [80, 160];
 const SWIMMING = { fun: 0.004, social: 0.001 };
+/** A walk in the park, and the fun it gives every tick (more for those short of it: fresh air). */
+const STROLL: [number, number] = [150, 300];
+const STROLLING = 0.003;
 const MEETING = 50;
 /** Using furniture with no duration of its own. */
 const USE: [number, number] = [30, 60];
@@ -179,6 +182,17 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
       refill(p, 'social', SWIMMING.social);
     },
     fits: (sim) => sim.summerDay(),
+  },
+
+  // A walk in the park on a dry day: an outing (once a day, like any other).
+  stroll: {
+    to: (_sim, _p, intent) => intent.to,
+    start: (sim, p) => {
+      p.timer = sim.rng.int(...STROLL);
+      p.lastOuting = sim.tick;
+    },
+    doing: (_sim, p, _intent, refill) => refill(p, 'fun', STROLLING),
+    fits: (sim) => sim.daylight() > 0.3 && sim.weather.wet() === 0,
   },
 
   retreat: {

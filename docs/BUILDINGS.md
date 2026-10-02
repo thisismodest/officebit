@@ -109,7 +109,7 @@ Swimmers in the `pool` are drawn in the water.
 and a café corner, with Flo on the till. **Dove Parcels** has parcel shelves and a sorting table; Kit
 drives the van (see [TRAFFIC](TRAFFIC.md#parcels)). The **hangars** are workshops (a plane in for a
 service, a workbench, tool chests, a desk): Nat the mechanic works at West Field, and Jo the pilot
-from whichever hangar the plane's at.
+from whichever hangar the plane's at (by the gate, at an airfield without one).
 
 A venue with staff of its own (the shop, the diner, the leisure centre) is only open while one of
 them is in and on shift (`sim.venueOpen`); when the last goes, it shuts and

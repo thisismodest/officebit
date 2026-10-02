@@ -90,9 +90,11 @@ export const STARTER_CONFIG: TownConfig = {
     [43, 91, 54, 1],
     [31, 55, 1, 12],
     [131, 55, 1, 12],
-    // From each hangar's door across to its airfield's apron.
-    [11, 52, 13, 1],
-    [136, 52, 12, 1],
+    // From each hangar's door: a step out, then across to its airfield's apron.
+    [11, 52, 1, 1],
+    [11, 53, 13, 1],
+    [147, 52, 1, 1],
+    [136, 53, 12, 1],
     // Onto the footbridge, either side of the highway.
     [58, 31, 1, 3],
     [58, 38, 1, 2],
@@ -151,11 +153,6 @@ export const STARTER_CONFIG: TownConfig = {
     { t: 'plantStand', row: [50, 54], y: 4 },
     { t: 'plantStand', row: [50, 54], y: 7 },
     { t: 'loadingBay', p: [100, 18] },
-    // Traffic lights at the corners of the crossroads where Hill Road and Nursery Lane meet the highway.
-    { t: 'trafficLight', p: [59, 33] },
-    { t: 'trafficLight', p: [62, 33] },
-    { t: 'trafficLight', p: [59, 38] },
-    { t: 'trafficLight', p: [62, 38] },
     // Parking bays: people's own cars live in the ones nearest home (docs/TRAFFIC.md#own-cars).
     { t: 'parkingBay', column: [73, 75, 77, 79], x: 4 },
     { t: 'parkingBay', column: [73, 75, 77, 79], x: 8 },
