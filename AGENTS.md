@@ -99,7 +99,7 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   places.ts       buildings on the map and what's inside (for the click card); validate.ts: world checks
 src/worlds/   starter.config.ts (the starter town as data: the map, buildings, homes, the office floors, everyone),
               config.ts (its types), build.ts (a config made into a world), starter.ts (STARTER, built from the config),
-              ground.ts (roads, paths, crossings, generated pavements), layout.ts (LevelBuilder),
+              ground.ts (roads, pavements, paths, crossings, water: each its own piece; layPavements lays pavement along a new town's roads once), layout.ts (LevelBuilder),
               homes.ts (terrace/house/detached interiors), offices.ts (startup tier 1/2), venues.ts (diner, shop, clubhouse, leisure centre),
               school.ts, version.ts (VERSION), upgrades.ts (what each release adds to older towns), relocate.ts (moving pre-0.5 towns
               onto the new map), edit.ts (world edits: moving buildings, turning houses, floors, team), placement.ts (safe zones),

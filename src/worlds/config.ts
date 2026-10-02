@@ -13,8 +13,10 @@ export interface TownConfig {
   spawn: Tile;
   /** Ground, laid in order over the grass: the highway, water, parks, forecourts… (later ones on top). */
   areas: Area[];
-  /** Roads by name; pavements are worked out from them, and a road over water is bridged. */
+  /** Roads by name (a road over water is bridged). */
   roads: { name: string; rects: Rect[] }[];
+  /** Pavement along every road, laid once as the town's built (it's paving like any other after). */
+  pavements?: boolean;
   /** Zebra crossings: `zebra` across a road running east–west, `zebraSide` one running north–south. */
   crossings: { floor: 'zebra' | 'zebraSide'; rect: Rect }[];
   /** Footpaths (beyond the ones worked out from each door to its street). */

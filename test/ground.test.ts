@@ -26,7 +26,7 @@ test('a stroke becomes one rectangle per straight run, overlapping at the corner
   assert.deepEqual(strokeRects([[4, 4]], 'path'), [[4, 4, 1, 1]]);
 });
 
-test('a new road clears small things, and gets pavements that wrap round its corner', () => {
+test('a new road clears small things in its way, and is only road: pavement is drawn beside it, and stops at the road', () => {
   const w = world();
   const town = townOf(w);
   town.furniture = town.furniture.filter((f) => !(f.p[1] >= FIELD.y - 2 && f.p[1] < FIELD.y + 8 && f.p[0] >= FIELD.x - 2 && f.p[0] < FIELD.x + 12));
@@ -36,10 +36,19 @@ test('a new road clears small things, and gets pavements that wrap round its cor
   const cleared = lay(town, strokeRects(stroke, 'road'), 'road');
   assert.deepEqual(cleared, [tree]);
   assert.equal(floorAt(town, FIELD.x + 3, FIELD.y + 1), 'road');
-  // Pavement above the road, and round the outside of the corner.
+  assert.equal(floorAt(town, FIELD.x + 3, FIELD.y - 1), 'grass', 'no pavement of its own');
+  // Pavement drawn along it, and down across the road: it's laid either side, not on the road.
+  lay(town, strokeRects([0, 1, 2, 3, 4, 5].map((i): [number, number] => [FIELD.x + i, FIELD.y - 1]), 'pavement'), 'pavement');
+  lay(town, [[FIELD.x + 2, FIELD.y - 1, 1, 4]], 'pavement');
   assert.equal(floorAt(town, FIELD.x + 3, FIELD.y - 1), 'path');
-  assert.equal(floorAt(town, FIELD.x + 8, FIELD.y - 1), 'path');
-  assert.equal(floorAt(town, FIELD.x + 8, FIELD.y + 3), 'path');
+  assert.equal(floorAt(town, FIELD.x + 2, FIELD.y), 'road', 'the road stays road');
+  assert.equal(floorAt(town, FIELD.x + 2, FIELD.y + 2), 'path', 'and the pavement carries on the other side');
+});
+
+test('the starter town has pavement along every road, laid as it was built', () => {
+  const town = townOf(world());
+  assert.equal(floorAt(town, 30, 67), 'path', 'along the Street');
+  assert.equal(floorAt(town, 59, 44), 'path', 'down Hill Road');
 });
 
 test('paths stop at roads; rubbing out a road cuts right across it; crossings go across', () => {
@@ -56,18 +65,18 @@ test('paths stop at roads; rubbing out a road cuts right across it; crossings go
   assert.match(addCrossing(town, [30, 20]) ?? '', /across a road/);
 
   assert.ok(erase(town, [140, main]));
-  // The road's gone at both lanes: the two ends it leaves are dead ends now, with the kerb round them.
-  assert.equal(floorAt(town, 140, main), 'path', 'the road is gone at both lanes, kerbed where it ends');
-  assert.equal(floorAt(town, 140, main + 1), 'path');
+  // The road's gone at both lanes, to grass; its pavements stay where they are.
+  assert.equal(floorAt(town, 140, main), 'grass', 'the road is gone at both lanes');
+  assert.equal(floorAt(town, 140, main + 1), 'grass');
   assert.equal(floorAt(town, 140, main - 1), 'path', 'with the pavement still running past');
   assert.equal(floorAt(town, 142, main), 'road', 'and the road carrying on beyond');
 
-  // Pavement rubs out too, to grass, and stays rubbed out when the pavements are laid again; a path drawn over it brings it back.
+  // Pavement rubs out too, to grass, and stays rubbed out (another road drawn doesn't bring it back); drawing pavement does.
   assert.ok(erase(town, [92, main - 1]));
   assert.equal(floorAt(town, 92, main - 1), 'grass');
   lay(town, [[60, 140, 3, 1]], 'road');
-  assert.equal(floorAt(town, 92, main - 1), 'grass', 'still grass after the pavements are laid again');
-  lay(town, [[92, main - 1, 1, 1]], 'path');
+  assert.equal(floorAt(town, 92, main - 1), 'grass', 'still grass after another road');
+  lay(town, [[92, main - 1, 1, 1]], 'pavement');
   assert.equal(floorAt(town, 92, main - 1), 'path');
 });
 

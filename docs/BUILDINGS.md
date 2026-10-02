@@ -73,9 +73,10 @@ Bigger households choose first: families with children get a detached house, cou
 the CEO a semi, ambitious people a semi if one's free, everyone else a terrace. Seven
 empty lots, most on Kiln Lane.
 
-Pavements are worked out from the roads (`layPavements` in `worlds/ground.ts`:
-every tile touching a road that isn't one, except along the highway), so they
-wrap round corners and the ends of dead ends, and never cross the tarmac. Zebra
+The starter town's pavements are laid along every road once, as it's built (`pavements: true`
+in the config; `layPavements` in `worlds/ground.ts`: every tile touching a road that isn't one,
+except along the highway and on forecourts), so they wrap round corners and the ends of dead ends,
+and never cross the tarmac. After that they're paving like any other. Zebra
 crossings (`zebra`, `zebraSide` floors) continue the pavement over side roads
 and sit at busy spots; walking costs rank path and crossings (1) over roads
 (3) and grass (4). Trees are scattered from a fixed seed over grass only, so

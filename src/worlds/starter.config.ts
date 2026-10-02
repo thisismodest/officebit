@@ -47,6 +47,7 @@ export const STARTER_CONFIG: TownConfig = {
     { name: 'Jetty', floor: 'jetty', rects: [[96, 138, 1, 3]] },
   ],
 
+  pavements: true,
   roads: [
     { name: 'Hill Road', rects: [[60, 38, 2, 30]] },
     { name: 'The Street', rects: [[10, STREET, 146, 2]] },

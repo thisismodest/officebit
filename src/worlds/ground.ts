@@ -1,5 +1,6 @@
-// The town's ground (docs/BUILDER.md#roads-and-paths): roads, paths, forecourts, zebra
-// crossings, and the pavements worked out from the roads. The town is built
+// The town's ground (docs/BUILDER.md#roads-and-paths): roads, pavements, paths, forecourts, zebra
+// crossings, water and the rest, each its own piece: a road is just road (pavement is drawn
+// beside it, or laid along every road once when a town's built). The town is built
 // with these, and the map editor draws with them. Roads are stored as
 // rectangles, so each knows which way it runs (for its centre line); a stroke
 // of the brush becomes one rectangle per straight run.
@@ -8,12 +9,14 @@ import { footprint, freeRoomId, inRect, intersection, overlap } from '../sim/geo
 import type { FurnitureDef, LevelDef, Rect, RoomDef, Tile } from '../sim/world.ts';
 import { aOrAn, type Problem } from './placement.ts';
 
-export type Surface = 'road' | 'path' | 'forecourt' | 'water' | 'sand' | 'shallows' | 'runway' | 'apron';
+export type Surface = 'road' | 'pavement' | 'path' | 'forecourt' | 'water' | 'sand' | 'shallows' | 'runway' | 'apron';
 
 /** How wide each surface is drawn, in tiles. */
-const WIDTH: Record<Surface, number> = { road: 2, path: 1, forecourt: 1, water: 2, sand: 2, shallows: 2, runway: 3, apron: 2 };
+const WIDTH: Record<Surface, number> = { road: 2, pavement: 1, path: 1, forecourt: 1, water: 2, sand: 2, shallows: 2, runway: 3, apron: 2 };
 /** What each surface is called on the map. */
-const NAMES: Record<Surface, string> = { road: 'Road', path: 'Path', forecourt: 'Forecourt', water: 'River', sand: 'Beach', shallows: 'Shallows', runway: 'Runway', apron: 'Apron' };
+const NAMES: Record<Surface, string> = { road: 'Road', pavement: 'Pavement', path: 'Path', forecourt: 'Forecourt', water: 'River', sand: 'Beach', shallows: 'Shallows', runway: 'Runway', apron: 'Apron' };
+/** The floor each surface lays, where it isn't its own name: pavement is paving, like a path. */
+const FLOOR: Partial<Record<Surface, string>> = { pavement: 'path' };
 /** Floors that are water: drawn across, a road or path becomes a bridge. */
 const WATER = new Set(['water', 'shallows']);
 /** Ground that isn't for walking or driving on as laid (water, the shallows, a beach): no road or path goes under it, and a road or path over it is bridged (over water) or laid on it. */
@@ -24,16 +27,16 @@ export const CLEARABLE = new Set(['tree', 'bush', 'flowers', 'bench', 'lamppost'
 const KEEP = new Set(['highway']);
 /** How far along a path (tiles) to look for where it joins up. */
 const MOST_PATH = 400;
-/** Generated pavements carry this id prefix, so they can be laid again. */
+/** Pavement (laid along the roads when a town's built, or drawn) carries this id prefix. */
 const PAVEMENT = 'pavement-';
-/** Grass where a pavement was rubbed out: pavements are never laid there again (until something's drawn over it). */
+/** Grass where a pavement was rubbed out, in towns from before pavements were their own piece: drawing over it takes it up. */
 const VERGE = 'verge-';
 
 /**
- * Pavements, worked out from the roads: every tile beside a road (diagonals
- * too, so they wrap round corners, and round the end of a dead end, like a
- * kerb) that isn't road itself, except along the highway, and on forecourts (they meet the road). Stored as runs along
- * each row, replacing any laid before.
+ * Pavement along every road, laid once when a town's built (build.ts): every tile beside a road (diagonals
+ * too, so they wrap round corners, and round the end of a dead end, like a kerb) that isn't road itself,
+ * except along the highway, and on forecourts (they meet the road). Stored as runs along each row. After
+ * that it's paving like any other: the editor doesn't lay it with roads.
  */
 export function layPavements(level: LevelDef): void {
   const roads = level.rooms.filter((r) => r.floor === 'road').map((r) => r.rect);
@@ -97,7 +100,7 @@ export function strokeRects(stroke: readonly Tile[], surface: Surface): Rect[] {
  * beside a road) are cleared, and returned; paths and forecourts stop where
  * they meet a road and carry on the other side, and replace the other where
  * they cross it; a road replaces either. A road, path or forecourt across
- * water bridges it. Pavements are laid again.
+ * water bridges it. A road is only road: pavement beside it is drawn separately.
  */
 export function lay(level: LevelDef, rects: readonly Rect[], surface: Surface, name = NAMES[surface]): FurnitureDef[] {
   const roads = level.rooms.filter((r) => r.floor === 'road' || r.floor === 'zebra' || r.floor === 'zebraSide');
@@ -111,7 +114,7 @@ export function lay(level: LevelDef, rects: readonly Rect[], surface: Surface, n
   level.rooms = level.rooms.filter((r) => !(r.id.startsWith(VERGE) && pieces.some((p) => overlap(p, r.rect))));
   const waters = level.rooms.filter((r) => WATER.has(r.floor)).map((r) => r.rect);
   for (const rect of pieces) {
-    level.rooms.push({ id: freeRoomId(level, surface), name, rect, floor: surface });
+    level.rooms.push({ id: freeRoomId(level, surface), name, rect, floor: FLOOR[surface] ?? surface });
     if (SOFT.has(surface)) continue;
     // Over water, a bridge: crossing the way the stroke runs.
     for (const water of waters) {
@@ -120,11 +123,8 @@ export function lay(level: LevelDef, rects: readonly Rect[], surface: Surface, n
       level.rooms.push({ id: freeRoomId(level, 'bridge'), name: 'Bridge', rect: intersection(rect, water), floor });
     }
   }
-  // A road's kerbs become pavement: clear those too.
-  const reach = surface === 'road' ? pieces.map(([x, y, w, h]): Rect => [x - 1, y - 1, w + 2, h + 2]) : pieces;
-  const cleared = level.furniture.filter((f) => CLEARABLE.has(f.t) && reach.some((r) => overlap(footprint(f), r)));
+  const cleared = level.furniture.filter((f) => CLEARABLE.has(f.t) && pieces.some((r) => overlap(footprint(f), r)));
   level.furniture = level.furniture.filter((f) => !cleared.includes(f));
-  if (surface === 'road') layPavements(level);
   return cleared;
 }
 
@@ -134,22 +134,18 @@ export function erase(level: LevelDef, tile: Tile): boolean {
 }
 
 /**
- * Turn ground back to grass, a stroke at a time: a path, forecourt, water,
- * beach or pavement tile, or a road's full width where you rub it out. Crossings and
+ * Turn ground back to grass, a stroke at a time: a pavement, path, forecourt, water
+ * or beach tile, or a road's full width where you rub it out (its pavements stay). Crossings and
  * bridges on it go too. Neighbouring tiles come out as one piece (so the river
- * isn't left in a hundred bits), and pavements are laid again once, at the
- * end. Rubbed-out pavement leaves verge it won't be laid over. Whether anything changed.
+ * isn't left in a hundred bits). Whether anything changed.
  */
 export function eraseAll(level: LevelDef, tiles: readonly Tile[]): boolean {
   const cuts: Rect[] = [];
-  const verges: Tile[] = [];
   for (const [x, y] of tiles) {
     const hit = level.rooms.filter((r) => (r.floor === 'road' || isDrawnPath(r) || isCrossing(r) || isBridge(r) || SOFT.has(r.floor)) && inRect(r.rect, x, y));
     if (hit.length > 0) cuts.push(...hit.map((r): Rect => (r.floor === 'road' ? acrossRoad(r.rect, x, y, 1) : [x, y, 1, 1])));
-    // Pavement is laid from the roads, so rubbing it out leaves a patch of verge it won't be laid over.
-    else if (level.rooms.some((r) => r.id.startsWith(PAVEMENT) && inRect(r.rect, x, y))) verges.push([x, y]);
   }
-  if (cuts.length === 0 && verges.length === 0) return false;
+  if (cuts.length === 0) return false;
   const pieces = runs(cuts);
   level.rooms = level.rooms.flatMap((room) => {
     if ((isCrossing(room) || isBridge(room)) && pieces.some((c) => overlap(c, room.rect))) return [];
@@ -157,10 +153,6 @@ export function eraseAll(level: LevelDef, tiles: readonly Tile[]): boolean {
     if (!pieces.some((c) => overlap(c, room.rect))) return [room];
     return pieces.reduce<RoomDef[]>((kept, c) => kept.flatMap((r) => without(r, c)), [room]);
   });
-  for (const [x, y, w, h] of runs(verges.map(([x, y]): Rect => [x, y, 1, 1]))) {
-    level.rooms.push({ id: `${VERGE}${x}-${y}`, name: 'Verge', rect: [x, y, w, h], floor: 'grass' });
-  }
-  layPavements(level);
   return true;
 }
 
@@ -235,7 +227,7 @@ export function joinsUp(level: LevelDef, [x, y]: Tile): boolean {
 /** Hard ground drawn on the map (paths, forecourts, an airfield's apron and runway), not pavement worked out from the roads. */
 const HARD = new Set(['path', 'forecourt', 'apron', 'runway']);
 function isDrawnPath(room: RoomDef): boolean {
-  return HARD.has(room.floor) && !room.id.startsWith(PAVEMENT);
+  return HARD.has(room.floor);
 }
 
 function isBridge(room: RoomDef): boolean {

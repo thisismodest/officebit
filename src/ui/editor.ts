@@ -31,7 +31,7 @@ import { ROOM_HINTS, RoomTools, type RoomTool } from './room-tools.ts';
 
 type Tool = 'move' | 'add' | Surface | 'crossing' | 'grass' | RoomTool;
 /** Tools for the ground outside: they only work on the town map. */
-const GROUND_TOOLS = new Set<Tool>(['road', 'path', 'forecourt', 'water', 'sand', 'shallows', 'runway', 'apron', 'crossing', 'grass']);
+const GROUND_TOOLS = new Set<Tool>(['road', 'pavement', 'path', 'forecourt', 'water', 'sand', 'shallows', 'runway', 'apron', 'crossing', 'grass']);
 /** Tools for walls, doorways and floors: they only work indoors (room-tools.ts). */
 const INDOOR_TOOLS = new Set<Tool>(['room', 'area', 'door', 'stairs']);
 const HOUSES = new Set(['terrace', 'house', 'detached']);
@@ -50,6 +50,7 @@ const INDOOR_GROUPS: [string, string[]][] = [
 type GroundTool = Surface | 'crossing' | 'grass';
 const GROUND: Record<GroundTool, string> = {
   road: 'Road: drag to draw one',
+  pavement: 'Pavement: drag to draw it beside a road',
   path: 'Path: drag to draw one',
   forecourt: 'Forecourt: drag to draw hard standing cars can drive on',
   water: 'Water: drag to draw a river, canal or pond',
@@ -63,6 +64,7 @@ const GROUND: Record<GroundTool, string> = {
 /** What a stroke of each kind of ground says once it's down. */
 const LAID: Record<Surface | 'grass', string> = {
   road: 'Laid a road',
+  pavement: 'Laid some pavement',
   path: 'Laid a path',
   forecourt: 'Laid a forecourt',
   water: 'Drew some water',
@@ -691,8 +693,7 @@ export class Editor {
     const surface = this.tool as Surface;
     const rects = strokeRects(tiles, surface);
     const problem = tiles.length === 1 ? this.brushProblem(last) : null;
-    const reach = surface === 'road' ? rects.map(([x, y, w, h]): Rect => [x - 1, y - 1, w + 2, h + 2]) : rects;
-    const clears = level.furniture.filter((f) => CLEARABLE.has(f.t) && reach.some((r) => overlap(footprint(f), r)));
+    const clears = level.furniture.filter((f) => CLEARABLE.has(f.t) && rects.some((r) => overlap(footprint(f), r)));
     return [
       ...rects.map((rect): Ghost => ({ rect, tone: problem ? 'bad' : 'ok' })),
       ...clears.map((f): Ghost => ({ rect: [f.p[0], f.p[1], ...(CATALOG[f.t]?.size ?? [1, 1])], tone: 'clear' })),
@@ -706,7 +707,7 @@ export class Editor {
 
   /** Is the tool one that draws ground (a road, path or forecourt)? */
   private drawing(tool: Tool = this.tool): tool is Surface {
-    return tool === 'road' || tool === 'path' || tool === 'forecourt' || tool === 'water' || tool === 'sand' || tool === 'shallows' || tool === 'runway' || tool === 'apron';
+    return tool === 'road' || tool === 'pavement' || tool === 'path' || tool === 'forecourt' || tool === 'water' || tool === 'sand' || tool === 'shallows' || tool === 'runway' || tool === 'apron';
   }
 
   private brushProblem(tile: Tile): string | null {
@@ -907,7 +908,8 @@ function thumbnail(t: string): HTMLCanvasElement {
 const HAND_HINT = ' Hold Space and drag to move the map.';
 
 const GROUND_HINTS = {
-  road: 'Drag to draw a road: it follows you along the grid and turns where you turn. Trees and the like in the way are cleared.',
+  road: 'Drag to draw a road: it follows you along the grid and turns where you turn. Trees and the like in the way are cleared. Draw pavement beside it with Pavement.',
+  pavement: 'Drag to draw pavement along a road, for people to walk on (it stops at roads, and carries on the other side).',
   path: 'Drag to draw a path. Draw one to a front door so people keep to it.',
   forecourt: 'Drag to draw a forecourt: paving cars can drive and park on, like the charging station’s.',
   water: 'Drag to draw water: a river, a canal or a pond. Draw a road or path across it afterwards and it’s bridged.',

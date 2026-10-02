@@ -1,4 +1,4 @@
-// A town config made into a world (docs/WORLD.md#town-configs): ground, roads and pavements, buildings with their
+// A town config made into a world (docs/WORLD.md#town-configs): ground, roads (and pavements along them), buildings with their
 // insides and doors, everyone's home, and the paths from each door to its street.
 import { CATALOG } from '../sim/catalog.ts';
 import { footprint, freeRoomId, tilesIn } from '../sim/geometry.ts';
@@ -6,7 +6,7 @@ import { resolveTraits } from '../sim/personality.ts';
 import { Rng } from '../sim/rng.ts';
 import type { FurnitureDef, LevelDef, PortalDef, Tile, WorldDef } from '../sim/world.ts';
 import type { Building, Floor, HomeRow, Placed, Thing, TownConfig } from './config.ts';
-import { lay } from './ground.ts';
+import { lay, layPavements } from './ground.ts';
 import { buildHome, buildNarrowboat, buildToLet, type HomeStyle } from './homes.ts';
 import { portal } from './layout.ts';
 import { roomAt } from './rooms.ts';
@@ -45,6 +45,7 @@ export function buildWorld(config: TownConfig): WorldDef {
     }
   }
   for (const road of config.roads) lay(town, road.rects, 'road', road.name);
+  if (config.pavements) layPavements(town);
   for (const { floor, rect } of config.crossings) town.rooms.push({ id: freeRoomId(town, 'crossing'), name: 'Zebra crossing', rect, floor });
   for (const rect of config.paths) lay(town, [rect], 'path');
 
