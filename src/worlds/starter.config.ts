@@ -161,8 +161,10 @@ export const STARTER_CONFIG: TownConfig = {
 
   homes: [
     // Detached cottages over the river on Mill Road, for families.
-    { t: "detached", at: [124, 98], count: 4, gap: 3 },
-    { t: "detached", at: [124, 109], faces: "up", count: 4, gap: 3 },
+    { t: "detached", at: [124, 98], count: 3, gap: 3 },
+    { t: "detached", at: [148, 98], owner: "shreya" },
+    { t: "detached", at: [124, 109], faces: "up", owner: "andrei" },
+    { t: "detached", at: [132, 109], faces: "up", count: 3, gap: 3 },
     // Semis facing the Street, on Orchard Close, and south of the Green.
     { t: "house", at: [14, 73], faces: "up", count: 4, gap: 2 },
     { t: "house", at: [14, 99], faces: "up", count: 4, gap: 2 },
@@ -197,11 +199,11 @@ export const STARTER_CONFIG: TownConfig = {
     { t: "parkingBay", row: [101, 103], y: 65 },
     { t: "chargingBay", row: [105, 107], y: 65 },
     { t: "bench", p: [110, 62] },
-    // The garden centre's car park and its plants out in the yard; the parcel van's loading bay.
+    // The garden centre's car park and its plants out in the yard; the parcel vans' loading bays.
     { t: "parkingBay", row: [33, 35, 37, 39, 41, 43, 45, 47], y: 20 },
     { t: "plantStand", row: [50, 54], y: 4 },
     { t: "plantStand", row: [50, 54], y: 7 },
-    { t: "loadingBay", p: [100, 18] },
+    { t: "loadingBay", row: [100, 102, 104], y: 18 },
     // Parking bays: people's own cars live in the ones nearest home (docs/TRAFFIC.md#own-cars).
     { t: "parkingBay", column: [73, 75, 77, 79], x: 4 },
     { t: "parkingBay", column: [73, 75, 77, 79], x: 8 },
@@ -499,13 +501,13 @@ export const STARTER_CONFIG: TownConfig = {
     { id: "mo", name: "Mo", dept: "film", look: [4, 0, 3, 0], preset: "founder" },
     { id: "priya", name: "Priya", dept: "cs", look: [3, 0, 6, 1], preset: "regular", car: true },
     { id: "sam", name: "Sam", dept: "cs", look: [0, 1, 0, 0], preset: "introvert" },
-    { id: "lou", name: "Lou", dept: "cs", look: [1, 6, 2, 1], preset: "magnet" },
     { id: "ada", name: "Ada", dept: "brand", look: [0, 1, 4, 2], preset: "regular", car: true },
     { id: "bea", name: "Bea", dept: "brand", look: [2, 3, 1, 1], preset: "magnet" },
     { id: "cal", name: "Cal", dept: "brand", look: [1, 0, 2, 0], preset: "distractor" },
     { id: "dev", name: "Dev", dept: "eng", look: [3, 2, 3, 0], preset: "introvert" },
     { id: "hana", name: "Hana", dept: "eng", look: [0, 0, 7, 1], preset: "workhorse", traits: { ambition: 0.75 }, car: true },
-    { id: "gus", name: "Gus", dept: "eng", look: [2, 4, 6, 0], preset: "introvert", car: true },
+    { id: "shreya", name: "Shreya", dept: "eng", look: [2, 0, 4, 1], preset: "magnet", birthday: [6, 29], car: true },
+    { id: "andrei", name: "Andrei", dept: "eng", look: [0, 0, 3, 0], preset: "founder", birthday: [3, 22], car: true },
     { id: "fay", name: "Fay", dept: "design", look: [1, 6, 5, 1], preset: "regular" },
     { id: "eli", name: "Eli", dept: "ops", look: [4, 4, 4, 0], preset: "workhorse", car: true },
     { id: "nia", name: "Nia", dept: "ops", look: [3, 0, 0, 2], preset: "regular", car: true },
@@ -590,7 +592,7 @@ export const STARTER_CONFIG: TownConfig = {
       works: "leisure",
       shift: [7, 15]
     },
-    // Flo runs the garden centre; Kit drives the parcel van.
+    // Flo runs the garden centre; Kit, Rio and Tam drive the parcel vans.
     {
       id: "flo",
       name: "Flo",
@@ -613,7 +615,29 @@ export const STARTER_CONFIG: TownConfig = {
       works: "depot",
       shift: [8, 16]
     },
-    // Dove Air: Jo flies the plane (and works from whichever hangar it's at), Nat keeps it going at West Field.
+    {
+      id: "rio",
+      name: "Rio",
+      species: "human",
+      look: [3, 3, 2, 0],
+      own: true,
+      preset: "workhorse",
+      role: "staff",
+      works: "depot",
+      shift: [7, 15]
+    },
+    {
+      id: "tam",
+      name: "Tam",
+      species: "human",
+      look: [1, 5, 6, 1],
+      own: true,
+      preset: "regular",
+      role: "staff",
+      works: "depot",
+      shift: [9, 17]
+    },
+    // Dove Air: Jo and Nat fly the plane (working from whichever hangar it's at): Jo Monday to Friday, Nat Wednesday to Sunday.
     {
       id: "jo",
       name: "Jo",
@@ -624,6 +648,7 @@ export const STARTER_CONFIG: TownConfig = {
       role: "staff",
       works: "hangar-west",
       shift: [7, 21],
+      days: [0, 1, 2, 3, 4],
       flies: true
     },
     {
@@ -635,7 +660,9 @@ export const STARTER_CONFIG: TownConfig = {
       preset: "introvert",
       role: "staff",
       works: "hangar-west",
-      shift: [8, 17]
+      shift: [7, 21],
+      days: [2, 3, 4, 5, 6],
+      flies: true
     },
     {
       id: "bex",

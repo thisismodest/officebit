@@ -149,6 +149,8 @@ export interface PersonDef {
   home?: string;
   /** A shift they work every day, weekends too (the shop), instead of office hours from their traits. */
   shift?: [start: number, end: number];
+  /** The days of the week they work that shift (0 is Monday); every day, unless it says. */
+  days?: number[];
   /** False keeps them out of love stories (see docs/LOVE.md). */
   romance?: boolean;
   /** Has a car of their own, kept in the parking bay nearest home (docs/TRAFFIC.md#own-cars). */
@@ -178,6 +180,8 @@ export interface NpcDef {
   /** Staff: the venue or school they work at, and their shift hours (may wrap past midnight). Children: their school. */
   works?: string;
   shift?: [start: number, end: number];
+  /** The days of the week they work that shift (0 is Monday); every day, unless it says. */
+  days?: number[];
   /** False keeps them out of love stories. */
   romance?: boolean;
   /** Has a car of their own. */

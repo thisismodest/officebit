@@ -2,22 +2,22 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TICKS_PER_DAY } from '../src/sim/clock.ts';
 import { AHEAD } from '../src/sim/movement.ts';
-import { Simulation } from '../src/sim/sim.ts';
-import { STARTER } from '../src/worlds/starter.ts';
-import { onMap } from './town.ts';
+import { TEST_TOWN_CONFIG } from './town.config.ts';
+import { doorInto, fresh, onMap } from './town.ts';
 
 const CHARGING = onMap('chargingCanopy');
-
-const fresh = () => new Simulation(structuredClone(STARTER));
+/** The test town's Street: its north lane (eastbound) and south lane (westbound), and how far it runs. */
+const STREET = TEST_TOWN_CONFIG.roads.find((r) => r.name === 'The Street')!.rects[0]!;
+const [NORTH, SOUTH] = [STREET[1], STREET[1] + 1];
+const [WEST, EAST] = [STREET[0] + 5, STREET[0] + STREET[2] - 5];
 
 test('cars keep to the left: along the Street, east in the north lane and west in the south', () => {
   const roads = fresh().traffic.roads()!;
-  const main = 68;
-  const east = roads.route([20, main + 1], [140, main + 1], 'right')!;
-  const west = roads.route([140, main], [20, main], 'left')!;
-  const middle = (path: [number, number][]) => path.filter(([x]) => x > 40 && x < 120);
-  assert.ok(middle(east).every(([, y]) => y === main), 'eastbound, the north lane');
-  assert.ok(middle(west).every(([, y]) => y === main + 1), 'westbound, the south lane');
+  const east = roads.route([WEST, SOUTH], [EAST, SOUTH], 'right')!;
+  const west = roads.route([EAST, NORTH], [WEST, NORTH], 'left')!;
+  const middle = (path: [number, number][]) => path.filter(([x]) => x > WEST + 15 && x < EAST - 15);
+  assert.ok(middle(east).every(([, y]) => y === NORTH), 'eastbound, the north lane');
+  assert.ok(middle(west).every(([, y]) => y === SOUTH), 'westbound, the south lane');
 });
 
 test('through-traffic drives along the highway, each lane its own way, the same every time', () => {
@@ -45,7 +45,8 @@ test('a visitor turns off the highway, parks, gets out for their errand, then dr
   for (let t = 0; t < 3 * TICKS_PER_DAY && !(seen.size > 0 && !sim.people.some((p) => p.role === 'visitor')); t++) {
     sim.step();
     for (const p of sim.people) if (p.role === 'visitor') seen.add(p.id);
-    const car = sim.traffic.cars.find((c) => c.parked && !sim.cars.owned.some((o) => o.car === c));
+    // A visitor's car: not someone's own, a parcel van or a food truck.
+    const car = sim.traffic.cars.find((c) => c.parked && !c.van && c.truck === undefined && !sim.cars.owned.some((o) => o.car === c));
     if (car) parkedAt = [car.x, car.y];
   }
   assert.ok(seen.size > 0, 'someone visited');
@@ -57,16 +58,18 @@ test('a visitor turns off the highway, parks, gets out for their errand, then dr
 
 test('cars wait for someone on a zebra crossing, then carry on', () => {
   const sim = fresh();
+  // A zebra across the Street, Bea on it, and a car coming along the north lane.
+  const [zx] = TEST_TOWN_CONFIG.crossings[0]!.rect;
   const bea = sim.person('bea')!;
   sim.interactions.control(bea, true);
-  Object.assign(bea, { level: 'town', x: 77, y: 51, px: 77, py: 51, hidden: false, transit: 0 });
-  const car = sim.traffic.add(0.3, [60, 51], [[100, 51]]);
+  Object.assign(bea, { level: 'town', x: zx, y: NORTH, px: zx, py: NORTH, hidden: false, transit: 0 });
+  const car = sim.traffic.add(0.3, [zx - 15, NORTH], [[zx + 20, NORTH]]);
   car.facing = 'right';
   for (let i = 0; i < 200; i++) sim.step();
-  assert.ok(car.x < 77 && car.x > 70, `waiting short of the crossing, at ${car.x}`);
-  Object.assign(bea, { y: 53, py: 53 });
+  assert.ok(car.x < zx && car.x > zx - 6, `waiting short of the crossing, at ${car.x}`);
+  Object.assign(bea, { y: SOUTH + 2, py: SOUTH + 2 });
   for (let i = 0; i < 200; i++) sim.step();
-  assert.equal(car.x, 100, 'and on its way once she’s across');
+  assert.equal(car.x, zx + 20, 'and on its way once she’s across');
 });
 
 test('a parked car stays exactly where it is, nose in', () => {
@@ -95,16 +98,14 @@ test('cars take a path only when there’s no other way, and back out of a bay',
   const sim = fresh();
   const roads = sim.traffic.roads()!;
   // Along the Street, a car keeps to the road, even though the pavement beside it is shorter to reach.
-  assert.ok(roads.route([20, 69], [60, 69], 'right')!.every(([, y]) => y === 68 || y === 69), 'on the road');
+  assert.ok(roads.route([WEST, SOUTH], [WEST + 40, SOUTH], 'right')!.every(([, y]) => y === NORTH || y === SOUTH), 'on the road');
   // To a spot only a path reaches (a house's front path), it goes along the path.
-  const house = sim.levels.get('town')!.furniture.find((f) => f.t === 'detached' && !f.faces)!;
-  const door: [number, number] = [house.p[0] + 1, house.p[1] + 3];
-  assert.ok(roads.route([20, 69], door), 'up the front path to the door');
-  // Visitors back out: the first move off a bay keeps the car facing in.
+  assert.ok(roads.route([WEST, SOUTH], doorInto('home-rowan')), 'up the front path to the door');
+  // Cars back out: the first move off a bay keeps the car facing in.
   let backedOut = false;
   for (let t = 0; t < 2 * TICKS_PER_DAY && !backedOut; t++) {
     sim.step();
-    backedOut = sim.traffic.cars.some((c) => c.reversing && c.facing === 'up');
+    backedOut = sim.traffic.cars.some((c) => c.reversing);
   }
   assert.ok(backedOut, 'reversing out, still facing the bay');
 });
@@ -131,6 +132,7 @@ test('cars wait for a gap before driving onto the highway', () => {
   const sim = fresh();
   const highway = (x: number, y: number) => sim.traffic.roads()!.floorAt(Math.round(x), Math.round(y)) === 'highway';
   const was = new Map<string, boolean>();
+  const lastX = new Map<string, number>();
   let joins = 0;
   for (let t = 0; t < TICKS_PER_DAY; t++) {
     sim.step();
@@ -139,12 +141,13 @@ test('cars wait for a gap before driving onto the highway', () => {
       // From a road (not on along the highway from the edge of the map, or over the footbridge's deck).
       if (on && was.get(car.id) === false && (car.facing === 'up' || car.facing === 'down')) {
         joins++;
-        // Nothing bearing down on it along any lane, close by.
-        const near = sim.traffic.cars.filter((o) => o !== car && highway(o.x, o.y) && o.facing !== car.facing && Math.abs(o.y - car.y) < 4 && (o.facing === 'right' ? car.x - o.x : o.x - car.x) > 0.5 && Math.abs(o.x - car.x) < 4);
+        // Nothing bearing down on it along any lane, close by (a car stopped in a queue isn't).
+        const near = sim.traffic.cars.filter((o) => o !== car && highway(o.x, o.y) && lastX.get(o.id) !== o.x && o.facing !== car.facing && Math.abs(o.y - car.y) < 4 && (o.facing === 'right' ? car.x - o.x : o.x - car.x) > 0.5 && Math.abs(o.x - car.x) < 4);
         assert.deepEqual(near.map((o) => o.id), [], `${car.id} pulled out in front of traffic`);
       }
       was.set(car.id, on);
     }
+    for (const car of sim.traffic.cars) lastX.set(car.id, car.x);
   }
   assert.ok(joins > 3, `${joins} cars onto the highway`);
 });

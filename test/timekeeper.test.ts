@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TICKS_PER_DAY, TICKS_PER_HOUR, formatClock, formatTime, weekdayOf } from '../src/sim/clock.ts';
-import { Simulation } from '../src/sim/sim.ts';
+import type { Simulation } from '../src/sim/sim.ts';
 import { Timekeeper, liveOrigin, liveTick } from '../src/ui/timekeeper.ts';
-import { STARTER } from '../src/worlds/starter.ts';
+import { fresh } from './town.ts';
 
-const fresh = () => new Simulation(structuredClone(STARTER));
 // Thursday 1 October 2026, 14:30 local time.
 const THURSDAY = new Date(2026, 9, 1, 14, 30).getTime();
 

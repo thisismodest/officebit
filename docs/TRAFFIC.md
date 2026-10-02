@@ -124,18 +124,21 @@ runway or concrete, with its shadow below. It's a look in `VEHICLES` (render/veh
 painter facing whichever way it's going, parked or moving. Like the bus: anyone with a long walk (70 tiles or more)
 that the gates nearest each end halve, and the plane on its stand there leaving soon or calling there next, walks to
 the gate and waits (40 minutes at most), flies ("✈️ Lou flew to West Field"), staying aboard for any stops on the way,
-and walks on from their own gate. Dove Air's pilot (`flies` in the world) works from the hangar at whichever field the
-plane's at (a hangar within 30 tiles of its gate), or waits by the gate at a field without one, and flies with it; on
-shift and in that hangar (or out by the plane), or there's no flight ("No flight from West Field: the pilot isn't in").
+and walks on from their own gate. Dove Air's pilots (`flies` in the world: Jo, and Nat on Jo's days off) work from the
+hangar at whichever field the plane's at (a hangar within 30 tiles of its gate), or waits by the gate at a field without one. Twenty minutes before
+a flight they're called out to the gate and board from there, like everyone (the plane waits for them, and for a pilot
+out at the shop). On shift and in
+the hangar or out in town, or there's no flight ("No flight from West Field: the pilot isn't in").
 
 ## Parcels
 
-`sim/parcels.ts`. The depot's van (`MOVERS.van`) stands in its `loadingBay` between rounds. On
-weekdays at 10:00 and 14:00 a driver on shift at the depot gets in, it backs out and calls at two to
-four homes with someone in them, nearest first, pulling up at the kerb outside each (the lorry's way of
-finding the kerb, `kerbOutside` in deliveries.ts) with its hazards on for a few minutes ("📦 A parcel
-for Ada's house": a little lift for whoever's at home), then comes back to its bay. No driver in, no
-round.
+`sim/parcels.ts`. Every `loadingBay` has a van (`MOVERS.van`), which stands in it between rounds; the
+starter town has three. On weekdays at 10:00 and 14:00 each van goes as soon as a driver on shift at the
+depot is free to take it (within the hour): it backs out and calls at two to four homes with someone in
+them, nearest first, pulling up at the kerb outside each (the lorry's way of finding the kerb,
+`kerbOutside` in deliveries.ts) with its hazards on for a few minutes ("📦 A parcel for Ada's house": a
+little lift for whoever's at home), then comes back to its bay. A van with no driver free stays put; if
+none went all hour, it's in the News. A bay put in later gets a van that drives in from the edge of town.
 
 ## Deliveries
 

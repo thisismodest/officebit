@@ -72,6 +72,8 @@ export interface Person {
   readonly flies?: boolean;
   /** Hours they work every day, weekends too, if they work shifts. */
   readonly shift?: [start: number, end: number];
+  /** The days of the week they work their shift (0 is Monday); every day, unless it says. */
+  readonly days?: readonly number[];
   /** Has a car of their own (cars.ts). */
   readonly car?: boolean;
   preset: string;

@@ -52,3 +52,9 @@ test('anywhere on a flight of stairs is the stairs: up from the ground floor, do
     assert.equal(exitAt(sim, 'first', x + dx, y + dy)?.to.level, 'ground', `${x + dx},${y + dy} comes down`);
   }
 });
+
+test('furniture just inside a home (a TV, a rug over the way in) is not a building with an inside', () => {
+  const indoors = sim.activeItems().filter((i) => sim.levels.get(i.level)?.kind === 'home' && (i.def.t === 'tv' || i.def.t === 'rug'));
+  assert.ok(indoors.length > 0);
+  for (const item of indoors) assert.equal(interiorOf(sim, item), null, `${item.def.t} in ${item.level}`);
+});

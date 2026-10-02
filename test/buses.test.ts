@@ -6,6 +6,7 @@ import { Simulation } from '../src/sim/sim.ts';
 import { validate } from '../src/sim/validate.ts';
 import { placementProblem } from '../src/worlds/placement.ts';
 import { STARTER } from '../src/worlds/starter.ts';
+import { fresh } from './town.ts';
 
 /** Every departure in the day after `from`, as hours. */
 const timetable = (from: number) => {
@@ -24,9 +25,10 @@ test('the timetable: hourly by day, rush hour too, and a night bus every two hou
 });
 
 test('buses call at every stop in turn, both ways round the town, without turning round in the road, and people ride them', () => {
-  const sim = new Simulation(structuredClone(STARTER));
+  const sim = fresh();
   const { runs } = sim.buses.plan()!;
-  assert.equal(runs[0].stops.length, 8, 'eight stops');
+  const stops = sim.activeItems().filter((i) => i.def.t === 'busStop').length;
+  assert.equal(runs[0].stops.length, stops, 'every stop');
   assert.deepEqual(runs[1].stops, [...runs[0].stops].reverse(), 'the other way round');
   const news: string[] = [];
   sim.onEvent((e) => news.push(e.text));
@@ -45,7 +47,7 @@ test('buses call at every stop in turn, both ways round the town, without turnin
       facing.set(s.car.id, s.car.facing);
     }
   }
-  const full = [...calls.values()].filter((c) => c.length === 8);
+  const full = [...calls.values()].filter((c) => c.length === stops);
   assert.ok(full.length >= 30, `${full.length} buses went all the way round`);
   const orders = runs.map((run) => run.stops.map((s) => s.def.label).join());
   assert.ok(full.every((c) => orders.includes(c.join())), 'every stop, in order');
@@ -58,7 +60,7 @@ test('buses call at every stop in turn, both ways round the town, without turnin
 });
 
 test('waiting too long, they walk instead', () => {
-  const sim = new Simulation(structuredClone(STARTER));
+  const sim = fresh();
   const plan = sim.buses.plan()!.runs[0];
   // Late at night (no bus for a while), someone at the first stop, going to the last.
   while (hourOf(sim.tick) < 23.5) sim.step();

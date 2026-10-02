@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TICKS_PER_DAY } from '../src/sim/clock.ts';
 import { validate } from '../src/sim/validate.ts';
-import { fresh, run, until } from './town.ts';
+import { fresh, until } from './town.ts';
 
 test('love: friends with a spark start seeing each other, date, and move in together; freed homes go to let', () => {
   const sim = until(fresh(), 17);
@@ -16,7 +16,8 @@ test('love: friends with a spark start seeing each other, date, and move in toge
   assert.equal(sim.love.partnerOf(a), b);
   const homes = [a.home, b.home];
 
-  run(sim, 8 * TICKS_PER_DAY);
+  // As if they'd been seeing each other a week.
+  sim.love.coupleOf(a)!.since -= 8 * TICKS_PER_DAY;
   for (let i = 0; i < 20; i++) sim.relationships.together(a, b, 1000, 2);
   until(sim, 11);
   assert.ok(sim.love.coupleOf(a)?.together, 'living together');

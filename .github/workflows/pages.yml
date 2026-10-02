@@ -1,5 +1,5 @@
 # Deploy to GitHub Pages (docs/DEVELOPING.md#deploying): on every push to main,
-# typecheck, then build dist/ and publish it. The tests run locally before a push (npm test), not here, till they're quicker.
+# typecheck and test, then build dist/ and publish it. A failing test stops the deploy.
 name: Pages
 
 on:
@@ -28,6 +28,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm test
       - uses: actions/configure-pages@v6
       # The site's address (for og:image, canonical links, the sitemap) is `homepage` in package.json.
       - run: npm run build

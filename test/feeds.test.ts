@@ -8,8 +8,14 @@ import { fresh, run, until, kindOf } from './town.ts';
 test('feed: away sends someone home, here brings them back', () => {
   const sim = until(fresh(), 11);
   sim.applyFeed({ id: 'dev', presence: 'away' });
-  run(sim, 2 * TICKS_PER_HOUR);
-  assert.equal(kindOf(sim, 'dev'), 'home');
+  // Home, and not back at work (a walk or an outing after is their own time).
+  let home = false;
+  for (let t = 0; t < 2 * TICKS_PER_HOUR; t++) {
+    run(sim, 1);
+    home ||= kindOf(sim, 'dev') === 'home';
+    if (home) assert.notEqual(kindOf(sim, 'dev'), 'building', 'back at work while away');
+  }
+  assert.ok(home, 'went home');
 
   sim.applyFeed({ id: 'dev', presence: 'here' });
   run(sim, 2 * TICKS_PER_HOUR);

@@ -1,14 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TICKS_PER_DAY, TICKS_PER_HOUR } from '../src/sim/clock.ts';
+import { TICKS_PER_DAY, TICKS_PER_HOUR, tickAt } from '../src/sim/clock.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { vehicleAt } from '../src/sim/food-trucks.ts';
 import { validate } from '../src/sim/validate.ts';
 import { STARTER } from '../src/worlds/starter.ts';
-import { fresh, run, until, snapshot, employees } from './town.ts';
+import { TEST_TOWN, fresh, run, until, snapshot, employees } from './town.ts';
 
 test('the starter world is valid', () => {
   assert.deepEqual(validate(STARTER), []);
+});
+
+test('the test town is valid', () => {
+  assert.deepEqual(validate(TEST_TOWN), []);
 });
 
 test('the same world replays identically', () => {
@@ -46,8 +50,10 @@ test('a day: asleep at home at night, at the office by late morning', () => {
   assert.ok(employees(sim).filter((p) => !p.shift).every((p) => p.intent?.kind === 'sleep'), 'everyone asleep at 03:00');
 
   until(sim, 11);
-  const atWork = employees(sim).filter((p) => sim.companies.get(p.company ?? '')?.levels.includes(p.level));
-  assert.ok(atWork.length >= employees(sim).length - 1, `only ${atWork.length} at work at 11:00`);
+  // Everyone due by then (Juno's shift starts at noon); one may be late, or stretching a swim into the morning.
+  const due = employees(sim).filter((p) => !p.shift || p.shift[0] <= 11);
+  const atWork = due.filter((p) => sim.companies.get(p.company ?? '')?.levels.includes(p.level));
+  assert.ok(atWork.length >= due.length - 1, `only ${atWork.length} of ${due.length} at work at 11:00`);
   assert.ok(sim.events.some((e) => e.text.endsWith('arrived at Head office')));
 });
 
@@ -78,7 +84,7 @@ test('personalities show up in behaviour', () => {
 });
 
 test('people without a home come and go via the spawn point', () => {
-  const world = structuredClone(STARTER);
+  const world = structuredClone(TEST_TOWN);
   world.people[0]!.home = undefined;
   const sim = until(new Simulation(world), 3);
   assert.equal(sim.person(world.people[0]!.id)!.hidden, true);
@@ -87,7 +93,9 @@ test('people without a home come and go via the spawn point', () => {
 });
 
 test('weekends: nobody goes to work on Saturday', () => {
-  const sim = run(fresh(), 5 * TICKS_PER_DAY);
+  // Straight to Saturday morning, everyone in bed.
+  const sim = fresh();
+  sim.tick = tickAt(5, 0);
   until(sim, 11);
   assert.ok(employees(sim).every((p) => sim.levels.get(p.level)!.kind !== 'building'), 'the office should be empty on Saturday');
 });
@@ -96,7 +104,7 @@ test('food trucks: open for weekday lunch, and people pop out to them', () => {
   const sim = fresh();
   const trucks = sim.activeItems().filter((i) => i.type.street);
   let visits = 0;
-  for (let day = 0; day < 5; day++) {
+  for (let day = 0; day < 2; day++) {
     until(sim, 11.9);
     assert.ok(trucks.every((t) => !sim.isOpen(t)), 'closed before noon');
     for (let t = 0; t < 2 * TICKS_PER_HOUR; t++) {
@@ -106,7 +114,7 @@ test('food trucks: open for weekday lunch, and people pop out to them', () => {
     until(sim, 15);
     assert.ok(trucks.every((t) => !sim.isOpen(t)), 'gone by the afternoon');
   }
-  assert.ok(visits > 0, 'someone had lunch from a truck this week');
+  assert.ok(visits > 0, 'someone had lunch from a truck');
 });
 
 test('evenings: some people play video games at home', () => {
@@ -218,10 +226,10 @@ test("relationships: people keep away from someone they can't stand", async () =
 });
 
 test('gamers seek out the arcade machines, and play them most', () => {
-  const sim = new Simulation(structuredClone(STARTER));
+  const sim = fresh();
   const goes = new Map<string, number>();
   const last = new Map<string, number>();
-  for (let t = 0; t < 7 * TICKS_PER_DAY; t++) {
+  for (let t = 0; t < 4 * TICKS_PER_DAY; t++) {
     sim.step();
     for (const p of sim.people) {
       const i = p.intent?.kind === 'use' ? p.intent.item : -1;
@@ -235,6 +243,6 @@ test('gamers seek out the arcade machines, and play them most', () => {
   };
   const total = (which: boolean) => [...goes].filter(([id]) => gamer(id) === which).reduce((sum, [, n]) => sum + n, 0);
   assert.ok(total(true) > 0, 'gamers play');
-  // A week's plays are a handful, so "regulars" is more than everyone else put together, not a landslide.
+  // A few days' plays are a handful, so "regulars" is more than everyone else put together, not a landslide.
   assert.ok(total(true) > total(false), 'and they are the regulars');
 });

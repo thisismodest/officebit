@@ -29,8 +29,9 @@ const CLIMB = 8;
 const FLYERS = new Set(['employee', 'family', 'staff', 'child', 'resident']);
 const JOURNEYS = new Set<Intent['kind']>(['use', 'work', 'hustle', 'wander', 'play', 'sleep']);
 const TICKS_PER_MINUTE = TICKS_PER_HOUR / 60;
-/** How near the plane's stand (tiles) the pilot can be, out on the field, to fly it. */
-const NEAR_THE_PLANE = 12;
+/** How near the gate (tiles) the pilot has to be to get aboard, and how long before a flight (game minutes) they head out to it. */
+const BOARD_REACH = 2;
+const PILOT_READY = 20;
 /** A hangar this near a field's gate (tiles, along and across) is its hangar. */
 const HANGAR_NEAR = 30;
 /** What a passenger is riding (`p.riding`): the plane. */
@@ -103,7 +104,8 @@ export class Planes {
     const fields = this.fields();
     if (!plane || this.flight) return null;
     const field = fields[this.fieldAt(plane, fields)];
-    return field && !field.hangar ? { level: field.gate.level, p: this.waitAt(field.gate) } : null;
+    const due = this.nextFlight >= 0 && this.nextFlight - this.sim.tick <= PILOT_READY * TICKS_PER_MINUTE;
+    return field && (due || !field.hangar) ? { level: field.gate.level, p: this.waitAt(field.gate) } : null;
   }
 
   /** Every step: the plane takes off on time, flies, and lands; its passengers go with it. */
@@ -137,7 +139,21 @@ export class Planes {
     const hangar = fields[at]!.hangar;
     if (hangar) for (const p of sim.people) if (p.flies && p.works !== hangar) p.works = hangar;
     if (this.nextFlight < 0) this.nextFlight = nextDeparture(sim.tick);
+    // Nearly time: the pilot's called out to the plane (from the hangar, or wherever they are in town).
+    const pilot = sim.people.find((p) => p.flies && this.onDuty(p, fields[at]!));
+    if (pilot && this.nextFlight - sim.tick <= PILOT_READY * TICKS_PER_MINUTE) this.callOut(pilot, fields[at]!);
     if (sim.tick >= this.nextFlight) this.takeOff(plane, fields, at);
+  }
+
+  /** Off to the gate if they're not there yet (and not on their way): is the pilot by the plane, ready to board? */
+  private callOut(pilot: Person, field: Field): boolean {
+    const gate = { level: field.gate.level, p: this.waitAt(field.gate) };
+    if (pilot.level === gate.level && Math.hypot(pilot.x - gate.p[0], pilot.y - gate.p[1]) <= BOARD_REACH) return true;
+    // Off for a food shop: back after (the plane waits).
+    if (pilot.intent?.kind === 'use' && this.sim.items[pilot.intent.item]?.type.groceries) return false;
+    const going = pilot.intent?.kind === 'wander' && pilot.intent.to.level === gate.level && pilot.intent.to.p.join() === gate.p.join();
+    if (!going) this.sim.walkOn(pilot, { kind: 'wander', to: gate });
+    return false;
   }
 
   /**
@@ -232,13 +248,16 @@ export class Planes {
       this.grounded = day;
       return;
     }
-    sim.board(pilot, PLANE, null);
+    // Not by the plane yet: the plane waits for them (they board from the gate, like everyone).
+    if (!this.callOut(pilot, from)) return;
+    const aboard = { level: plane.level, p: middleOf(plane) };
+    sim.board(pilot, PLANE, null, aboard);
     const gates = new Set(fields.map((f) => f.gate.index));
     for (const p of sim.people) {
       const intent = p.intent;
       if (intent?.kind !== 'fly' || intent.from !== from.gate.index || intent.to === intent.from || !gates.has(intent.to) || p.phase !== 'doing' || p.riding) continue;
       this.passengers.push({ id: p.id, to: intent.to, after: intent.after });
-      sim.board(p, PLANE, `✈️ ${p.name} flew to ${sim.items[intent.to]?.def.label ?? 'the other airfield'}`);
+      sim.board(p, PLANE, `✈️ ${p.name} flew to ${sim.items[intent.to]?.def.label ?? 'the other airfield'}`, aboard);
     }
     // Middle of the plane: straight off the stand onto the runway, along it to the far end, then down it towards where
     // it's going, up and over, down on the far runway, rolled out, back along it and straight onto the stand.
@@ -276,12 +295,11 @@ export class Planes {
     this.nextFlight = nextDeparture(sim.tick + TURNAROUND * TICKS_PER_MINUTE);
   }
 
-  /** Is the pilot here for this field's flight: on shift, and in its hangar or out by the plane? */
+  /** Is the pilot in for this field's flight: on shift, and in its hangar or out in town (on their way to the plane, which waits for them)? */
   private onDuty(p: Person, field: Field): boolean {
     const { sim } = this;
     if (sim.phaseOf(p) !== 'work' || !sim.present(p)) return false;
-    if (field.hangar && p.level === field.hangar) return true;
-    return p.level === field.gate.level && manhattan([Math.round(p.x), Math.round(p.y)], field.stand.def.p) <= NEAR_THE_PLANE;
+    return p.level === field.hangar || p.level === field.gate.level;
   }
   private grounded = -1;
 

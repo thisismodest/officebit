@@ -1,24 +1,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_CALENDAR, type Calendar } from '../src/sim/calendar.ts';
 import { TICKS_PER_HOUR, tickAt } from '../src/sim/clock.ts';
 import { bankHoliday, partyDay } from '../src/sim/holidays.ts';
-import { Simulation } from '../src/sim/sim.ts';
+import type { Simulation } from '../src/sim/sim.ts';
 import { validate } from '../src/sim/validate.ts';
-import { STARTER } from '../src/worlds/starter.ts';
+import { restore, snapshot } from '../src/sim/snapshot.ts';
+import { freshFrom as townFrom, untilDay as until } from './town.ts';
 
-/** A town whose first day (a Monday, tick 0) is this date. */
-const townFrom = (start: Calendar['start']) => {
-  const sim = new Simulation(structuredClone(STARTER));
-  sim.calendar = { ...DEFAULT_CALENDAR, start };
+/** A town from this date, its clock jumped on to `hour` on story day `day` (nothing needed from the days between). */
+const jumped = (start: Parameters<typeof townFrom>[0], day: number, hour: number) => {
+  const sim = townFrom(start);
+  sim.tick = tickAt(day, hour);
   return sim;
 };
-/** Run to `hour` on story day `day` (0 is the first). */
-const until = (sim: Simulation, day: number, hour: number) => {
-  const to = tickAt(day, hour);
-  while (sim.tick < to) sim.step();
-  return sim;
+
+/** Just after midnight on New Year's Day (from the Monday before): once, for both New Year tests. */
+let newYear: ReturnType<typeof snapshot> | undefined;
+const midnight = () => {
+  newYear ??= snapshot(until(jumped([2026, 12, 28], 3, 18), 4, 0.1));
+  return restore(structuredClone(newYear));
 };
+
 const news = (sim: Simulation, pattern: RegExp) => sim.events.some((e) => pattern.test(e.text));
 
 test('bank holidays move to the next weekday when they fall at a weekend; the party is the last working day', () => {
@@ -45,7 +47,7 @@ test('a crew puts the Christmas tree up on the Green in December, and a town tha
 });
 
 test("Christmas Day: the office is shut, and there are presents at home", () => {
-  const sim = until(townFrom([2026, 12, 21]), 4, 11);
+  const sim = until(jumped([2026, 12, 21], 4, 0), 4, 11);
   assert.equal(sim.holiday()?.id, 'christmas');
   const office = sim.people.filter((p) => ['ground', 'first'].includes(p.level));
   assert.equal(office.length, 0, `nobody at the office (${office.map((p) => p.name)})`);
@@ -63,7 +65,7 @@ test('Bonfire Night: a crew builds it, the town turns out, and it is cleared awa
 });
 
 test("New Year's Eve: grown-ups see the new year in", () => {
-  const sim = until(townFrom([2026, 12, 28]), 4, 0.25);
+  const sim = until(midnight(), 4, 0.25);
   assert.equal(sim.holiday()?.id, 'newYearsDay');
   const adults = sim.people.filter((p) => p.species === 'human' && !p.npc);
   const up = adults.filter((p) => p.intent?.kind !== 'sleep');
@@ -72,7 +74,7 @@ test("New Year's Eve: grown-ups see the new year in", () => {
 });
 
 test('Halloween: children go trick-or-treating', () => {
-  const sim = townFrom([2026, 10, 26]);
+  const sim = jumped([2026, 10, 26], 5, 12);
   let out = 0;
   until(sim, 5, 17.5);
   for (let t = 0; t < 2 * TICKS_PER_HOUR; t++) {
@@ -83,7 +85,7 @@ test('Halloween: children go trick-or-treating', () => {
 });
 
 test('New Year: people go out on the Green to see the fireworks, and homes put their trees up', () => {
-  const sim = until(townFrom([2026, 12, 28]), 4, 0.1);
+  const sim = midnight();
   const [gx, gy, gw, gh] = sim.levels.get('town')!.rooms.find((r) => r.square)!.rect;
   const green = sim.people.filter((p) => p.level === sim.traffic.level && p.x >= gx && p.x < gx + gw && p.y >= gy && p.y < gy + gh);
   assert.ok(green.length >= 5, `a crowd on the Green at midnight (${green.length})`);

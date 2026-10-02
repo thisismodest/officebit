@@ -2,7 +2,7 @@
 // right now and picks the best. Where they can choose from depends on the
 // time of day: the office during work hours, their home otherwise.
 import { TICKS_PER_DAY, TICKS_PER_HOUR, between, hourOf } from './clock.ts';
-import { NEEDS, PANTRY_FULL, urgency, type Need } from './needs.ts';
+import { NEEDS, PANTRY_FULL, SHOP_WHEN, urgency, type Need } from './needs.ts';
 import { asleep, walkingAway, type Intent, type Person, type UseMode } from './person.ts';
 import { outsideDoor } from './places.ts';
 import { roleOf } from './roles.ts';
@@ -36,8 +36,6 @@ const WORN_OUT = { below: 0.15, pull: 0.3 };
 const FIREWORKS = 0.7;
 /** Trick-or-treating: how keen children are on the next door. */
 const TRICK_OR_TREAT = 0.9;
-/** Meals left at home before the food shop comes on the list. */
-const SHOP_WHEN = 4;
 /** Waiting outside for the shop to open: the longest anyone will (ticks), how much less appealing it is than going in, and how long they won't bother again after giving up. */
 const MOST_WAIT = 0.75 * TICKS_PER_HOUR;
 const QUEUE_COST = 0.1;
@@ -298,11 +296,22 @@ export class StaffBrain implements Brain {
   decide(p: Person, sim: Simulation): Intent {
     const venue = p.works;
     if (!venue || sim.phaseOf(p) !== 'work') return this.offShift.decide(p, sim);
-    // The pilot, with the plane at a field with no hangar: waiting by its gate.
+    // Running low at home, with long shifts and little time off to shop: a quick food shop on shift, if one's open
+    // (the plane waits for its pilot).
+    if (sim.shiftErrand(p)) {
+      const shop = sim.activeItems().find((item) => item.type.groceries && sim.canUse(p, item, 'work') && sim.freeSpots(item.index) > 0);
+      if (shop) return { kind: 'use', item: shop.index };
+    }
+    // The pilot, with a flight due or the plane at a field with no hangar: by its gate.
     const post = p.flies ? sim.planes.crewPost() : null;
     if (post) return { kind: 'wander', to: post };
     const till = sim.activeItems().find((item) => item.level === venue && item.type.staff && sim.freeSpots(item.index) > 0);
-    if (p.level !== venue) return till ? { kind: 'use', item: till.index } : idle(p);
+    // Off to work: to a free till, or in anyway (more staff than tills), to potter about till one's free.
+    if (p.level !== venue) {
+      if (till) return { kind: 'use', item: till.index };
+      const inside = sim.randomWalkable(venue);
+      return inside ? { kind: 'wander', to: inside } : idle(p);
+    }
 
     const waiting = sim.people.filter(
       (q) => q !== p && q.level === venue && q.phase === 'doing' && q.intent?.kind === 'use' && q.lastServed < q.lastOuting,

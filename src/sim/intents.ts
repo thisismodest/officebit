@@ -247,7 +247,9 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
     doing: (sim, p, intent) => {
       // Open at last: in they go (they'll decide what to do once they're in).
       if (sim.venueOpen(intent.level)) {
-        sim.interrupt(p);
+        const inside = sim.randomWalkable(intent.level);
+        if (inside) sim.walkOn(p, { kind: 'wander', to: inside });
+        else sim.interrupt(p);
         return;
       }
       if (p.timer > sim.dt) return;

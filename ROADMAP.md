@@ -121,10 +121,10 @@ cars and car parks; two airfields with a plane between them, used like the bus.
 - An og:image of the new town (the share picture still shows the old map).
 - Hedges and fences drawn in a stroke in the editor, like paths (they go in a tile at a time for now).
 - Bus lines: each stop on a line (a name saved with it, chosen in the editor; no line is the main one), a route worked out per line, so rides are shorter and more direct (one loop round all eight stops takes over two hours). Riders take the one line that suits; changing buses later.
-- A much quicker test suite (about 5 minutes locally, 8 on CI, mostly a few long runs of the town: ventures, plans, the diner, groceries, construction). Share one run between tests that watch the same weeks, shorten runs to what each check needs, set up the moment under test directly instead of waiting weeks for it; then put the tests back in CI (`pages.yml`).
 - Single-width roads (one lane, for both ways): cars meeting head-on wait at the end, or in a passing place, for the other to clear. Then they're another choice under Ground.
 - Bus stops: something to mark where the bus the other way pulls up, across the road from a shelter (a flag on a pole was tried; placing it clear of paths and the road needs care).
 - Editor: anything you can move, you can add and delete too (now a rule in AGENTS.md). Still to do: buildings with interiors from the picker (houses, the boating club, a narrowboat, venues and lots).
+- Vehicle interiors: an inside for each vehicle that carries people (the plane's cockpit and seats, the bus, cars, the food trucks' kitchens, the van and the lorry), like the narrowboat but not a home and editable. Getting on puts someone in a seat inside, following them takes you in, and clicking a vehicle offers "Look inside". For now, following someone aboard follows the vehicle.
 - Co-founders and couples visiting each other's homes.
 - Feed transports (WebSocket, SSE, polled JSON) and bridges (Slack, agents).
 - Residents' cars: people who live far from work drive in, parking on the street

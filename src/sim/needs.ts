@@ -11,6 +11,8 @@ export type Activity = 'awake' | 'working' | 'asleep';
 
 /** Meals' worth of ingredients a well-stocked home kitchen holds. */
 export const PANTRY_FULL = 14;
+/** Meals left at home before the food shop comes on the list. */
+export const SHOP_WHEN = 4;
 
 /** Base drain per game hour while awake. */
 const DRAIN: Needs = { energy: 0.08, hunger: 0.09, social: 0.18, fun: 0.15 };

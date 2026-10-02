@@ -26,7 +26,16 @@ interface Upgrade {
 }
 
 /** Oldest first, since the move (older towns get the new map, and everything on it). Anything new in the starter town goes here too. */
-export const UPGRADES: Upgrade[] = [];
+export const UPGRADES: Upgrade[] = [
+  // Three parcel vans: two more loading bays in the depot yard, beside the first (each gets a van, which drives in).
+  {
+    version: '0.5.1',
+    add: [
+      { level: 'town', furniture: { t: 'loadingBay', p: [102, 18] } },
+      { level: 'town', furniture: { t: 'loadingBay', p: [104, 18] } },
+    ],
+  },
+];
 
 /**
  * Bring a town made before this release up to date, in place: one from before the move goes onto the new map; then each

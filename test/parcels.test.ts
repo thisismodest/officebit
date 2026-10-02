@@ -9,26 +9,44 @@ const until = (sim: ReturnType<typeof fresh>, hour: number) => {
   return sim;
 };
 
-test('the parcel van goes round homes in the morning, the driver aboard, and comes back to its bay', () => {
+test('the parcel vans go round homes in the morning, each with its own driver, and come back to their bays', () => {
   const sim = fresh();
-  // The van's in its bay from the first step.
+  // A van in each bay from the first step.
   sim.step();
-  const van = sim.parcels.van!;
-  const home = [van.x, van.y];
+  const vans = sim.parcels.vans.map((v) => v.car);
+  assert.equal(vans.length, 3, 'three bays, three vans');
+  const homes = vans.map((van) => [van.x, van.y].join());
   until(sim, 10.2);
-  assert.ok(!van.parked && sim.person('kit')!.riding === van.id, 'out on its round, with Kit driving');
+  const drivers = vans.map((van) => sim.people.find((p) => p.riding === van.id)?.id);
+  assert.ok(vans.every((van) => !van.parked), 'all out on their rounds');
+  assert.deepEqual([...drivers].sort(), ['kit', 'rio', 'tam'], 'Kit, Rio and Tam driving one each');
   until(sim, 13.5);
   const parcels = sim.events.filter((e) => /📦 A parcel for/.test(e.text));
-  assert.ok(parcels.length >= 2, `${parcels.length} parcels delivered`);
-  assert.ok(van.parked && van.x === home[0] && van.y === home[1], 'back in its bay');
-  assert.ok(!sim.person('kit')!.riding, 'and Kit is out');
+  assert.ok(parcels.length >= 6, `${parcels.length} parcels delivered`);
+  assert.deepEqual(vans.map((van) => van.parked && [van.x, van.y].join()), homes, 'each back in its bay');
+  assert.ok(['kit', 'rio', 'tam'].every((id) => !sim.person(id)!.riding), 'and the drivers are out');
   assert.deepEqual(validate(sim.world), []);
 });
 
 test('no driver in, no round', () => {
   const sim = fresh();
-  sim.removePerson('kit');
-  until(sim, 11);
-  assert.ok(sim.parcels.van?.parked);
+  for (const id of ['kit', 'rio', 'tam']) sim.removePerson(id);
+  until(sim, 11.2);
+  assert.ok(sim.parcels.vans.every((v) => v.car.parked));
   assert.ok(sim.events.some((e) => /No parcel round/.test(e.text)));
+});
+
+test('a loading bay put in later gets a van, which drives in to it', () => {
+  const sim = fresh();
+  sim.step();
+  // Beside the others in the depot yard.
+  const [last] = sim.activeItems().filter((i) => i.type.loading).sort((a, b) => b.def.p[0] - a.def.p[0]);
+  const bay = sim.addItem('town', { t: 'loadingBay', p: [last!.def.p[0] + 2, last!.def.p[1]] })!;
+  sim.step();
+  const van = sim.parcels.vans.find((v) => v.bay === bay.index)!.car;
+  const [w, h] = sim.levels.get('town')!.size;
+  assert.ok(!van.parked && (van.x < 0 || van.y < 0 || van.x >= w || van.y >= h), 'on its way in from the edge of town');
+  for (let t = 0; t < 2000 && !van.parked; t++) sim.step();
+  assert.ok(van.parked, 'parked');
+  assert.deepEqual([van.x, van.y], [bay.def.p[0], bay.def.p[1] + 0.5], 'in its bay');
 });

@@ -6,9 +6,9 @@ import { Simulation } from '../src/sim/sim.ts';
 import { validate } from '../src/sim/validate.ts';
 import type { WorldDef } from '../src/sim/world.ts';
 import { addFamily, addPerson, giveJob, letGo, planFamily, removePerson, updatePerson, type NewFamily } from '../src/worlds/edit.ts';
-import { STARTER } from '../src/worlds/starter.ts';
+import { TEST_TOWN } from './town.ts';
 
-const world = (): WorldDef => structuredClone(STARTER);
+const world = (): WorldDef => structuredClone(TEST_TOWN);
 const run = (sim: Simulation, ticks: number) => {
   for (let t = 0; t < ticks; t++) sim.step();
   return sim;

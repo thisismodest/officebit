@@ -7,7 +7,11 @@ import { checkWorld, decodeWorld, encodeWorld } from '../src/ui/world-io.ts';
 import { addHouse, addPerson, eraseAt, moveFurniture, parseTeamList, placeFurniture, removePerson, updatePerson } from '../src/worlds/edit.ts';
 import { placementProblem } from '../src/worlds/placement.ts';
 import { STARTER } from '../src/worlds/starter.ts';
-import { doorInto, onMap } from './town.ts';
+import { doorInto as doorIn, onMap as on } from './town.ts';
+
+/** Places on the starter town's map: the editor's checks are tried on the town that ships. */
+const onMap = (label: string) => on(label, STARTER);
+const doorInto = (level: string) => doorIn(level, STARTER);
 
 const OFFICE = onMap('Head office');
 const OFFICE_DOOR = doorInto('ground');

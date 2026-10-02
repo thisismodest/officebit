@@ -130,7 +130,7 @@ export class Boats {
     const names = crew.length > 1 ? `${crew.slice(0, -1).join(', ')} and ${crew.at(-1)}` : crew[0];
     const sail = item.type.boat === 'sail';
     const news = `${sail ? '⛵' : '🚣'} ${names} took a ${sail ? 'sailing boat' : 'rowing boat'} out on the river`;
-    for (const [i, p] of riders.entries()) sim.board(p, `boat-${item.index}`, i === 0 ? news : null);
+    for (const [i, p] of riders.entries()) sim.board(p, `boat-${item.index}`, i === 0 ? news : null, { level: item.level, p: home });
     this.trips.push({ item, boat: { x: home[0], y: home[1], px: home[0], py: home[1], facing: heading, path: [...out, ...back] }, riders: riders.map((p) => p.id), ashore, borrowed: item.type.boat === 'row' });
     return true;
   }

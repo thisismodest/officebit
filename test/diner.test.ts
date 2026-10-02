@@ -15,7 +15,7 @@ test('the diner: open all hours, staffed through the night, a treat rather than 
 
   const outings = new Map<string, number>();
   const inside = new Set<string>();
-  for (let t = 0; t < 14 * TICKS_PER_DAY; t++) {
+  for (let t = 0; t < 4 * TICKS_PER_DAY; t++) {
     sim.step();
     for (const p of employees(sim)) {
       const there = p.level === 'diner';
@@ -25,5 +25,5 @@ test('the diner: open all hours, staffed through the night, a treat rather than 
     }
   }
   assert.ok(outings.size > 0, 'someone went to the diner');
-  for (const [id, n] of outings) assert.ok(n <= 14, `${id} went ${n} times in a fortnight`);
+  for (const [id, n] of outings) assert.ok(n <= 4, `${id} went ${n} times in four days`);
 });

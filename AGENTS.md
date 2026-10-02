@@ -37,13 +37,13 @@ kitchenette.
 - **Verify in the browser**, not just tests, before saying something works
   (see Verifying, below). Report honestly what was and wasn't checked.
 - **Don't commit** unless asked (and no co-author line when you do). Pushing to
-  `main` deploys to GitHub Pages (`.github/workflows/pages.yml`), which only typechecks: run `npm test` before pushing.
+  `main` deploys to GitHub Pages (`.github/workflows/pages.yml`), which typechecks and runs the tests first (a failing test stops the deploy).
 
 ## Commands
 
 ```sh
 npm run dev          # http://localhost:6060 (not 6666: browsers block 6665–6669)
-npm test             # node:test against the .ts sources (~1 min)
+npm test             # node:test against the .ts sources (under a minute)
 npm run typecheck    # tsc; strict, erasableSyntaxOnly, noUnused*
 npx @biomejs/biome lint .   # lint (biome.jsonc; not an npm script, not a dependency)
 npm run probe -- 48  # headless: everyone's last 48 h as a timeline, plus venture events
@@ -88,7 +88,7 @@ src/sim/      Pure TS, no DOM, deterministic (seeded rng.ts, no Math.random / Da
   buses.ts        the bus route (stops in the shortest order, timetable, night bus), and who rides instead of walking
   cars.ts         people's own cars: kept in the bay nearest home, driven a long way, parked near where they're going
   planes.ts       the airfields and the plane between them, by timetable, when the pilot's in; who flies instead of walking
-  parcels.ts      the depot's van taking parcels round homes on weekdays, with a driver on shift
+  parcels.ts      the depot's vans (one per loading bay) taking parcels round homes on weekdays, each with a driver on shift
   arrivals.ts     newcomers: a baby dropped off by car (it crawls in), family and new team members on foot from the edge of town
   weather.ts      clear, grey, rain or snow in spells, from the seed and the date; the wet keeps people in
   birthdays.ts    everyone's birthday: the News, a cheerier day, a party hat, a cake at work (or at home)
@@ -123,7 +123,7 @@ public/       index.html + style.css (the town, at the site's root), about/ + la
               for players: add a line when something ships), sw.js (the app's service worker), og-image.png, icons,
               site.webmanifest, sitemap.xml (addresses filled in from package.json `homepage`: docs/DEVELOPING.md#deploying)
 scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports, site address), probe.ts, bench.ts, spotlights.ts (fetches the spotlights with the site)
-test/         node:test suites, one per area
+test/         node:test suites, one per area, mostly on the compact test town (town.config.ts; helpers in town.ts: docs/DEVELOPING.md#testing)
 ```
 
 Details: `docs/ARCHITECTURE.md`, and a doc per area. Walking and doors are
@@ -217,7 +217,7 @@ Working and verified in the browser:
   areas without walls, floors; it saves as you go, story-built places as overrides), an About page and a welcome card, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 
-195 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+207 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

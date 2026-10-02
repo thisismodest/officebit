@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TICKS_PER_HOUR, hourOf } from '../src/sim/clock.ts';
-import { Simulation } from '../src/sim/sim.ts';
+import type { Simulation } from '../src/sim/sim.ts';
 import { atDesk } from '../src/sim/person.ts';
-import { STARTER } from '../src/worlds/starter.ts';
-
-const fresh = () => new Simulation(structuredClone(STARTER));
+import type { Tile } from '../src/sim/world.ts';
+import { fresh } from './town.ts';
 const run = (sim: Simulation, ticks: number) => {
   for (let i = 0; i < ticks; i++) sim.step();
   return sim;
@@ -48,7 +47,8 @@ test('taking control: they go where they are told, then their personality takes 
   const sim = until(fresh(), 8.5);
   const bea = sim.person('bea')!;
   sim.interactions.control(bea, true);
-  const green: [number, number] = [56, 80];
+  const [gx, gy, gw, gh] = sim.levels.get('town')!.rooms.find((r) => r.square)!.rect;
+  const green: Tile = [gx + Math.floor(gw / 2), gy + Math.floor(gh / 3)];
   sim.interactions.command(bea, { kind: 'wander', to: { level: 'town', p: green } });
   run(sim, TICKS_PER_HOUR);
   assert.equal(bea.level, 'town');

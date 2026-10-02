@@ -20,7 +20,8 @@ export function interiorOf(sim: Simulation, item: Item): Interior | null {
     if (portal.b.level === item.level && atDoorOf(item.def, portal.b.p)) return [portal.a.level];
     return [];
   });
-  const entry = entries[0] && sim.levels.get(entries[0]);
+  // A building's door leads indoors: furniture just above the way in from outside (a TV, a rug) isn't a building.
+  const entry = entries.map((id) => sim.levels.get(id)).find((level) => level && level.kind !== 'outside');
   if (!entry) return null;
 
   // Walk portals from the entry, staying indoors.

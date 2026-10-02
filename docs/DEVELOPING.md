@@ -36,9 +36,19 @@ allowed: no `enum`, `namespace`, or constructor parameter properties.
 
 ## Testing
 
-Tests live in `test/` (`*.test.ts`) and mostly run the real sim on the starter world. Prefer
-behaviour ("the workhorse out-works the distractor") over internals. When
-tuning behaviour, `npm run probe` is quicker than the browser:
+Tests live in `test/` (`*.test.ts`). Most run on the **test town** (`test/town.config.ts`): a compact
+town with one of everything the starter town has (the office, diner, shop, school, leisure centre,
+river and boats, depot, airfields, roads and the highway) and a smaller cast with every kind of person,
+using the starter's ids (Rowan's family, Theo the distractor, Hana the workhorse, Jo the pilot…). Tests
+about the town that ships (it validates, editing it, upgrading older towns) use `starter()`.
+
+Test the thing, not the story. Rather than waiting weeks for something to happen by chance, set the
+moment up (`test/town.ts` has helpers): make two people friends and have one suggest a picnic
+(`befriend`, `sim.plans.suggest`), give someone a venture ready to launch (`startVenture`), jump the
+clock to the day (`sim.tick = tickAt(day, hour)`), or start the calendar on a date (`freshFrom`). Then
+check what should always be true. Where a test shares a long run, snapshot it once and `restore` a copy
+for each (see `plans.test.ts`). Prefer behaviour ("the workhorse out-works the distractor") over
+internals. When tuning behaviour, `npm run probe` is quicker than the browser:
 
 ```
 Rowan   z>WWWWWuWWWuuuuuuzzzzzzz   W25% H0% u28% c1% >14%  int 2/1
@@ -76,8 +86,8 @@ unreachable beds); the starter world must always validate clean.
 ## Deploying
 
 Pushing to `main` publishes the site to GitHub Pages
-(`.github/workflows/pages.yml`): it typechecks, builds `dist/` and deploys
-it. It doesn't run the tests (they took eight minutes there): run `npm test` before you push. Paths are all relative, so it works at a domain's
+(`.github/workflows/pages.yml`): it typechecks, runs the tests, builds `dist/` and deploys
+it; a failing test stops the deploy. Paths are all relative, so it works at a domain's
 root or under a path. In the repo's settings, Pages' source must be **GitHub
 Actions**, and the custom domain is `officebit.town` (DNS at Porkbun: the four
 GitHub `A` and `AAAA` records, `www` a `CNAME` to `thisismodest.github.io`, and the

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TICKS_PER_HOUR, hourOf } from '../src/sim/clock.ts';
+import { TICKS_PER_HOUR, hourOf, tickAt } from '../src/sim/clock.ts';
 import { nextDeparture } from '../src/sim/planes.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { validate } from '../src/sim/validate.ts';
@@ -32,7 +32,10 @@ test('the plane takes off, flies over, lands on the far stand, and its passenger
   const sim = fresh();
   const plane = () => sim.activeItems().find((i) => i.type.airfield === 'plane')!;
   const [west, east] = [onMap('West Field'), onMap('East Field')];
-  assert.deepEqual(plane().def.p, [28, 48], 'on its stand at West Field');
+  // Each field's stand: the one nearest its gate.
+  const standBy = (gate: Tile) =>
+    sim.activeItems().filter((i) => i.type.airfield === 'stand').sort((a, b) => Math.hypot(a.def.p[0] - gate[0], a.def.p[1] - gate[1]) - Math.hypot(b.def.p[0] - gate[0], b.def.p[1] - gate[1]))[0]!.def.p;
+  assert.deepEqual(plane().def.p, standBy(west), 'on its stand at West Field');
   // Someone at West Field's gate before the 08:00, flying to East Field.
   while (hourOf(sim.tick) < 7.8) sim.step();
   const p = flier(sim, west, east);
@@ -46,7 +49,7 @@ test('the plane takes off, flies over, lands on the far stand, and its passenger
   assert.ok(flew, 'aboard');
   assert.equal(high, 1, 'up in the air');
   assert.ok(!p.riding, 'and off again');
-  assert.deepEqual(plane().def.p, [128, 48], 'on its stand at East Field');
+  assert.deepEqual(plane().def.p, standBy(east), 'on its stand at East Field');
   assert.ok(Math.abs(p.x - (east[0] + 1)) + Math.abs(p.y - (east[1] + 1)) < 3, 'got off at East Field’s gate');
   assert.ok(sim.events.some((e) => e.text.includes('flew to East Field')));
   assert.deepEqual(validate(sim.world), []);
@@ -84,7 +87,7 @@ test('a new airfield joins the round: the plane calls there, and passengers stay
   const plane = () => sim.activeItems().find((i) => i.type.airfield === 'plane')!;
   while (hourOf(sim.tick) < 7.8) sim.step();
   // Round the town from West Field: East, then South. Flying West to South, they stay aboard at East Field.
-  const p = flier(sim, onMap('West Field'), south);
+  const p = flier(sim, onMap('West Field', STARTER), south);
   const called: string[] = [];
   let flew = false;
   for (let t = 0; t < 4 * TICKS_PER_HOUR && !(flew && !p.riding); t++) {
@@ -98,4 +101,18 @@ test('a new airfield joins the round: the plane calls there, and passengers stay
   assert.ok(Math.abs(p.x - (south[0] + 1)) + Math.abs(p.y - (south[1] + 1)) < 3, 'at South Field’s gate');
   // No hangar there: on shift, the pilot waits by the gate.
   assert.deepEqual(sim.planes.crewPost()?.p, [south[0] + 1, south[1] + 1]);
+});
+
+test("on Jo's days off, Nat flies the plane", () => {
+  const sim = fresh();
+  const plane = () => sim.activeItems().find((i) => i.type.airfield === 'plane')!;
+  // Saturday morning: Jo's day off.
+  sim.tick = tickAt(5, 6);
+  let pilot: string | undefined;
+  for (let t = 0; t < 4 * TICKS_PER_HOUR && !pilot; t++) {
+    sim.step();
+    if (sim.planes.poseOf(plane())) pilot = sim.planes.aboard()[0];
+  }
+  assert.equal(pilot, 'nat');
+  assert.equal(sim.phaseOf(sim.person('jo')!), 'home', 'Jo has the day off');
 });

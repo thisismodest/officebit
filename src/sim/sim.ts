@@ -13,7 +13,7 @@ import { Space, easeAside, inTheWay, type Body, type Manners } from './collision
 import { Emitter } from './emitter.ts';
 import { MOVERS, advance, headingOf, speedOn } from './movement.ts';
 import { rulesFor } from './intents.ts';
-import { NEEDS, PANTRY_FULL, drain, restore, type Need } from './needs.ts';
+import { NEEDS, PANTRY_FULL, SHOP_WHEN, drain, restore, type Need } from './needs.ts';
 import { asleep, atDesk, catchingUp, seatedAtDesk, walkingAway, type Intent, type Person, hasUmbrella } from './person.ts';
 import { resolveTraits, type Traits } from './personality.ts';
 import { Housing } from './housing.ts';
@@ -95,7 +95,7 @@ export interface PersonChanges {
   preset?: string;
 }
 
-type Spawn = Pick<Person, 'id' | 'name' | 'species' | 'npc' | 'look' | 'dept' | 'company' | 'home' | 'role' | 'works' | 'shift' | 'preset' | 'traits' | 'routine'>;
+type Spawn = Pick<Person, 'id' | 'name' | 'species' | 'npc' | 'look' | 'dept' | 'company' | 'home' | 'role' | 'works' | 'shift' | 'days' | 'preset' | 'traits' | 'routine'>;
 
 export class Simulation {
   readonly world: WorldDef;
@@ -323,7 +323,7 @@ export class Simulation {
   /** Is one of a venue's staff on shift but not in yet, or due in later today (so it's worth waiting for it to open)? */
   staffDueSoon(level: string): boolean {
     const hour = hourOf(this.tick);
-    const workingDay = (p: Person) => !!p.shift || !roleOf(p).weekends || !this.dayOff();
+    const workingDay = (p: Person) => (p.shift ? !this.shiftOff(p) : !roleOf(p).weekends || !this.dayOff());
     return this.staffOf(level).some((p) => workingDay(p) && (this.phaseOf(p) === 'work' || hour < p.routine.commute));
   }
 
@@ -336,7 +336,9 @@ export class Simulation {
     if (needs > 0 && this.levels.get(item.level)?.kind === 'home' && this.pantry(this.baseOf(item.level)) < needs) return false;
     // Out of work: a row on the river is somewhere to go too (for anyone who goes out at all).
     const rowing = phase === 'home' && !!item.type.boating && roleOf(p).goesOut;
-    return this.areaOf(p, phase).includes(item.level) || (phase === 'work' && !!item.type.street) || rowing;
+    // At work: street food at lunch, and the food shop for a shift worker running low at home.
+    const errand = phase === 'work' && ((!!item.type.street) || (!!item.type.groceries && this.shiftErrand(p)));
+    return this.areaOf(p, phase).includes(item.level) || errand || rowing;
   }
 
   /** Meals' worth of ingredients in a home's kitchen. */
@@ -387,11 +389,21 @@ export class Simulation {
     return null;
   }
 
+  /** A shift worker (staff) running low at home: they may pop to the shop during their shift. */
+  shiftErrand(p: Person): boolean {
+    return p.role === 'staff' && !!p.shift && !!p.home && this.pantry(p.home) < SHOP_WHEN;
+  }
+
+  /** A shift worker's day off: a day of the week their shift isn't on. */
+  private shiftOff(p: Person): boolean {
+    return !!p.shift && !!p.days && !p.days.includes(dayOf(this.tick) % 7);
+  }
+
   /** Where someone is in their day: their routine, as their kind of person keeps it (roles.ts). Feed status overrides it. */
   phaseOf(p: Person): DayPhase {
     const role = roleOf(p);
-    // Offices, crews and schools keep office weeks (and bank holidays); anyone on shifts works them every day.
-    const weekend = ((role.weekends && !p.shift) || this.levels.get(p.works ?? '')?.kind === 'school') && this.dayOff();
+    // Offices, crews and schools keep office weeks (and bank holidays); anyone on shifts works them every day (or the days they say).
+    const weekend = (((role.weekends && !p.shift) || this.levels.get(p.works ?? '')?.kind === 'school') && this.dayOff()) || this.shiftOff(p);
     const phase = phaseAt(p.routine, hourOf(this.tick), weekend);
     // New Year's Eve and Midsummer: grown-ups stay up.
     const natural = phase === 'sleep' && this.festivities.upLate(p) ? 'home' : phase;
@@ -1174,10 +1186,16 @@ export class Simulation {
     );
   }
 
-  /** On the bus: out of sight (their seat at the stop let go of) till their stop. */
-  /** On board a vehicle (the bus, a boat), out of sight till they get off; it's in the News. */
-  board(p: Person, vehicle: string, news: string | null = `🚌 ${p.name} got on the bus`): void {
+  /**
+   * On board a vehicle (the bus, a boat), out of sight till they get off; it's in the News. `at`: where the vehicle is,
+   * if they might not be beside it (in the clubhouse, say): they're on its level there, so following them follows it.
+   */
+  board(p: Person, vehicle: string, news: string | null = `🚌 ${p.name} got on the bus`, at?: Place): void {
     this.stop(p);
+    if (at) {
+      this.setLevel(p, at.level);
+      [p.x, p.y] = [p.px, p.py] = at.p;
+    }
     p.riding = vehicle;
     if (news) this.log(news, [p.id]);
   }

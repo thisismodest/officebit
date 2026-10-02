@@ -1,18 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PersonalityBrain } from '../src/sim/brain.ts';
-import { TICKS_PER_DAY, TICKS_PER_HOUR, hourOf } from '../src/sim/clock.ts';
+import { TICKS_PER_HOUR, tickAt } from '../src/sim/clock.ts';
 import type { Intent } from '../src/sim/person.ts';
-import { Simulation } from '../src/sim/sim.ts';
-import { STARTER } from '../src/worlds/starter.ts';
-import { doorInto } from './town.ts';
-
-const fresh = () => new Simulation(structuredClone(STARTER));
-const run = (sim: Simulation, ticks: number) => {
-  for (let i = 0; i < ticks; i++) sim.step();
-  return sim;
-};
-const until = (sim: Simulation, hour: number) => run(sim, Math.round(((hour - hourOf(sim.tick) + 24) % 24) * TICKS_PER_HOUR));
+import type { Simulation } from '../src/sim/sim.ts';
+import { doorInto, fresh, onMap, run, until } from './town.ts';
 
 /** Keep the shop's staff at home: steered, and told nothing. */
 const keepStaffHome = (sim: Simulation) => {
@@ -21,7 +13,8 @@ const keepStaffHome = (sim: Simulation) => {
 
 /** Saturday morning, with the shop's staff kept at home since six: nobody else has work to go to, and the shop should be open. */
 const saturday = () => {
-  const sim = run(fresh(), 5 * TICKS_PER_DAY);
+  const sim = fresh();
+  sim.tick = tickAt(5, 6);
   keepStaffHome(sim);
   return until(sim, 9.5);
 };
@@ -32,7 +25,7 @@ test('the shop is only open while someone is minding it, and customers leave whe
   // Everyone minding it walks out.
   for (const p of sim.staffOf('shop')) {
     sim.interactions.control(p, true);
-    sim.interactions.command(p, { kind: 'wander', to: { level: 'town', p: [56, 80] } });
+    sim.interactions.command(p, { kind: 'wander', to: { level: 'town', p: onMap('bench') } });
   }
   for (let t = 0; t < TICKS_PER_HOUR && sim.venueOpen('shop'); t++) sim.step();
   assert.ok(!sim.venueOpen('shop'), 'shut once they’ve gone');
@@ -77,7 +70,7 @@ test('when the shop opens, the queue goes in', () => {
 });
 
 test('a delivery lorry comes to the Corner Shop first thing on a Monday: pulls up at the kerb (not on the crossing), unloads, and drives off out of town', () => {
-  const sim = new Simulation(structuredClone(STARTER));
+  const sim = fresh();
   const roads = sim.traffic.roads()!;
   let pulledUp: { x: number; y: number } | undefined;
   let came = false;

@@ -21,9 +21,9 @@ export const IDEA_AMBITION = 0.6;
 /** Ambition needed to go full-time at launch, and when the venture grows. */
 const FULL_TIME_AMBITION = { launch: 0.6, grow: 0.5 };
 /** Hours of hustling before an idea becomes a named venture. */
-const IDEA_HOURS = 10;
+export const IDEA_HOURS = 10;
 /** Hours of work before the founder quits to go full-time. */
-const LAUNCH_HOURS = 60;
+export const LAUNCH_HOURS = 60;
 /** Hours of work before moving into a bigger office. */
 const GROW_HOURS = 400;
 /** A side project nobody touches for this long fizzles out. */

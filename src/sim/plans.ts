@@ -196,7 +196,7 @@ export class Plans {
       if (sim.rng.next() >= SUGGEST * keen) continue;
       const start = dayOff ? tickAt(day, DAY_OFF_STARTS[sim.rng.int(0, DAY_OFF_STARTS.length - 1)]!) : tickAt(day, EVENING_START);
       const activity = this.choose(maker, dayOff, start);
-      if (activity) this.propose(p, activity, start);
+      if (activity) this.suggest(p, activity, start);
     }
   }
 
@@ -223,8 +223,8 @@ export class Plans {
     return options[sim.rng.int(0, options.length - 1)];
   }
 
-  /** Ask round; if enough say yes and there's somewhere to do it, it's on. */
-  private propose(organiser: Person, activity: ActivityId, start: number): void {
+  /** Ask round; if enough say yes and there's somewhere to do it, it's on (and here it is). */
+  suggest(organiser: Person, activity: ActivityId, start: number): Plan | undefined {
     const { sim } = this;
     const { group, who, family } = ACTIVITIES[activity];
     const asked = sim.people
@@ -242,15 +242,16 @@ export class Plans {
           .filter((q) => q.species === 'human' && q.npc && q.plan === undefined && !going.includes(q) && going.some((g) => g.home && g.home === q.home) && q.role !== 'staff')
           .slice(0, Math.max(0, group[1] - going.length))
       : [];
-    if (going.length < 2 || going.length + along.length < group[0]) return;
+    if (going.length < 2 || going.length + along.length < group[0]) return undefined;
     const end = start + ACTIVITIES[activity].hours * TICKS_PER_HOUR;
     const place = this.placeFor(activity, going.length + along.length, start, end);
-    if (!place) return;
+    if (!place) return undefined;
     const plan: Plan = { id: ++this.count, activity, organiser: organiser.id, members: [...going, ...along].map((q) => q.id), start, end, ...place };
     for (const id of plan.members) sim.person(id)!.plan = plan.id;
     this.list.push(plan);
     const spot = placeName(plan, sim);
     sim.log(`${ACTIVITIES[activity].emoji} ${names(going.map((q) => q.name))} are meeting at ${spot} ${ACTIVITIES[activity].news} at ${formatTime(start)}`, going.map((q) => q.id));
+    return plan;
   }
 
   /** Who'd be asked: friends, or colleagues they get on with; for a project, their venture's team or others with ideas on the go. */

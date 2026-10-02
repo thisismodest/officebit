@@ -12,6 +12,7 @@
 | `preset`, `traits` | Personality (see [PERSONALITIES](PERSONALITIES.md)) |
 | `home` | Their home level. Without one, they arrive and leave via the world's `spawn`. |
 | `shift` | `[start, end]` hours worked every day, weekends too, instead of office hours from their traits (the shop's Wes 7–15 and Juno 12–22). They set off 1¼ hours before it starts. |
+| `days` | The days of the week a `shift` is worked (0 is Monday), if not every day: the pilots, Jo Monday to Friday and Nat Wednesday to Sunday. |
 | `romance` | `false` keeps them out of love stories (see [LOVE](LOVE.md)). |
 
 Their desk is whichever workstation lists them as `owner`.
@@ -55,6 +56,8 @@ lists them too.
   homes like anyone and work a shift every day. On shift, `StaffBrain` serves
   anyone who hasn't been served (☕), wipes down tables (🧽), and minds the till.
   Off shift they live as their preset says, including going out and shopping.
+  Running low at home (under four meals' worth), they pop to the shop during a shift if it's open
+  (`sim.shiftErrand`): long shifts leave little time otherwise.
   Dot does days and Ray does nights. A venue with staff is only open while one
   is in and on shift (see [BUILDINGS](BUILDINGS.md#venues)).
 - **Children** (`"role": "child"`, `"works": "school"`) walk to school on
