@@ -149,6 +149,12 @@ it (`doing`), and whether it still suits the time of day (`fits`). The kinds:
 `queue` (waiting outside a venue for its staff) and `leave`. A new activity is
 a new `Intent` in `person.ts` and one entry here.
 
+Standing about (`wander`, `retreat`), people potter: every 2–5 ticks, a few
+steps to a free tile within 3 of where they first stood, in the same room, then
+on standing there. The stand ends when it would have anyway (the walking counts
+towards it). Not out of sight (brisk: they just stand, so catching up and jumping
+ahead cost no more), and not someone you've sent there (taking control).
+
 ## At runtime
 
 `src/sim/person.ts` holds the live state: position and level, needs, current

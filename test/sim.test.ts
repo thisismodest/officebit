@@ -246,3 +246,44 @@ test('gamers seek out the arcade machines, and play them most', () => {
   // A few days' plays are a handful, so "regulars" is more than everyone else put together, not a landslide.
   assert.ok(total(true) > total(false), 'and they are the regulars');
 });
+
+test('standing about, people potter: a few steps now and then, round where they stood and in the same room, for as long as the stand was; out of sight, they just stand', () => {
+  const stand = (brisk: boolean) => {
+    const sim = until(fresh(), 12);
+    sim.brisk = brisk;
+    const p = employees(sim)[0]!;
+    // Stood about at work, somewhere with room round them, with a while to go.
+    const level = sim.companies.get(p.company!)!.levels[0]!;
+    const grid = sim.grids.get(level)!;
+    let at: [number, number] = [0, 0];
+    for (let tries = 0; tries < 200; tries++) {
+      at = sim.randomWalkable(level)!.p;
+      const room = grid.roomAt(...at);
+      if ([-2, 2].every((d) => grid.free(at[0] + d, at[1]) && grid.roomAt(at[0] + d, at[1]) === room)) break;
+    }
+    sim.setLevel(p, level);
+    [p.x, p.y] = [p.px, p.py] = at;
+    p.route = [];
+    p.dest = null;
+    p.intent = { kind: 'wander', to: { level, p: at } };
+    p.phase = 'doing';
+    p.timer = 40;
+    const intent = p.intent;
+    const room = grid.roomAt(...at);
+    const spots = new Set<string>();
+    let ticks = 0;
+    for (; ticks < 200 && p.intent === intent; ticks++) {
+      sim.step();
+      spots.add(`${Math.round(p.x)},${Math.round(p.y)}`);
+      assert.equal(grid.roomAt(Math.round(p.x), Math.round(p.y)), room, 'in the same room');
+      assert.ok(Math.abs(p.x - at[0]) <= 3 && Math.abs(p.y - at[1]) <= 3, 'round where they stood');
+    }
+    return { moved: spots.size > 1, ticks };
+  };
+  const watched = stand(false);
+  assert.ok(watched.moved, 'a few steps while watched');
+  assert.ok(watched.ticks >= 40 && watched.ticks < 80, `about as long as the stand (${watched.ticks} ticks)`);
+  const brisk = stand(true);
+  assert.equal(brisk.moved, false, 'out of sight, just standing');
+  assert.equal(brisk.ticks, 40);
+});

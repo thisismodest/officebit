@@ -1317,6 +1317,30 @@ export class Simulation {
     return { level: item.level, p: best.tile };
   }
 
+  /** A free tile within `reach` of a spot, in the same room as someone, not where they are and nobody else is headed for (somewhere to potter to). */
+  nearby(p: Person, around: Place, reach: number): Place | null {
+    const grid = this.grids.get(p.level);
+    if (!grid || around.level !== p.level) return null;
+    const [x, y] = [Math.round(p.x), Math.round(p.y)];
+    const room = grid.roomAt(x, y);
+    for (let tries = 0; tries < 8; tries++) {
+      const place: Place = { level: p.level, p: [around.p[0] + this.rng.int(-reach, reach), around.p[1] + this.rng.int(-reach, reach)] };
+      const [tx, ty] = place.p;
+      if ((tx !== x || ty !== y) && grid.inBounds(tx, ty) && grid.free(tx, ty) && grid.roomAt(tx, ty) === room && !this.isClaimed(place, p)) return place;
+    }
+    return null;
+  }
+
+  /** Off on foot somewhere, keeping on with what they're doing once there (a few steps, pottering: intents.ts). False if there's no way. */
+  walkTo(p: Person, to: Place): boolean {
+    const route = this.nav.route(this.placeOf(p), to);
+    if (!route) return false;
+    p.dest = to;
+    p.route = route;
+    p.phase = 'moving';
+    return true;
+  }
+
   /** Nearest free tile next to `target`. */
   beside(p: Person, target: Person): Place | null {
     const grid = this.grids.get(target.level)!;

@@ -20,6 +20,7 @@ import { vehicleAt } from '../sim/food-trucks.ts';
 import { paintDeck, paintStaticLayer } from './tiles.ts';
 import { paintSeasonal } from './seasonal.ts';
 import { paintSky, snowLayer } from './weather.ts';
+import { chatTurn, glance, paintLife } from './life.ts';
 import { paintGames, paintLaptop } from './play.ts';
 import { Spotlights, type Spotlight } from './spotlights.ts';
 
@@ -567,13 +568,16 @@ export class Renderer {
       return;
     }
     const pose = this.poseOf(p, pos);
-    const facing: Facing = pose === 'sitDesk' ? 'up' : pose === 'sitSofa' || pose === 'sleep' ? 'down' : p.facing;
+    // Standing about, a glance round now and then (life.ts).
+    const facing: Facing = pose === 'sitDesk' ? 'up' : pose === 'sitSofa' || pose === 'sleep' ? 'down' : (glance(p, pose, this.time) ?? p.facing);
     if (pose !== 'sitDesk' && pose !== 'sitSofa' && pose !== 'sleep') {
       rect(ctx, x + 2, feet - 1, 8, 2, 'rgba(20,14,30,0.22)');
       rect(ctx, x + 3, feet + 1, 6, 1, 'rgba(20,14,30,0.12)');
     }
     const sprite = characterSprite(this.lookOf(p), facing, pose, p.status.activity === 'focus');
     ctx.drawImage(sprite, x, feet - SPRITE_H + 1);
+    // A phone, a cup, the TV's glow (life.ts).
+    paintLife(ctx, this.sim, p, pose, facing, x, feet, feet - SPRITE_H + 1 + headTop(sprite), this.time);
     // Out in the rain: an umbrella up, for those who carry one.
     if (this.sim.weather.wet() > 0 && hasUmbrella(p, this.sim.world.seed) && this.sim.levels.get(p.level)?.kind === 'outside') {
       paintUmbrella(ctx, x + 6, feet - SPRITE_H + 1 + headTop(sprite), hashString(p.id));
@@ -625,7 +629,7 @@ export class Renderer {
   }
 
   private paintBubble(p: Person, pos: { x: number; y: number }): void {
-    const emoji = bubbleFor(p, this.sim);
+    const emoji = bubbleFor(p, this.sim, this.time);
     if (!emoji) return;
     const { ctx } = this;
     const cx = Math.round(pos.x * TILE) + 8;
@@ -706,8 +710,8 @@ function headlight(x: number, y: number, facing: Heading): Light {
   return { x: (x + 0.5 + dx * HEADLIGHT_REACH) * TILE, y: (y + 0.5 + dy * HEADLIGHT_REACH) * TILE, r: HEADLIGHT_RADIUS };
 }
 
-/** What floats above someone's head. Feed bubbles win over behaviour. */
-export function bubbleFor(p: Person, sim: Simulation): string | null {
+/** What floats above someone's head (`time`, the render clock, ms). Feed bubbles win over behaviour. */
+export function bubbleFor(p: Person, sim: Simulation, time: number): string | null {
   if (p.status.bubble) return p.status.bubble;
   if (asleep(p)) return '💤';
   if (p.distracted > 0) return '💢';
@@ -723,7 +727,8 @@ export function bubbleFor(p: Person, sim: Simulation): string | null {
   }
   if (p.talkingTo) {
     const other = sim.person(p.talkingTo);
-    return p.species !== 'human' ? '❤️' : other && other.species !== 'human' ? '🐾' : '💬';
+    // Two people talking take turns, on about this and that (life.ts).
+    return p.species !== 'human' ? '❤️' : other && other.species !== 'human' ? '🐾' : chatTurn(p, p.talkingTo, time);
   }
   switch (p.intent.kind) {
     case 'hustle':

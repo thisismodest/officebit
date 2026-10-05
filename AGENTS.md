@@ -225,7 +225,7 @@ Working and verified in the browser:
   cabinet; out in town, Parcel Dash from a signpost by the depot (a van round the real town), and on the Green Find it
   (spot someone out and about) and Catch! (run to catch a friend's throws).
 
-226 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+227 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

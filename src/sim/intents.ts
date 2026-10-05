@@ -15,6 +15,9 @@ const WORK_SPELL: [number, number] = [150, 350];
 const CHAT: [number, number] = [40, 90];
 const WANDER: [number, number] = [20, 60];
 const RETREAT: [number, number] = [80, 160];
+/** Pottering, standing about: stood this long between a few steps (ticks), how far they go (tiles), and how much of the
+ * stand must be left to bother. Only when it's being watched: catching up out of sight (brisk), they just stand. */
+const POTTER = { stand: [2, 5] as [number, number], reach: 3, least: 4 };
 /** A swim, and the fun and company it gives every tick. */
 const SWIM: [number, number] = [80, 160];
 const SWIMMING = { fun: 0.004, social: 0.001 };
@@ -56,6 +59,29 @@ interface Rules<I extends Intent> {
 type Of<K extends Intent['kind']> = Extract<Intent, { kind: K }>;
 
 const somewhere: Rules<Of<'wander'> | Of<'retreat'>>['fits'] = (_sim, _p, intent, _phase, area) => area.includes(intent.to.level);
+
+type Standing = Extract<Intent, { kind: 'wander' | 'retreat' }>;
+
+/** Stood about somewhere: for a while (a new stand), or till it ends (back from a few steps, pottering: the walk counts). */
+function resume(sim: Simulation, p: Person, intent: Standing, length: [number, number]): void {
+  p.timer = intent.until === undefined ? sim.rng.int(...length) : Math.max(0, intent.until - sim.tick);
+  intent.until = undefined;
+}
+
+/** Standing about, now and then a few steps round where they first stood, in the same room, then on standing there for what's left.
+ * Not someone you've sent there (taking control): they stay where they're put. */
+function potter(sim: Simulation, p: Person, intent: Standing): void {
+  if (sim.brisk || sim.interactions.isControlled(p)) return;
+  intent.potterAt ??= sim.tick + sim.rng.int(...POTTER.stand);
+  if (sim.tick < intent.potterAt || p.timer < POTTER.least) return;
+  intent.potterAt = undefined;
+  intent.around ??= intent.to;
+  const to = sim.nearby(p, intent.around, POTTER.reach);
+  const until = sim.tick + p.timer;
+  if (!to || !sim.walkTo(p, to)) return;
+  intent.until = until;
+  intent.to = to;
+}
 
 export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
   work: {
@@ -163,10 +189,11 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
 
   wander: {
     to: (_sim, _p, intent) => intent.to,
-    start: (sim, p) => {
-      p.timer = sim.rng.int(...WANDER);
+    start: (sim, p, intent) => resume(sim, p, intent, WANDER),
+    doing: (sim, p, intent, refill) => {
+      refill(p, 'fun', 0.004 * p.traits.chaos);
+      potter(sim, p, intent);
     },
-    doing: (_sim, p, _intent, refill) => refill(p, 'fun', 0.004 * p.traits.chaos),
     fits: somewhere,
   },
 
@@ -197,9 +224,8 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
 
   retreat: {
     to: (_sim, _p, intent) => intent.to,
-    start: (sim, p) => {
-      p.timer = sim.rng.int(...RETREAT);
-    },
+    start: (sim, p, intent) => resume(sim, p, intent, RETREAT),
+    doing: (sim, p, intent) => potter(sim, p, intent),
     fits: somewhere,
   },
 

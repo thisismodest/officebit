@@ -76,6 +76,13 @@ To add a vehicle: a mover in `MOVERS` (sim: speed, reach) and a look in
 `VEHICLES` by the same name, and have `vehicleKind` (`traffic.ts`) say which
 cars are one.
 
+## Signs of life
+
+`life.ts` keeps still moments from looking frozen, drawn only (from each person's id and the clock, never the story):
+standing about, a glance round now and then and a look at their phone; in a chat, the bubble (`bubbleFor` in
+`renderer.ts`) takes turns between the two of them, on about this and that; on the sofa in front of the TV, its glow
+flickering on them, and a controller for a game; at the table, a cup raised now and then.
+
 ## Camera
 
 Drag to pan (flick it and it glides on, slowing to a stop; the world can go nearly off screen, but 64px always stays to grab it back), wheel to zoom (anchored at the cursor, easing between

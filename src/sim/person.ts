@@ -15,8 +15,11 @@ export type Intent =
   | { kind: 'use'; item: number; mode?: UseMode }
   | { kind: 'hustle'; item: number }
   | { kind: 'chat'; with: string }
-  | { kind: 'wander'; to: Place }
-  | { kind: 'retreat'; to: Place }
+  /** Standing about (a wander), or somewhere quiet (a retreat), pottering a few steps now and then (intents.ts): `around`,
+   * where they first stood, that they potter round; `until`, the tick the stand ends (set when they set off on a few
+   * steps, so the walking counts towards it); `potterAt`, the tick they next move. */
+  | { kind: 'wander'; to: Place; around?: Place; until?: number; potterAt?: number }
+  | { kind: 'retreat'; to: Place; around?: Place; until?: number; potterAt?: number }
   /** A swim in the shallows off a beach (intents.ts). */
   | { kind: 'swim'; to: Place }
   | { kind: 'stroll'; to: Place }
