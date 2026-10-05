@@ -35,6 +35,8 @@ export const UPGRADES: Upgrade[] = [
       { level: 'town', furniture: { t: 'loadingBay', p: [104, 18] } },
     ],
   },
+  // Mini games: Parcel Dash's signpost by the depot's door (the arcade machines are already there).
+  { version: '0.6.0', add: [{ level: 'town', furniture: { t: 'parcelDash', p: [99, 9] } }] },
 ];
 
 /**

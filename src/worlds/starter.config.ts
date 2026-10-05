@@ -204,6 +204,8 @@ export const STARTER_CONFIG: TownConfig = {
     { t: "plantStand", row: [50, 54], y: 4 },
     { t: "plantStand", row: [50, 54], y: 7 },
     { t: "loadingBay", row: [100, 102, 104], y: 18 },
+    // Parcel Dash (docs/GAMES.md): its signpost by the depot's door.
+    { t: "parcelDash", p: [99, 9] },
     // Parking bays: people's own cars live in the ones nearest home (docs/TRAFFIC.md#own-cars).
     { t: "parkingBay", column: [73, 75, 77, 79], x: 4 },
     { t: "parkingBay", column: [73, 75, 77, 79], x: 8 },

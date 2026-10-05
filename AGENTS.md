@@ -116,6 +116,8 @@ src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-
               timekeeper.ts (live/sandbox; catching up brisk), snapshots.ts (Live towns saved in IndexedDB), time-jump.ts (jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
               place-card.ts, fullscreen.ts, welcome.ts (the first-visit card and ?), tour.ts (the tour, from the welcome card), team-form.ts (adding someone
               to the team), describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
+src/games/    mini games (docs/GAMES.md): controls.ts, cabinet.ts (the arcade cabinet), arcade/ (Caterpillar, Brick Bash), town/ (Parcel Dash
+              and its runner, drawn over the map); index.ts (Games, MINIGAMES). Never touch the sim's story.
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects), noise.ts;
               ui/soundscape.ts decides which effects play, ui/audio-menu.ts the switches and volumes
 src/feeds/    protocol.ts (validated data-only messages), local.ts (console + postMessage)
@@ -216,8 +218,10 @@ Working and verified in the browser:
   editor (furniture, buildings, roads, paths, crossings, rub out, rooms, doorways,
   areas without walls, floors; it saves as you go, story-built places as overrides), an About page and a welcome card, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
+- **Games:** the arcade machines play Caterpillar and Brick Bash in an arcade cabinet; Parcel Dash from a signpost
+  by the depot, driving a van round the real town.
 
-207 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+216 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

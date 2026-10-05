@@ -83,6 +83,24 @@ export class PlaceCard {
     this.root.dataset.kind = 'spotlight';
   }
 
+  /** Open for something to play (an arcade machine, a game's signpost): what it is, and a big button to play. */
+  openPlay(title: string, about: string, label: string, at: { x: number; y: number }, play: () => void): void {
+    this.interior = null;
+    const text = document.createElement('p');
+    text.className = 'mdst-p--sm';
+    text.textContent = about;
+    const go = document.createElement('button');
+    go.type = 'button';
+    go.className = 'mdst-button--inverted play-button';
+    go.textContent = label;
+    go.addEventListener('click', () => {
+      this.close();
+      play();
+    });
+    this.show(title, at, [text, go]);
+    this.root.dataset.kind = 'play';
+  }
+
   /** Open for a door or stairs: one button, straight through to the other side. */
   openExit(exit: Exit, at: { x: number; y: number }, sim: Simulation): void {
     this.interior = null;

@@ -58,6 +58,8 @@ export class Renderer {
   readonly canvas: HTMLCanvasElement;
   readonly camera = new Camera();
   selected: string | null = null;
+  /** Drawn over the map in world pixels, after the town (a mini game played out in it: src/games). */
+  readonly overlays: ((ctx: Ctx, level: string) => void)[] = [];
   /** The level on screen. */
   level = '';
   /** Called when the level on screen changes (e.g. following someone upstairs). */
@@ -251,6 +253,7 @@ export class Renderer {
 
     // A frisbee thrown round a game in the park.
     paintGames(ctx, sim, this.level, this.time, at);
+    for (const paint of this.overlays) paint(ctx, this.level);
 
     // Fairy lights, pumpkins and fireworks, as the date has them.
     if (this.level === sim.traffic.level) paintSeasonal(ctx, sim, props, night, this.time, sim.tick + alpha);

@@ -37,6 +37,7 @@ import { TICK_MS, Timekeeper, liveTick, type Mode } from './ui/timekeeper.ts';
 import { narrow } from './ui/html.ts';
 import { attachFullscreen, registerApp } from './ui/fullscreen.ts';
 import { PersonEditor } from './ui/person-editor.ts';
+import { Games, MINIGAMES } from './games/index.ts';
 import { STARTER } from './worlds/starter.ts';
 
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -127,6 +128,18 @@ const placeLabel = $('#place');
 const stage = $('#stage');
 const renderer = new Renderer(stage, sim, FIRST_LEVEL);
 const card = new PlaceCard(stage, visit);
+// Mini games (docs/GAMES.md): a sandbox town waits while you play; a Live one carries on.
+const games = new Games({
+  stage,
+  renderer,
+  sim: () => sim,
+  hold() {
+    if (time.mode !== 'sandbox' || time.speed === 0) return () => {};
+    const was = time.speed;
+    setSpeed(0);
+    return () => setSpeed(was);
+  },
+});
 const profile = new Profile(stage, renderer, {
   follow,
   // Closing the profile keeps following them: the chip over the map stops that; tap them for the profile again.
@@ -341,11 +354,19 @@ const enterable = (item: Item) => interiorOf(sim, item) !== null;
 attachControls(renderer, {
   click(x, y) {
     if (editor.active) return editor.click(x, y);
+    // Playing a game out in the town: the map's for zooming, not clicking.
+    if (games.playing) return;
     if (steering && command(x, y)) return;
     const person = renderer.pick(x, y);
     if (person) {
       card.close();
       return select(person.id);
+    }
+    const toy = renderer.pickItem(x, y, (item) => !!item.type.minigame);
+    const game = toy?.item.type.minigame;
+    if (toy && game) {
+      const { title, about, play } = MINIGAMES[game];
+      return card.openPlay(title, about, play, renderer.toWorld(x, y), () => games.play(game, toy.item.def.p));
     }
     const panel = renderer.pickItem(x, y, (item) => !!item.type.spotlight);
     if (panel) {
@@ -363,7 +384,8 @@ attachControls(renderer, {
   },
   hover(x, y) {
     if (editor.active) return editor.hover(x, y);
-    return !!renderer.pick(x, y) || !!renderer.pickItem(x, y, (item) => enterable(item) || !!item.type.spotlight) || !!exitUnder(x, y);
+    if (games.playing) return false;
+    return !!renderer.pick(x, y) || !!renderer.pickItem(x, y, (item) => enterable(item) || !!item.type.spotlight || !!item.type.minigame) || !!exitUnder(x, y);
   },
   grab: (x, y) => (editor.active ? editor.grab(x, y) : null),
   changed: updateCameraUi,

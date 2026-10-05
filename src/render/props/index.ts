@@ -10,11 +10,12 @@ import { HOME } from './home.ts';
 import { LEISURE } from './leisure.ts';
 import { OFFICE } from './office.ts';
 import { OUTDOOR } from './outdoor.ts';
+import { GAMES } from './games.ts';
 import { RETAIL } from './retail.ts';
 import { SCHOOL } from './school.ts';
 import { VENUE } from './venue.ts';
 
-export const PAINTERS: Record<string, Painter> = { ...OFFICE, ...HOME, ...OUTDOOR, ...VENUE, ...SCHOOL, ...LEISURE, ...AIRFIELD, ...RETAIL };
+export const PAINTERS: Record<string, Painter> = { ...OFFICE, ...HOME, ...OUTDOOR, ...VENUE, ...SCHOOL, ...LEISURE, ...AIRFIELD, ...RETAIL, ...GAMES };
 
 export interface Prop {
   item: Item;

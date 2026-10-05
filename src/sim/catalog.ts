@@ -72,6 +72,8 @@ export interface FurnitureType {
   game?: boolean;
   /** Something to play on (swings, hopscotch): grown-ups have a go too, when they're feeling playful. */
   play?: boolean;
+  /** Click it to play a mini game (src/games, docs/GAMES.md): the arcade's games, or one out in the town. Only the UI reads it. */
+  minigame?: 'arcade' | 'parcelDash';
   /** Outdoors, it stands on hard ground (concrete or paving), not grass: chargers, bays, the canopy, the plane. */
   hardStanding?: boolean;
   /** A parking bay: somewhere to leave a car, or to charge it (see traffic.ts). */
@@ -173,6 +175,7 @@ export const CATALOG: Record<string, FurnitureType> = {
     duration: [40, 80],
     hangout: true,
     game: true,
+    minigame: 'arcade',
   },
 
   // The shop
@@ -243,6 +246,8 @@ export const CATALOG: Record<string, FurnitureType> = {
   parcelShelf: decor('Parcel shelves', [3, 1]),
   sortingTable: { name: 'Sorting table', size: [3, 1], solid: true, spots: [[1, 1]], staff: true, duration: [200, 500] },
   loadingBay: { ...decor('Loading bay', [1, 2], false), hardStanding: true, loading: true },
+  // Mini games out in the town (docs/GAMES.md): a signpost that starts one.
+  parcelDash: { ...decor('Parcel Dash', [1, 1], false), minigame: 'parcelDash' },
   // The hangar (worlds/venues.ts): the workbench the mechanic and the pilot work at, and a tool chest.
   workbench: { name: 'Workbench', size: [3, 1], solid: true, spots: [[1, 1]], staff: true, duration: [200, 500] },
   toolChest: decor('Tool chest', [1, 1]),
