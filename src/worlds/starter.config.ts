@@ -276,7 +276,11 @@ export const STARTER_CONFIG: TownConfig = {
     { t: "tree", scatter: [0, 150, 160, 10], count: 18 },
     { t: "tree", scatter: [112, 126, 28, 30], count: 10 },
     { t: "bush", scatter: [0, 129, 160, 31], count: 20 },
-    { t: "bush", scatter: [100, 70, 52, 20], count: 6 }
+    { t: "bush", scatter: [100, 70, 52, 20], count: 6 },
+    // Games on the Green (docs/GAMES.md): Find it's noticeboard by the path, and Catch!'s ball tub out on the grass.
+    // Last, so everything before them keeps its place in the town's numbering (and the story its course).
+    { t: "findIt", p: [52, 90] },
+    { t: "ballTub", p: [88, 100] }
   ],
 
   floors: {

@@ -8,10 +8,13 @@ import { kerbOutside } from '../../sim/deliveries.ts';
 import { outsideDoor } from '../../sim/places.ts';
 import type { Tile } from '../../sim/world.ts';
 import { TICKS_PER_SECOND } from '../../sim/clock.ts';
-import { MOVERS, speedOn } from '../../sim/movement.ts';
+import { MOVERS, speedOn, type Mover } from '../../sim/movement.ts';
+import { vehicleKind } from '../../sim/traffic.ts';
 import { TILE, type Ctx } from '../../render/pixels.ts';
-import { vehicleOrigin, vehicleSprite } from '../../render/vehicles.ts';
+import { DUSK } from '../../render/renderer.ts';
+import { paintVehicleLights, vehicleOrigin, vehicleSprite } from '../../render/vehicles.ts';
 import { DELTA, OPPOSITE, type Dir, type Input } from '../controls.ts';
+import { clock, type Bar, type TownGameDef, type TownRound } from './runner.ts';
 
 /** How many parcels a round, how fast the van goes where nothing says (tiles a second), how far from a junction's middle it can still turn, and how close to the kerb counts as there (tiles). */
 const PARCELS = 3;
@@ -28,8 +31,8 @@ const STARS: [three: number, two: number] = [20, 40];
 const LANE_SPEED = 4;
 /** A crash: the van's half-size and how far vehicles can overlap before it counts (tiles), the seconds it adds, how long the van's stopped, how far it's knocked back, and how long before it can crash again. */
 const CRASH = { van: 0.45, give: 0.2, seconds: 5, stopped: 0.8, knock: 0.5, grace: 1.5 };
-/** What a crash adds to the time (s): shown in the bar. */
-export const CRASH_SECONDS = CRASH.seconds;
+/** How long the time shows what a crash added (s). */
+const CRASH_SHOWN = 1.2;
 /** Each parcel's colour, on the house and in the bar. */
 export const COLOURS = ['#e94f4f', '#4f8fd6', '#f3c969', '#5fb35a'];
 
@@ -233,8 +236,85 @@ export function plan(sim: Simulation, from: Tile, random: () => number): ParcelD
   return new ParcelDash(start, drops, drivable, speedAt);
 }
 
-/** Over the town, in world pixels: a parcel bobbing over each house still waiting for one, a ring where to pull up, and the van. */
-export function paintParcelDash(ctx: Ctx, game: ParcelDash, time: number): void {
+/** Parcel Dash, as the runner plays it: the town's vehicles to crash into, and a bar of parcels and the time. */
+class ParcelRound implements TownRound {
+  readonly game: ParcelDash;
+  /** Seconds left showing a crash's penalty on the time. */
+  private crashShown = 0;
+
+  constructor(game: ParcelDash) {
+    this.game = game;
+  }
+
+  step(input: Input, dt: number, sim: Simulation): void {
+    // The town's vehicles, to crash into (only looked at: they never know).
+    const vehicles = sim.traffic.cars.filter((c) => !c.removed).map((c) => ({ x: c.x, y: c.y, facing: c.facing, reach: (MOVERS[vehicleKind(c)] as Mover).reach ?? 0 }));
+    this.game.step(input, dt, vehicles);
+    this.crashShown = this.game.crashed ? CRASH_SHOWN : Math.max(0, this.crashShown - dt);
+  }
+
+  paint(ctx: Ctx, time: number): void {
+    paintVan(ctx, this.game, time);
+  }
+
+  mark(ctx: Ctx, time: number, night: number): void {
+    paintParcels(ctx, this.game, time, night);
+  }
+
+  /** The van lights the road ahead after dark, as the town's vans do (its lamps are drawn with the markers). */
+  headlamps(): { x: number; y: number; facing: Dir }[] {
+    return [{ x: this.game.x, y: this.game.y, facing: this.game.heading }];
+  }
+
+  get done(): boolean {
+    return this.game.done;
+  }
+
+  get stars(): number {
+    return this.game.stars;
+  }
+
+  /** The parcels, the time (with what a crash just added), and an arrow to the nearest house still waiting. */
+  bar(): Bar {
+    const { game } = this;
+    const next = game.drops.filter((d) => !d.done).sort((a, b) => Math.hypot(a.at[0] - game.x, a.at[1] - game.y) - Math.hypot(b.at[0] - game.x, b.at[1] - game.y))[0];
+    return {
+      chips: game.drops.map((d) => ({ colour: d.colour, done: d.done, title: d.name })),
+      time: this.crashShown > 0 ? `${clock(game.time)} +${CRASH.seconds}s` : clock(game.time),
+      alert: this.crashShown > 0,
+      way: next ? { from: game, to: { x: next.at[0], y: next.at[1] }, colour: next.colour } : null,
+    };
+  }
+
+  focus(): { x: number; y: number } {
+    return this.game;
+  }
+
+  result(): string {
+    return `All delivered in ${clock(this.game.time)}!`;
+  }
+}
+
+export const PARCEL_DASH: TownGameDef = {
+  title: '📦 Parcel Dash',
+  pad: true,
+  plan: (sim, from, random) => {
+    const game = plan(sim, from, random);
+    return game && new ParcelRound(game);
+  },
+};
+
+/** The van, in world pixels (shaking, just after a crash). */
+function paintVan(ctx: Ctx, game: ParcelDash, time: number): void {
+  const sprite = vehicleSprite('van', game.heading);
+  const [x, y] = vehicleOrigin(sprite, game.x, game.y, game.heading);
+  const shake = game.stopped > 0 ? Math.round(Math.sin(time * 60)) : 0;
+  ctx.drawImage(sprite, x + shake, y);
+}
+
+/** Over the town, bright after dark too: a parcel bobbing over each house still waiting for one, a ring where to pull up,
+ * the van's lights at night, and a burst of pixels round it just after a crash. */
+function paintParcels(ctx: Ctx, game: ParcelDash, time: number, night: number): void {
   for (const drop of game.drops) {
     if (drop.done) continue;
     const pulse = 1 + Math.round((Math.sin(time * 6) + 1) * 1.5);
@@ -252,11 +332,10 @@ export function paintParcelDash(ctx: Ctx, game: ParcelDash, time: number): void 
     ctx.fillRect(bx + 4, by, 2, 9);
     ctx.fillRect(bx, by + 3, 10, 2);
   }
-  const sprite = vehicleSprite('van', game.heading);
-  const [x, y] = vehicleOrigin(sprite, game.x, game.y, game.heading);
-  // Just crashed: a shake, and a burst of pixels round it.
-  const shake = game.stopped > 0 ? Math.round(Math.sin(time * 60)) : 0;
-  ctx.drawImage(sprite, x + shake, y);
+  if (night > DUSK) {
+    const sprite = vehicleSprite('van', game.heading);
+    paintVehicleLights(ctx, sprite, vehicleOrigin(sprite, game.x, game.y, game.heading), game.heading);
+  }
   if (game.stopped > 0) paintBurst(ctx, (game.x + 0.5) * TILE, (game.y + 0.2) * TILE, game.stopped);
 }
 

@@ -49,7 +49,7 @@ const OUTSIDE_GROUPS: [string, string[]][] = [
   ['Airfield', ['stand', 'gate', 'windsock']],
   ['Shops', ['plantStand', 'loadingBay']],
   ['Transport', ['plane', 'sailboat']],
-  ['Fun & games', ['parcelDash']],
+  ['Fun & games', ['parcelDash', 'findIt', 'ballTub']],
 ];
 /** Everything only for out of doors (kept out of the indoor groups). */
 const OUTSIDE_ONLY = OUTSIDE_GROUPS.flatMap(([, types]) => types);

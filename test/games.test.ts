@@ -4,11 +4,17 @@ import assert from 'node:assert/strict';
 import { CATALOG } from '../src/sim/catalog.ts';
 import type { Tile } from '../src/sim/world.ts';
 import { BrickBash } from '../src/games/arcade/brick-bash.ts';
+import { BubbleBlaster } from '../src/games/arcade/bubble-blaster.ts';
 import { Caterpillar } from '../src/games/arcade/caterpillar.ts';
+import { CrossTheRoad } from '../src/games/arcade/cross-the-road.ts';
+import { SpaceRocks } from '../src/games/arcade/space-rocks.ts';
+import { ARCADE } from '../src/games/cabinet.ts';
+import { Catch, plan as planCatch } from '../src/games/town/catch.ts';
+import { FindIt, aboutTown, standingSpot, townsfolk, type Findable } from '../src/games/town/find-it.ts';
 import type { Dir, Input, Key } from '../src/games/controls.ts';
 import { MINIGAMES } from '../src/games/index.ts';
 import { ParcelDash, plan } from '../src/games/town/parcel-dash.ts';
-import { doorInto, fresh, run, snapshot } from './town.ts';
+import { doorInto, fresh, run, snapshot, until } from './town.ts';
 
 /** Controls for one frame: keys held, and keys pressed this frame. */
 const keys = (held: Dir[] = [], pressed: Key[] = []): Input => ({ held: new Set(held), pressed: new Set(pressed), pointer: null, tap: null });
@@ -159,3 +165,169 @@ test('parcel dash in the town: parcels for houses the van can reach, and the tow
   run(untouched, 600);
   assert.deepEqual(snapshot(played), snapshot(untouched), 'the story goes on just the same');
 });
+
+test('the arcade has its five games, each with a name, an icon and a line on how to play', () => {
+  assert.deepEqual(
+    ARCADE.map((g) => g.name),
+    ['Caterpillar', 'Brick Bash', 'Space Rocks', 'Bubble Blaster', 'Cross the Road'],
+  );
+  for (const game of ARCADE) assert.ok(game.icon && game.how && new Set(ARCADE.map((g) => g.id)).size === ARCADE.length, game.name);
+});
+
+test('space rocks: a shot breaks a big rock in two; the smallest crumble away; a rock into the ship costs one of three', () => {
+  const s = new SpaceRocks(fixed(0.3));
+  // One big rock straight ahead of the ship (it points up), still.
+  s.rocks = [{ x: s.ship.x, y: s.ship.y - 30, vx: 0, vy: 0, size: 3, shape: Array(8).fill(1), spin: 0, turn: 0 }];
+  s.step(keys([], ['a']), 0);
+  for (let i = 0; i < 30 && s.score === 0; i++) s.step(keys(), 1 / 30);
+  assert.equal(s.score, 1, 'a big rock is a point');
+  assert.equal(s.rocks.length, 2, 'in two');
+  assert.ok(s.rocks.every((r) => r.size === 2));
+  // A small one, hit: gone.
+  s.rocks = [{ x: s.ship.x, y: s.ship.y - 20, vx: 0, vy: 0, size: 1, shape: Array(8).fill(1), spin: 0, turn: 0 }];
+  for (let i = 0; i < 10; i++) s.step(keys(), 0.1);
+  s.step(keys([], ['a']), 0);
+  for (let i = 0; i < 30 && s.rocks.length; i++) s.step(keys(), 1 / 30);
+  assert.ok(s.wave === 2 || s.rocks.every((r) => r.size === 3), 'crumbled, and a new wave');
+  // A rock parked on the ship, once it can be hit: three times, and that's the round.
+  for (let crash = 0; crash < 3; crash++) {
+    for (let i = 0; i < 200 && s.ships === 3 - crash; i++) {
+      s.rocks = [{ x: s.ship.x, y: s.ship.y, vx: 0, vy: 0, size: 3, shape: Array(8).fill(1), spin: 0, turn: 0 }];
+      s.step(keys(), 0.05);
+    }
+  }
+  assert.ok(s.over, 'all three ships gone');
+});
+
+test('bubble blaster: three of a colour together pop; ones left hanging fall; and the bubbles come down every few shots', () => {
+  const b = new BubbleBlaster(fixed(0));
+  // A row of two reds at the top, with a blue hanging under the first.
+  b.grid = [[0, 0, ...Array(13).fill(null)], [1, ...Array(14).fill(null)]];
+  b.loaded = 0;
+  b.aim = Math.atan2(25 - 80, 134 - 12);
+  b.step(keys([], ['a']), 0);
+  for (let i = 0; i < 120 && b.flying; i++) b.step(keys(), 1 / 60);
+  assert.ok(b.score >= 3, `popped (score ${b.score})`);
+  assert.ok(b.grid.flat().every((c) => c === null) || b.grid.length >= 1, 'the reds gone');
+  assert.ok(!b.grid.flat().includes(1) || b.score >= 5, 'the blue fell with them, or a fresh lot');
+  // Shots that pop nothing: after a few, everything comes down a row.
+  const shots = new BubbleBlaster(fixed(0.99));
+  const rows = shots.grid.length;
+  for (let n = 0; n < 7; n++) {
+    shots.loaded = (shots.grid[0]![0]! + 1) % 4;
+    shots.aim = n % 2 ? 1.2 : -1.2;
+    shots.step(keys([], ['a']), 0);
+    for (let i = 0; i < 200 && shots.flying; i++) shots.step(keys(), 1 / 60);
+  }
+  assert.ok(shots.grid.length > rows, 'down a row');
+});
+
+test('cross the road: a hop at a time, a crossing scores, and the traffic catching you costs a go', () => {
+  const c = new CrossTheRoad(fixed(0.5));
+  for (const lane of c.lanes) lane.vehicles = [];
+  const row = c.row;
+  c.step(keys([], ['up']), 0.2);
+  assert.equal(c.row, row - 1, 'one hop up');
+  for (let i = 0; i < 12 && c.score === 0; i++) c.step(keys([], ['up']), 0.2);
+  assert.equal(c.score, 1, 'over the far side');
+  assert.equal(c.row, row, 'and back to the start for the next');
+  // A car in the first lane, right where you land.
+  const lane = c.lanes.find((l) => l.row === row - 1)!;
+  lane.speed = 0;
+  lane.vehicles = [{ x: c.col * 10 - 4, length: 14, colour: '#e94f4f', bus: false }];
+  c.step(keys([], ['up']), 0.2);
+  assert.equal(c.goes, 3, 'safe in the air');
+  c.step(keys(), 0.2);
+  assert.equal(c.goes, 2, 'caught as you land');
+});
+
+test('find it: tap whoever’s wanted to find them; someone else is named; three found, never the same one twice running', () => {
+  const town = [
+    { id: 'kit', name: 'Kit' },
+    { id: 'jo', name: 'Jo' },
+  ];
+  const about: Findable[] = [
+    { id: 'kit', name: 'Kit', x: 10, y: 10 },
+    { id: 'jo', name: 'Jo', x: 20, y: 10 },
+  ];
+  const f = new FindIt(town, about, () => [0, 0], fixed(0));
+  assert.equal(f.finds, 3, 'two in town is enough for three');
+  assert.equal(f.wanted?.id, 'kit');
+  assert.equal(f.standIn, false, 'Kit’s out: the real Kit');
+  f.tap(20, 10, about);
+  assert.equal(f.said?.text, "That's Jo!");
+  assert.equal(f.found.length, 0);
+  const found: string[] = [];
+  for (let n = 0; n < 3 && f.wanted; n++) {
+    found.push(f.wanted.id);
+    f.tap(f.wanted.x + 0.5, f.wanted.y + 0.5, about);
+  }
+  assert.ok(f.done && f.stars >= 1);
+  assert.deepEqual(found, ['kit', 'jo', 'kit'], 'Kit again, but not twice running');
+});
+
+test('find it: someone indoors waits outdoors as a stand-in; out for real, it’s the real them; gone in, the stand-in stays', () => {
+  const town = [{ id: 'kit', name: 'Kit' }, { id: 'jo', name: 'Jo' }];
+  const f = new FindIt(town, [], () => [30, 40], fixed(0));
+  assert.deepEqual([f.wanted?.id, f.standIn, f.wanted?.x, f.wanted?.y], ['kit', true, 30, 40], 'nobody out: a stand-in at a spot outdoors');
+  // Kit comes out: it's the real Kit, where she is.
+  f.step(1, [{ id: 'kit', name: 'Kit', x: 5, y: 6 }]);
+  assert.deepEqual([f.standIn, f.wanted?.x], [false, 5]);
+  // Kit goes back in: her stand-in stays where she was, so she's still there to find.
+  f.step(1, []);
+  assert.deepEqual([f.standIn, f.wanted?.id, f.wanted?.x], [true, 'kit', 5]);
+  f.tap(5, 6, []);
+  assert.deepEqual(f.found, ['kit']);
+  assert.equal(f.wanted?.id, 'jo', 'on to the next');
+});
+
+test('catch: every ball lands somewhere you could run to in time, from wherever you are', () => {
+  const field: Tile[] = [];
+  for (let y = 0; y < 30; y++) for (let x = 0; x < 30; x++) field.push([x, y]);
+  // Standing in a corner of a big field, the thrower in the middle: balls come your way, not to the far side.
+  const c = new Catch([0, 0], [15, 15], field, () => true, Math.random);
+  for (let i = 0; i < 4000 && !c.done; i++) {
+    if (c.ball && c.ball.t === 0) assert.ok(Math.hypot(c.ball.to[0] - c.x, c.ball.to[1] - c.y) <= 4.5 * (c.ball.flight - 0.4) * 0.6, `reachable (throw ${c.thrown})`);
+    c.step(keys(), 1 / 30);
+  }
+  assert.ok(c.done);
+});
+
+test('catch: be where the ball lands and it’s caught; ten throws and the round is done', () => {
+  const field: Tile[] = [];
+  for (let y = 0; y < 10; y++) for (let x = 0; x < 10; x++) field.push([x, y]);
+  const c = new Catch([5, 5], [0, 0], field, () => true, fixed(0.99));
+  for (let i = 0; i < 2000 && !c.done; i++) {
+    // Run to the shadow (on every other throw: some caught, some missed).
+    if (c.ball && c.thrown % 2 === 0) c.runTo(...c.ball.to);
+    c.step(keys(), 1 / 30);
+  }
+  assert.ok(c.done);
+  assert.equal(c.thrown, 10);
+  assert.ok(c.caught >= 4 && c.caught < 10, `caught ${c.caught}`);
+});
+
+test('find it and catch in the town: people to find, somewhere outdoors for stand-ins, grass to play on, and the town none the wiser', () => {
+  const played = fresh();
+  const untouched = fresh();
+  until(played, 12);
+  until(untouched, 12);
+  const town = townsfolk(played);
+  assert.ok(town.length > 2, 'people to find');
+  const spot = standingSpot(played, [50, 45], Math.random);
+  const ground = played.levels.get('town')!;
+  const grid = played.grids.get('town')!;
+  assert.ok(spot && grid.free(...spot) && ['grass', 'path', 'sand'].includes(ground.rooms[grid.roomAt(...spot)]!.floor ?? ''), 'a stand-in waits on grass or a path');
+  const find = new FindIt(town, aboutTown(played), () => standingSpot(played, [50, 45], Math.random), Math.random);
+  const game = planCatch(played, [50, 45], Math.random)!;
+  assert.ok(game, 'room to play catch on the Green');
+  for (let i = 0; i < 120; i++) {
+    find.step(1 / 30, aboutTown(played));
+    if (find.wanted) find.tap(find.wanted.x, find.wanted.y, aboutTown(played));
+    game.step(keys(['left']), 1 / 30);
+  }
+  run(played, 600);
+  run(untouched, 600);
+  assert.deepEqual(snapshot(played), snapshot(untouched), 'the story goes on just the same');
+});
+

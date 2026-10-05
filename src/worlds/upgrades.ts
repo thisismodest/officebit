@@ -37,6 +37,14 @@ export const UPGRADES: Upgrade[] = [
   },
   // Mini games: Parcel Dash's signpost by the depot's door (the arcade machines are already there).
   { version: '0.6.0', add: [{ level: 'town', furniture: { t: 'parcelDash', p: [99, 9] } }] },
+  // More games: Find it's noticeboard and Catch!'s ball tub on the Green.
+  {
+    version: '0.7.0',
+    add: [
+      { level: 'town', furniture: { t: 'findIt', p: [52, 90] } },
+      { level: 'town', furniture: { t: 'ballTub', p: [88, 100] } },
+    ],
+  },
 ];
 
 /**

@@ -73,3 +73,27 @@ export function box(ctx: CanvasRenderingContext2D, x: number, y: number, w: numb
   ctx.fillStyle = colour;
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 }
+
+/** A line a pixel at a time (crisp, like an old vector screen), from one point to another. */
+export function line(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, colour: string): void {
+  ctx.fillStyle = colour;
+  const steps = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
+  for (let i = 0; i <= steps; i++) ctx.fillRect(Math.round(x0 + ((x1 - x0) * i) / steps), Math.round(y0 + ((y1 - y0) * i) / steps), 1, 1);
+}
+
+/** A closed shape through these points, outlined a pixel at a time. */
+export function outline(ctx: CanvasRenderingContext2D, points: readonly (readonly [number, number])[], colour: string): void {
+  for (const [i, [x, y]] of points.entries()) {
+    const [nx, ny] = points[(i + 1) % points.length]!;
+    line(ctx, x, y, nx, ny, colour);
+  }
+}
+
+/** A filled circle, square by square (round enough at this size, and crisp). */
+export function disc(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, colour: string): void {
+  ctx.fillStyle = colour;
+  for (let y = -r; y <= r; y++) {
+    const half = Math.round(Math.sqrt(Math.max(0, r * r - y * y)));
+    ctx.fillRect(Math.round(cx - half), Math.round(cy + y), half * 2 + 1, 1);
+  }
+}

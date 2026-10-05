@@ -83,8 +83,9 @@ export class PlaceCard {
     this.root.dataset.kind = 'spotlight';
   }
 
-  /** Open for something to play (an arcade machine, a game's signpost): what it is, and a big button to play. */
-  openPlay(title: string, about: string, label: string, at: { x: number; y: number }, play: () => void): void {
+  /** Open for something to play (an arcade machine, a game's signpost): what it is, and a big button to play. If it can't
+   * be played from here just now, the card stays and says why (`cant`). */
+  openPlay(title: string, about: string, label: string, at: { x: number; y: number }, play: () => boolean, cant: string): void {
     this.interior = null;
     const text = document.createElement('p');
     text.className = 'mdst-p--sm';
@@ -94,8 +95,8 @@ export class PlaceCard {
     go.className = 'mdst-button--inverted play-button';
     go.textContent = label;
     go.addEventListener('click', () => {
-      this.close();
-      play();
+      if (play()) this.close();
+      else text.textContent = cant;
     });
     this.show(title, at, [text, go]);
     this.root.dataset.kind = 'play';

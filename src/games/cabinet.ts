@@ -2,18 +2,22 @@
 // (the menu of games, then the game), and a panel with a joystick and an A button. Every arcade game plays in it.
 // Best scores are kept in the browser.
 import { BRICK_BASH } from './arcade/brick-bash.ts';
+import { BUBBLE_BLASTER } from './arcade/bubble-blaster.ts';
 import { CATERPILLAR } from './arcade/caterpillar.ts';
+import { CROSS_THE_ROAD } from './arcade/cross-the-road.ts';
+import { SPACE_ROCKS } from './arcade/space-rocks.ts';
 import { SCREEN, box, prompt, wrap, write, type ArcadeGame, type Round } from './arcade/game.ts';
 import { GameControls, type Input } from './controls.ts';
 import { joystick, pixelCross, pixelGo, pixelWord } from './pixel.ts';
 
 /** The arcade's games, in the menu's order. */
-export const ARCADE: readonly ArcadeGame[] = [CATERPILLAR, BRICK_BASH];
+export const ARCADE: readonly ArcadeGame[] = [CATERPILLAR, BRICK_BASH, SPACE_ROCKS, BUBBLE_BLASTER, CROSS_THE_ROAD];
 
 const BEST_KEY = 'officebit:arcade-best';
 /** The longest a frame can be (s): back from another tab, a game picks up where it was rather than leaping on. */
 const LONGEST_FRAME = 0.05;
-const ROW = { top: 34, height: 26 };
+/** The menu's rows: where the first starts, and how tall each is (px), so all the games fit above the line on how to play. */
+const ROW = { top: 24, height: 19 };
 
 type Screen = { kind: 'menu' } | { kind: 'playing'; game: ArcadeGame; round: Round; since: number } | { kind: 'over'; game: ArcadeGame; round: Round; best: boolean };
 
@@ -158,18 +162,19 @@ export class Cabinet {
       const on = Math.floor(this.clock * 2 + i) % 3 !== 0;
       if (on) box(ctx, (i * 37) % SCREEN.w, (i * 53) % SCREEN.h, 1, 1, '#9fb3c8');
     }
-    write(ctx, 'CHOOSE A GAME', SCREEN.w / 2, 12, '#f3c969', { align: 'center', size: 10 });
+    write(ctx, 'CHOOSE A GAME', SCREEN.w / 2, 7, '#f3c969', { align: 'center', size: 10 });
     for (const [i, game] of ARCADE.entries()) {
       const y = ROW.top + i * ROW.height;
       const chosen = i === this.selected;
-      box(ctx, 8, y, SCREEN.w - 16, ROW.height - 4, chosen ? '#7f4aa6' : '#2a2033');
-      write(ctx, game.icon, 14, y + 4, '#ffffff', { size: 12 });
-      write(ctx, game.name.toUpperCase(), 32, y + 4, chosen ? '#ffffff' : '#c9c3d6');
-      write(ctx, `BEST ${this.best(game.id)}`, 32, y + 13, '#9fd3f0', { size: 7 });
-      if (chosen && Math.floor(this.clock * 3) % 2 === 0) write(ctx, '▶', SCREEN.w - 20, y + 7, '#f3c969');
+      box(ctx, 8, y, SCREEN.w - 16, ROW.height - 3, chosen ? '#7f4aa6' : '#2a2033');
+      write(ctx, game.icon, 12, y + 2, '#ffffff', { size: 11 });
+      write(ctx, game.name.toUpperCase(), 28, y + 4, chosen ? '#ffffff' : '#c9c3d6');
+      write(ctx, `BEST ${this.best(game.id)}`, SCREEN.w - 22, y + 5, '#9fd3f0', { align: 'right', size: 7 });
+      if (chosen && Math.floor(this.clock * 3) % 2 === 0) write(ctx, '▶', SCREEN.w - 18, y + 4, '#f3c969');
     }
-    const how = wrap(ARCADE[this.selected]?.how ?? '', 26);
-    for (const [i, line] of how.entries()) write(ctx, line, SCREEN.w / 2, SCREEN.h - 10 - (how.length - i) * 9, '#c9c3d6', { align: 'center', size: 7 });
+    // How to play the one picked, under the list.
+    const how = wrap(ARCADE[this.selected]?.how ?? '', 30);
+    for (const [i, line] of how.entries()) write(ctx, line, SCREEN.w / 2, SCREEN.h - 2 - (how.length - i) * 8, '#c9c3d6', { align: 'center', size: 7 });
   }
 
   private best(id: string): number {

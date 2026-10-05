@@ -139,6 +139,7 @@ const games = new Games({
     setSpeed(0);
     return () => setSpeed(was);
   },
+  zoomed: () => updateCameraUi(),
 });
 const profile = new Profile(stage, renderer, {
   follow,
@@ -353,8 +354,8 @@ const enterable = (item: Item) => interiorOf(sim, item) !== null;
 attachControls(renderer, {
   click(x, y) {
     if (editor.active) return editor.click(x, y);
-    // Playing a game out in the town: the map's for zooming, not clicking.
-    if (games.playing) return;
+    // Playing a game out in the town: a tap on the map is the game's (finding someone, running somewhere).
+    if (games.playing) return games.tap(x, y);
     if (steering && command(x, y)) return;
     const person = renderer.pick(x, y);
     if (person) {
@@ -364,8 +365,8 @@ attachControls(renderer, {
     const toy = renderer.pickItem(x, y, (item) => !!item.type.minigame);
     const game = toy?.item.type.minigame;
     if (toy && game) {
-      const { title, about, play } = MINIGAMES[game];
-      return card.openPlay(title, about, play, renderer.toWorld(x, y), () => games.play(game, toy.item.def.p));
+      const { title, about, play, cant } = MINIGAMES[game];
+      return card.openPlay(title, about, play, renderer.toWorld(x, y), () => games.play(game, toy.item.def.p), cant);
     }
     const panel = renderer.pickItem(x, y, (item) => !!item.type.spotlight);
     if (panel) {

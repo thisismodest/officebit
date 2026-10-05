@@ -24,7 +24,7 @@ import { paintGames, paintLaptop } from './play.ts';
 import { Spotlights, type Spotlight } from './spotlights.ts';
 
 /** Where feet sit within a person's tile. */
-const FEET = 14;
+export const FEET = 14;
 /** Street lights that come on at dusk whoever's about. */
 const ALWAYS_LIT = new Set(['lamppost', 'chargingCanopy', 'christmasTree', 'homeTree', 'billboard', 'busStop']);
 /** Headlights: how far ahead of a car (tiles) they light the road, and how wide (pixels). */
@@ -33,7 +33,7 @@ const HEADLIGHT_REACH = 1.5;
 const PLANE_HEIGHT = 40;
 const HEADLIGHT_RADIUS = 26;
 /** How dark (0–1) it must be for lights to come on. */
-const DUSK = 0.4;
+export const DUSK = 0.4;
 
 /** Part of the editor's outline: a tile rectangle, and what it means. */
 export interface Ghost {
@@ -58,8 +58,13 @@ export class Renderer {
   readonly canvas: HTMLCanvasElement;
   readonly camera = new Camera();
   selected: string | null = null;
-  /** Drawn over the map in world pixels, after the town (a mini game played out in it: src/games). */
+  /** A mini game played out in the town (src/games), in world pixels: what's in it (a van, a stand-in), drawn with the
+   * town so night darkens it too; and its markers (rings, sparkles), drawn after, bright day or night. */
   readonly overlays: ((ctx: Ctx, level: string) => void)[] = [];
+  readonly marks: ((ctx: Ctx, level: string) => void)[] = [];
+  /** Vehicles a mini game drives (its van): where they are (tiles) and which way they face, to light the road ahead
+   * after dark like the town's cars. */
+  readonly headlamps: ((level: string) => { x: number; y: number; facing: Heading }[])[] = [];
   /** The level on screen. */
   level = '';
   /** Called when the level on screen changes (e.g. following someone upstairs). */
@@ -231,13 +236,14 @@ export class Renderer {
     for (const { car, pos } of cars) {
       // Food trucks are drawn as themselves (with the furniture above), lights and all.
       if (car.truck === undefined) drawables.push({ sortY: pos.y * TILE + TILE, draw: () => this.onMap(() => this.paintCar(car, pos)) });
-      const [dx, dy] = AHEAD[car.facing];
-      if (!car.parked) headlights.push({ x: (pos.x + 0.5 + dx * HEADLIGHT_REACH) * TILE, y: (pos.y + 0.5 + dy * HEADLIGHT_REACH) * TILE, r: HEADLIGHT_RADIUS });
+      if (!car.parked) headlights.push(headlight(pos.x, pos.y, car.facing));
     }
+    for (const lamps of this.headlamps) for (const v of lamps(this.level)) headlights.push(headlight(v.x, v.y, v.facing));
     drawables.sort((a, b) => a.sortY - b.sortY);
     for (const d of drawables) d.draw();
     for (const { rect: [rx, ry, rw, rh] } of decks) for (let y = ry; y < ry + rh; y++) for (let x = rx; x < rx + rw; x++) paintDeck(ctx, x, y, rh >= rw);
     for (const draw of overhead) draw();
+    for (const paint of this.overlays) paint(ctx, this.level);
 
     this.paintLighting(props, night, headlights);
     // After dark, cars on the move show their lights, bright against the dark.
@@ -253,7 +259,7 @@ export class Renderer {
 
     // A frisbee thrown round a game in the park.
     paintGames(ctx, sim, this.level, this.time, at);
-    for (const paint of this.overlays) paint(ctx, this.level);
+    for (const paint of this.marks) paint(ctx, this.level);
 
     // Fairy lights, pumpkins and fireworks, as the date has them.
     if (this.level === sim.traffic.level) paintSeasonal(ctx, sim, props, night, this.time, sim.tick + alpha);
@@ -693,6 +699,12 @@ const USE_BUBBLES: Record<string, string> = {
 };
 
 const TRUCK_BUBBLES: [string, string][] = [['Taco', '🌮'], ['Noodle', '🍜'], ['Pizza', '🍕']];
+
+/** The pool of light a vehicle at (x, y) in tiles throws on the road ahead of it at night. */
+function headlight(x: number, y: number, facing: Heading): Light {
+  const [dx, dy] = AHEAD[facing];
+  return { x: (x + 0.5 + dx * HEADLIGHT_REACH) * TILE, y: (y + 0.5 + dy * HEADLIGHT_REACH) * TILE, r: HEADLIGHT_RADIUS };
+}
 
 /** What floats above someone's head. Feed bubbles win over behaviour. */
 export function bubbleFor(p: Person, sim: Simulation): string | null {

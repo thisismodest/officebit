@@ -1963,19 +1963,32 @@ button.icon-button {
   background: var(--mdst-color-bg);
 }
 
-.town-game-parcels {
+.town-game-say {
+  display: flex;
+  align-items: center;
+  gap: var(--mdst-space-xs);
+
+  /* Who to find: their sprite, crisp, a little bigger. */
+  & canvas {
+    width: auto;
+    height: 1.75rem;
+    image-rendering: pixelated;
+  }
+}
+
+.town-game-chips {
   display: flex;
   gap: var(--mdst-space-xs);
 }
 
-.town-game-parcel {
+.town-game-chip {
   display: grid;
   place-items: center;
   width: 1.4rem;
   height: 1.25rem;
   color: #fff;
   font-size: 0.8rem;
-  background: var(--parcel);
+  background: var(--chip);
   border: 0.15rem solid #2a2033;
   border-radius: 0.2rem;
 
@@ -1984,8 +1997,8 @@ button.icon-button {
   }
 }
 
-/* Just crashed: the time, in red, with what it added. */
-.town-game-time[data-crash] {
+/* Something's just gone wrong (a crash): the time, in red, with what it added. */
+.town-game-time[data-alert] {
   color: #c8453a;
   font-weight: bold;
 }

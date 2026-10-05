@@ -116,8 +116,9 @@ src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-
               timekeeper.ts (live/sandbox; catching up brisk), snapshots.ts (Live towns saved in IndexedDB), time-jump.ts (the clock's panel: Live or Sandbox, speeds, jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
               place-card.ts, fullscreen.ts, welcome.ts (the first-visit card and ?), tour.ts (the tour, from the welcome card), team-form.ts (adding someone
               to the team), describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
-src/games/    mini games (docs/GAMES.md): controls.ts, cabinet.ts (the arcade cabinet), arcade/ (Caterpillar, Brick Bash), town/ (Parcel Dash
-              and its runner, drawn over the map); index.ts (Games, MINIGAMES). Never touch the sim's story.
+src/games/    mini games (docs/GAMES.md): controls.ts, cabinet.ts (the arcade cabinet), arcade/ (Caterpillar, Brick Bash, Space Rocks, Bubble
+              Blaster, Cross the Road), town/ (Parcel Dash, Find it, Catch!, and the runner that plays them over the map); index.ts (Games,
+              MINIGAMES). Never touch the sim's story.
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects), noise.ts;
               ui/soundscape.ts decides which effects play, ui/audio-menu.ts the switches and volumes
 src/feeds/    protocol.ts (validated data-only messages), local.ts (console + postMessage)
@@ -156,6 +157,8 @@ Dijkstra over portal anchors between levels); driving in `docs/TRAFFIC.md`.
   where (`peopleOn`) up to date. A speed-up must leave `npm run probe -- 336` identical.
 - **Shipping something new in the starter town?** Add it to `UPGRADES` too, or
   saved towns never get it (docs/UPGRADES.md). Bump `package.json`, `VERSION` and the changelog together.
+  New furniture goes last in its list: anything earlier renumbers what follows and changes the story (and the tests
+  that ride on it). `npm run probe -- 336` before and after shows whether it has.
 - **Only erasable TypeScript**: no `enum`, `namespace` or parameter properties.
 - **Avoid runtime import cycles**: `person.ts` holds shared runtime helpers so
   `brain.ts` and `sim.ts` don't import values from each other. `roles.ts` names
@@ -218,10 +221,11 @@ Working and verified in the browser:
   editor (furniture, buildings, roads, paths, crossings, rub out, rooms, doorways,
   areas without walls, floors; it saves as you go, story-built places as overrides), an About page and a welcome card, save and share
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
-- **Games:** the arcade machines play Caterpillar and Brick Bash in an arcade cabinet; Parcel Dash from a signpost
-  by the depot, driving a van round the real town.
+- **Games:** the arcade machines play Caterpillar, Brick Bash, Space Rocks, Bubble Blaster and Cross the Road in an arcade
+  cabinet; out in town, Parcel Dash from a signpost by the depot (a van round the real town), and on the Green Find it
+  (spot someone out and about) and Catch! (run to catch a friend's throws).
 
-217 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+226 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

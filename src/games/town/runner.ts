@@ -1,16 +1,13 @@
-// Playing a game out in the town (docs/GAMES.md#town-games): the game drawn over the map, the camera on the player, a
-// bar along the top (what's left, the time, which way to go) and a joystick for fingers. The map still zooms; clicks on
-// it are ignored while you play (main.ts). A Live town carries on behind
-// you; a Sandbox one waits till you're done. The town's story never knows.
-import type { Renderer } from '../../render/renderer.ts';
+// Playing a game out in the town (docs/GAMES.md#town-games): the game drawn over the map, a bar along the top (how it's
+// going, the time, which way to go), and a joystick for fingers if it's a game you steer. The camera follows you, or is
+// left to you if the game's about looking round. The map still zooms; a tap on it goes to the game (main.ts). A Live
+// town carries on behind you; a Sandbox one waits till you're done. The town's story never knows.
+import { FEET, type Renderer } from '../../render/renderer.ts';
 import { TILE, type Ctx } from '../../render/pixels.ts';
-import { MOVERS, type Mover } from '../../sim/movement.ts';
 import type { Simulation } from '../../sim/sim.ts';
-import { vehicleKind } from '../../sim/traffic.ts';
 import type { Tile } from '../../sim/world.ts';
-import { GameControls } from '../controls.ts';
+import { DELTA, GameControls, type Dir, type Input } from '../controls.ts';
 import { joystick, pixelStar } from '../pixel.ts';
-import { CRASH_SECONDS, paintParcelDash, plan, type ParcelDash } from './parcel-dash.ts';
 
 /** What a town game needs of the page: where to put its bar, the map, the town, and a way to hold the town still. */
 export interface TownHost {
@@ -19,27 +16,93 @@ export interface TownHost {
   sim(): Simulation;
   /** Hold the town still if it's a sandbox (not if it's Live): returns how to let it go again. */
   hold(): () => void;
+  /** Told when the game moves the camera's zoom, so the zoom buttons say so. */
+  zoomed(): void;
 }
 
-/** The longest a frame can be (s), so a hidden tab doesn't send the van flying. */
+/** A chip in the bar, one for each thing to do: its colour, and whether it's done (a parcel delivered, a ball caught). */
+export interface Chip {
+  colour: string;
+  done: boolean;
+  title: string;
+}
+
+/** What the bar shows: a word on what to do (and who, by id, for their picture), the chips, the time, and which way to go (tiles). */
+export interface Bar {
+  say?: string;
+  who?: string;
+  chips: Chip[];
+  time: string;
+  /** Something's just gone wrong (a crash): the time shows it. */
+  alert?: boolean;
+  /** From where (the middle of the view, if it doesn't say) to where. */
+  way?: { from?: { x: number; y: number }; to: { x: number; y: number }; colour: string } | null;
+}
+
+/** A standing, front-facing sprite of someone from town, by id. */
+export type Portrait = (id: string) => HTMLCanvasElement | null;
+
+/** One go at a town game, as the runner plays it. */
+export interface TownRound {
+  /** On by `dt` seconds, with the town to look at (never to change). */
+  step(input: Input, dt: number, sim: Simulation): void;
+  /** What's in the town (a van, a stand-in), in world pixels, drawn with it so night darkens it too; `portrait` draws
+   * anyone from town, by id (for a stand-in of them). */
+  paint(ctx: Ctx, time: number, portrait: Portrait): void;
+  /** The game's markers (rings, sparkles), over the town after dark too; `night`, 0 by day to 1 at midnight. */
+  mark?(ctx: Ctx, time: number, night: number): void;
+  /** Vehicles it drives (tiles, and which way they face), to light the road ahead after dark like the town's cars. */
+  headlamps?(): { x: number; y: number; facing: Dir }[];
+  readonly done: boolean;
+  /** One to three, once it's done. */
+  readonly stars: number;
+  bar(): Bar;
+  /** Where the camera follows (tiles), or null to leave it to the player (looking round to find something). */
+  focus(): { x: number; y: number } | null;
+  /** Said when it's done. */
+  result(): string;
+  /** A tap on the map (tiles), for games you play by tapping. */
+  tap?(x: number, y: number, sim: Simulation): void;
+}
+
+/** A town game: its name in the bar, whether it's steered (the joystick), how close it wants the map (at least), and how
+ * a round's set up from where it's started. */
+export interface TownGameDef {
+  title: string;
+  pad: boolean;
+  zoom?: number;
+  plan(sim: Simulation, from: Tile, random: () => number): TownRound | null;
+}
+
+/** The longest a frame can be (s), so a hidden tab doesn't send things flying. */
 const LONGEST_FRAME = 0.05;
-/** How long the time shows what a crash added (s). */
-const CRASH_SHOWN = 1.2;
+/** How fast the arrows look round the map, in a game that leaves it to you (CSS px a second). */
+const LOOK_SPEED = 500;
 
 export class TownGame {
   private readonly host: TownHost;
   private readonly root: HTMLElement;
   private readonly controls = new GameControls();
-  private game: ParcelDash | null = null;
+  private def: TownGameDef | null = null;
+  private round: TownRound | null = null;
+  /** The done card's up for this round (it may finish between frames: on a tap). */
+  private shownDone = false;
   private from: Tile = [0, 0];
   private release: (() => void) | null = null;
   private frameId = 0;
   private last = 0;
   private clock = 0;
-  /** Seconds left showing a crash's penalty on the time. */
-  private crashShown = 0;
   private readonly paint = (ctx: Ctx, level: string) => {
-    if (this.game && level === this.host.sim().traffic.level) paintParcelDash(ctx, this.game, this.clock);
+    if (this.round && level === this.host.sim().traffic.level) this.round.paint(ctx, this.clock, this.portrait);
+  };
+  private readonly headlamps = (level: string) => (this.round && level === this.host.sim().traffic.level ? (this.round.headlamps?.() ?? []) : []);
+  private readonly mark = (ctx: Ctx, level: string) => {
+    const sim = this.host.sim();
+    if (this.round && level === sim.traffic.level) this.round.mark?.(ctx, this.clock, 1 - sim.daylight());
+  };
+  private readonly portrait: Portrait = (id) => {
+    const who = this.host.sim().person(id);
+    return who ? this.host.renderer.portrait(who) : null;
   };
 
   constructor(host: TownHost) {
@@ -49,8 +112,9 @@ export class TownGame {
     this.root.hidden = true;
     this.root.innerHTML = `
       <div class="town-game-bar mdst-card mdst-card--compact">
-        <strong>📦 Parcel Dash</strong>
-        <span class="town-game-parcels" aria-label="Parcels left"></span>
+        <strong class="town-game-title"></strong>
+        <span class="town-game-say"></span>
+        <span class="town-game-chips"></span>
         <span class="town-game-time">0:00</span>
         <span class="town-game-way" aria-hidden="true">➤</span>
         <button type="button" class="mdst-button--sm mdst-button--ghost" data-action="quit" aria-label="Stop playing">✕</button>
@@ -78,14 +142,23 @@ export class TownGame {
     return !this.root.hidden;
   }
 
-  /** Parcel Dash from a signpost: false if there's nowhere to drive to from here. */
-  start(from: Tile): boolean {
+  /** A town game from where it was started (its signpost): false if it can't be played from here. */
+  start(def: TownGameDef, from: Tile): boolean {
+    this.def = def;
     this.from = from;
     if (!this.begin()) return false;
     const { renderer } = this.host;
     renderer.showLevel(this.host.sim().traffic.level!);
+    if (def.zoom && renderer.camera.zoom < def.zoom) {
+      renderer.camera.zoomAt(def.zoom);
+      this.host.zoomed();
+    }
     renderer.overlays.push(this.paint);
+    renderer.marks.push(this.mark);
+    renderer.headlamps.push(this.headlamps);
     this.release = this.host.hold();
+    this.root.querySelector('.town-game-title')!.textContent = def.title;
+    this.root.querySelector<HTMLElement>('.town-game-pad')!.hidden = !def.pad;
     this.root.hidden = false;
     this.controls.attach();
     this.last = performance.now();
@@ -93,16 +166,25 @@ export class TownGame {
     return true;
   }
 
+  /** A tap on the map while playing (screen coordinates): to the game, if it's played by tapping. */
+  tap(clientX: number, clientY: number): void {
+    const round = this.round;
+    if (!round?.tap || round.done) return;
+    const { x, y } = this.host.renderer.toWorld(clientX, clientY);
+    round.tap(x / TILE - 0.5, y / TILE - 0.5, this.host.sim());
+  }
+
   /** A fresh round (again, after the last). */
   private begin(): boolean {
-    const game = plan(this.host.sim(), this.from, Math.random);
-    if (!game) return false;
-    this.game = game;
+    const round = this.def?.plan(this.host.sim(), this.from, Math.random);
+    if (!round) return false;
+    this.round = round;
+    this.shownDone = false;
     this.root.querySelector<HTMLElement>('.town-game-done')!.hidden = true;
     const camera = this.host.renderer.camera;
     camera.following = null;
-    camera.centerOn((game.x + 0.5) * TILE, (game.y + 0.5) * TILE);
-    this.showParcels();
+    const focus = round.focus() ?? { x: this.from[0], y: this.from[1] };
+    camera.centerOn((focus.x + 0.5) * TILE, (focus.y + 0.5) * TILE);
     return true;
   }
 
@@ -110,11 +192,13 @@ export class TownGame {
     if (this.root.hidden) return;
     cancelAnimationFrame(this.frameId);
     this.controls.detach();
-    const { overlays } = this.host.renderer;
+    const { overlays, marks, headlamps } = this.host.renderer;
     overlays.splice(overlays.indexOf(this.paint), 1);
+    marks.splice(marks.indexOf(this.mark), 1);
+    headlamps.splice(headlamps.indexOf(this.headlamps), 1);
     this.release?.();
     this.release = null;
-    this.game = null;
+    this.round = null;
     this.root.hidden = true;
   }
 
@@ -122,60 +206,96 @@ export class TownGame {
     const dt = Math.min(LONGEST_FRAME, (now - this.last) / 1000);
     this.last = now;
     this.clock += dt;
-    const game = this.game;
-    if (game) {
-      const wasDone = game.done;
-      // The town's vehicles, to crash into (only looked at: they never know).
-      const vehicles = this.host.sim().traffic.cars.filter((c) => !c.removed).map((c) => ({ x: c.x, y: c.y, facing: c.facing, reach: (MOVERS[vehicleKind(c)] as Mover).reach ?? 0 }));
-      game.step(this.controls.frame(), dt, vehicles);
-      this.crashShown = game.crashed ? CRASH_SHOWN : Math.max(0, this.crashShown - dt);
-      if (game.delivered) this.showParcels();
-      if (game.done && !wasDone) this.finished(game);
-      this.host.renderer.camera.glideTo((game.x + 0.5) * TILE, (game.y + 0.5) * TILE, dt * 1000);
-      this.showBar(game);
+    const round = this.round;
+    if (round) {
+      const input = this.controls.frame();
+      round.step(input, dt, this.host.sim());
+      if (round.done && !this.shownDone) this.finished(round);
+      const camera = this.host.renderer.camera;
+      const focus = round.focus();
+      if (focus) camera.glideTo((focus.x + 0.5) * TILE, (focus.y + 0.5) * TILE, dt * 1000);
+      // Left to you: the arrows look round.
+      else for (const way of input.held) camera.panBy(-DELTA[way][0] * LOOK_SPEED * dt, -DELTA[way][1] * LOOK_SPEED * dt);
+      this.showBar(round.bar());
     }
     this.frameId = requestAnimationFrame((t) => this.frame(t));
   }
 
-  private showParcels(): void {
-    const chips = this.root.querySelector('.town-game-parcels')!;
-    chips.replaceChildren(
-      ...(this.game?.drops ?? []).map((drop) => {
-        const chip = document.createElement('span');
-        chip.className = 'town-game-parcel';
-        chip.style.setProperty('--parcel', drop.colour);
-        chip.dataset.done = String(drop.done);
-        chip.title = drop.name;
-        chip.textContent = drop.done ? '✓' : '';
-        return chip;
-      }),
-    );
-  }
-
-  /** The time, and an arrow to the nearest house still waiting. */
-  private showBar(game: ParcelDash): void {
+  private showBar(bar: Bar): void {
+    const say = this.root.querySelector<HTMLElement>('.town-game-say')!;
+    say.hidden = !bar.say;
+    const said = `${bar.who ?? ''}|${bar.say ?? ''}`;
+    if (say.dataset.said !== said) {
+      say.dataset.said = said;
+      const words = document.createElement('span');
+      words.textContent = bar.say ?? '';
+      const who = bar.who ? this.host.sim().person(bar.who) : undefined;
+      say.replaceChildren(...(who ? [picture(this.host.renderer.portrait(who))] : []), words);
+    }
+    const chips = this.root.querySelector<HTMLElement>('.town-game-chips')!;
+    const shown = bar.chips.map((c) => `${c.colour}${c.done}`).join();
+    if (chips.dataset.shown !== shown) {
+      chips.dataset.shown = shown;
+      chips.replaceChildren(
+        ...bar.chips.map((c) => {
+          const chip = document.createElement('span');
+          chip.className = 'town-game-chip';
+          chip.style.setProperty('--chip', c.colour);
+          chip.dataset.done = String(c.done);
+          chip.title = c.title;
+          chip.textContent = c.done ? '✓' : '';
+          return chip;
+        }),
+      );
+    }
     const time = this.root.querySelector<HTMLElement>('.town-game-time')!;
-    time.textContent = this.crashShown > 0 ? `${clock(game.time)} +${CRASH_SECONDS}s` : clock(game.time);
-    time.toggleAttribute('data-crash', this.crashShown > 0);
-    const next = game.drops.filter((d) => !d.done).sort((a, b) => Math.hypot(a.at[0] - game.x, a.at[1] - game.y) - Math.hypot(b.at[0] - game.x, b.at[1] - game.y))[0];
+    time.textContent = bar.time;
+    time.toggleAttribute('data-alert', !!bar.alert);
     const way = this.root.querySelector<HTMLElement>('.town-game-way')!;
-    way.hidden = !next;
-    if (next) {
-      way.style.color = next.colour;
-      way.style.transform = `rotate(${Math.atan2(next.at[1] - game.y, next.at[0] - game.x)}rad)`;
+    way.hidden = !bar.way;
+    if (bar.way) {
+      const from = bar.way.from ?? this.middle();
+      way.style.color = bar.way.colour;
+      way.style.transform = `rotate(${Math.atan2(bar.way.to.y - from.y, bar.way.to.x - from.x)}rad)`;
     }
   }
 
-  private finished(game: ParcelDash): void {
+  /** The middle of what's showing of the map (tiles). */
+  private middle(): { x: number; y: number } {
+    const { camera } = this.host.renderer;
+    const { x, y } = camera.toWorld(camera.viewW / 2, (camera.viewH - camera.insetBottom) / 2);
+    return { x: x / TILE - 0.5, y: y / TILE - 0.5 };
+  }
+
+  private finished(round: TownRound): void {
+    this.shownDone = true;
     const done = this.root.querySelector<HTMLElement>('.town-game-done')!;
-    done.querySelector('.town-game-stars')!.innerHTML = [1, 2, 3].map((n) => pixelStar(n <= game.stars)).join('');
-    done.querySelector('.town-game-said')!.textContent = `All delivered in ${clock(game.time)}!`;
+    done.querySelector('.town-game-stars')!.innerHTML = [1, 2, 3].map((n) => pixelStar(n <= round.stars)).join('');
+    done.querySelector('.town-game-said')!.textContent = round.result();
     done.hidden = false;
   }
 }
 
+/** Someone standing at (x, y) in tiles, as the town's people stand, with a shadow at their feet. */
+export function standAt(ctx: Ctx, sprite: HTMLCanvasElement, x: number, y: number): void {
+  const left = Math.round(x * TILE) + 2;
+  const feet = Math.round(y * TILE) + FEET;
+  ctx.fillStyle = 'rgba(20, 14, 30, 0.22)';
+  ctx.fillRect(left + 2, feet - 1, 8, 2);
+  ctx.drawImage(sprite, left, feet - sprite.height + 1);
+}
+
+/** A sprite as a picture in the bar: copied, so it's the bar's own. */
+function picture(sprite: HTMLCanvasElement): HTMLCanvasElement {
+  const copy = document.createElement('canvas');
+  copy.width = sprite.width;
+  copy.height = sprite.height;
+  copy.getContext('2d')!.drawImage(sprite, 0, 0);
+  return copy;
+}
+
 /** Seconds as m:ss. */
-function clock(seconds: number): string {
+export function clock(seconds: number): string {
   const s = Math.floor(seconds);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
