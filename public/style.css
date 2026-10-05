@@ -581,7 +581,9 @@ main {
   position: absolute;
   top: 0;
   left: 0;
-  min-width: 12rem;
+  min-width: min(12rem, calc(100% - 1rem));
+  /* Never wider than the map, less the margin it keeps from the edges (place-card.ts, INSET), so it always fits. */
+  max-width: calc(100% - 1rem);
   background: var(--mdst-color-bg);
   box-shadow: 0 0.25rem 0 rgba(0, 0, 0, 0.35);
   pointer-events: auto;
@@ -1479,6 +1481,11 @@ button.icon-button {
     display: none;
   }
 
+  /* With no zoom box to match, full screen is a square like the other buttons. */
+  button#fullscreen {
+    width: var(--icon-button);
+  }
+
   /* Pinch to zoom here; full screen (where there is one) sits above the sheet. */
   .hud-corner {
     bottom: calc(3.5rem + var(--mdst-space-sm));
@@ -1527,6 +1534,11 @@ button.icon-button {
 
     &[data-open] {
       max-height: 60vh;
+    }
+
+    /* Folded away: just the tabs, flush, with nothing of the panel peeking above them. */
+    &:not([data-open]) .mdst-tabs-panel {
+      display: none;
     }
 
     & .mdst-tabs-list {
