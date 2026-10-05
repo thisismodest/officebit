@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { TICKS_PER_DAY } from '../src/sim/clock.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { validate } from '../src/sim/validate.ts';
+import { CATALOG } from '../src/sim/catalog.ts';
 import type { WorldDef } from '../src/sim/world.ts';
 import { buildingProblem, existing, inUse, newBuilding, putUp, takeDown } from '../src/worlds/buildings.ts';
 import { STARTER } from '../src/worlds/starter.ts';
@@ -31,6 +32,8 @@ test('a shop from the picker is a company of its own, with a made-up name, that 
   assert.notEqual(newBuilding([w, { ...w, companies: [...w.companies, b.company!] }], 'town', 'supermarket', SPOT).item.label, b.item.label, 'the next one gets another name');
   putUp(w, b);
   assert.deepEqual(validate(w), []);
+  // The shop's checkouts the only jobs going (nobody else has a spare desk), so who takes one isn't down to luck.
+  for (const level of w.levels) if (!b.company!.levels.includes(level.id)) level.furniture = level.furniture.filter((f) => !CATALOG[f.t]?.desk || !!f.owner);
   const sim = new Simulation(w);
   // People looking for work apply anywhere with a free desk: the new shop's checkouts too.
   for (const p of sim.people.filter((q) => q.company === 'head').slice(0, 6)) sim.careers.leave(p, 'fired');

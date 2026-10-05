@@ -55,11 +55,16 @@ test("Christmas Day: the office is shut, and there are presents at home", () => 
 });
 
 test('Bonfire Night: a crew builds it, the town turns out, and it is cleared away the next day', () => {
-  const sim = until(townFrom([2026, 11, 2]), 3, 20);
+  const sim = until(townFrom([2026, 11, 2]), 3, 18);
   const fire = sim.activeItems().find((i) => i.def.t === 'bonfire');
   assert.ok(fire, 'built');
-  const round = sim.people.filter((p) => p.level === fire.level && Math.hypot(p.x - fire.def.p[0], p.y - fire.def.p[1]) < 4);
-  assert.ok(round.length >= 3, `a crowd round it (${round.length})`);
+  // The most round it at once, over the evening (people come and go).
+  let most = 0;
+  for (let t = 0; t < 4 * TICKS_PER_HOUR; t++) {
+    sim.step();
+    if (t % 30 === 0) most = Math.max(most, sim.people.filter((p) => p.level === fire.level && Math.hypot(p.x - fire.def.p[0], p.y - fire.def.p[1]) < 4).length);
+  }
+  assert.ok(most >= 3, `a crowd round it (${most})`);
   until(sim, 4, 17);
   assert.ok(!sim.activeItems().some((i) => i.def.t === 'bonfire'), 'and gone');
 });

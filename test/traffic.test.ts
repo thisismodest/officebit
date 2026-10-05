@@ -133,21 +133,27 @@ test('cars wait for a gap before driving onto the highway', () => {
   const highway = (x: number, y: number) => sim.traffic.roads()!.floorAt(Math.round(x), Math.round(y)) === 'highway';
   const was = new Map<string, boolean>();
   const lastX = new Map<string, number>();
+  const lastFacing = new Map<string, string>();
   let joins = 0;
   for (let t = 0; t < TICKS_PER_DAY; t++) {
     sim.step();
     for (const car of sim.traffic.cars) {
       const on = highway(car.x, car.y);
-      // From a road (not on along the highway from the edge of the map, or over the footbridge's deck).
-      if (on && was.get(car.id) === false && (car.facing === 'up' || car.facing === 'down')) {
+      // Straight in from a side road (not on along the highway from the edge of the map, over the footbridge's deck,
+      // or turning off it across a junction).
+      if (on && was.get(car.id) === false && (car.facing === 'up' || car.facing === 'down') && lastFacing.get(car.id) === car.facing) {
         joins++;
-        // Nothing bearing down on it along any lane, close by (a car stopped in a queue isn't).
-        const near = sim.traffic.cars.filter((o) => o !== car && highway(o.x, o.y) && lastX.get(o.id) !== o.x && o.facing !== car.facing && Math.abs(o.y - car.y) < 4 && (o.facing === 'right' ? car.x - o.x : o.x - car.x) > 0.5 && Math.abs(o.x - car.x) < 4);
+        // Nothing bearing down on it, close by, in a lane it's driving into (a car stopped in a queue isn't).
+        const ahead = (o: { y: number }) => (car.facing === 'down' ? o.y > car.y - 0.5 : o.y < car.y + 0.5);
+        const near = sim.traffic.cars.filter((o) => o !== car && highway(o.x, o.y) && lastX.get(o.id) !== o.x && o.facing !== car.facing && ahead(o) && Math.abs(o.y - car.y) < 4 && (o.facing === 'right' ? car.x - o.x : o.x - car.x) > 0.5 && Math.abs(o.x - car.x) < 4);
         assert.deepEqual(near.map((o) => o.id), [], `${car.id} pulled out in front of traffic`);
       }
       was.set(car.id, on);
     }
-    for (const car of sim.traffic.cars) lastX.set(car.id, car.x);
+    for (const car of sim.traffic.cars) {
+      lastX.set(car.id, car.x);
+      lastFacing.set(car.id, car.facing);
+    }
   }
   assert.ok(joins > 3, `${joins} cars onto the highway`);
 });

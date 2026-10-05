@@ -174,15 +174,16 @@ export class Parcels {
     const { sim } = this;
     const driver = this.driverFor(bay);
     if (!driver) return false;
-    const homes = sim.housing.homes().filter((h) => sim.housing.residents(h).length > 0);
+    // Homes with someone living there that the van can pull up outside (not one only reached on foot).
+    const homes = sim.housing.homes().flatMap((h) => {
+      if (!sim.housing.residents(h).length) return [];
+      const door = outsideDoor(sim, new Set([h.level.id]));
+      const kerb = door && kerbOutside(sim, door.p);
+      return kerb ? [{ home: h.level.id, ...kerb }] : [];
+    });
     const count = Math.min(homes.length, sim.rng.int(...PARCELS));
     const stops: Stop[] = [];
-    for (let i = 0; i < count && homes.length; i++) {
-      const home = homes.splice(sim.rng.int(0, homes.length - 1), 1)[0]!;
-      const door = outsideDoor(sim, new Set([home.level.id]));
-      const kerb = door && kerbOutside(sim, door.p);
-      if (kerb) stops.push({ home: home.level.id, ...kerb });
-    }
+    for (let i = 0; i < count; i++) stops.push(homes.splice(sim.rng.int(0, homes.length - 1), 1)[0]!);
     if (!stops.length) return true;
     // Nearest first, and on from each to the next nearest.
     const ordered: Stop[] = [];
