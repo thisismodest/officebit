@@ -115,8 +115,9 @@ function newSim(): Simulation {
   return next;
 }
 
-/** Save the Live town as it is now (when it's caught up), for next time. */
-const SNAPSHOT_EVERY_MS = 10 * 60 * 1000;
+/** Save the Live town as it is now (when it's caught up), for next time: often (it takes a few milliseconds), since
+ * saving as the page closes doesn't always finish before it's gone. */
+const SNAPSHOT_EVERY_MS = 60 * 1000;
 function saveTown(): void {
   if (time.mode !== 'live' || time.catchingUp || !time.since) return;
   lastSaved = saved(snapshot(sim), design, time.since);
@@ -182,6 +183,8 @@ function saveNow(): void {
   clearTimeout(saveTimer);
   saveTimer = undefined;
   saveLocal(design);
+  // The town's design has changed, so the last snapshot no longer fits it: save one that does.
+  saveTown();
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 }
 addEventListener('pagehide', () => {

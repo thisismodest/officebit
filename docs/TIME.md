@@ -57,15 +57,18 @@ reads the wall clock; the timekeeper does.
 ### Snapshots
 
 A Live town is saved as it's running (`sim/snapshot.ts`, stored by
-`ui/snapshots.ts` in IndexedDB): when you leave the page or switch to Sandbox,
-once it's caught up, and every 10 minutes: one per town (by story seed, so a
+`ui/snapshots.ts` in IndexedDB): once it's caught up, every minute (a save takes
+a few milliseconds), straight after an edit (the design's changed, so the old
+one no longer fits), and when you switch to Sandbox or leave the page (which
+doesn't always finish before the page is gone): one per town (by story seed, so a
 town opened from a link keeps its own), the latest three. Next time it's restored and only
 catches up from then. A snapshot is the sim's whole object graph as cloneable
 data (about 1 MB): class instances are tagged and come back with their class,
 shared constant tables (CATALOG, MOVERS…) as references, emitters and the
 collision layers made afresh. It's only used for the same release, design
-(a fingerprint, seed included) and start date; otherwise the town replays
-from its first morning.
+(a fingerprint, seed included), start date and shape of sim (a build whose
+classes have changed); otherwise the town replays from its first morning, as it
+does once after each new release.
 
 - **A new class in the sim?** Add it to `CLASSES` in `snapshot.ts` (saving
   throws, naming it, and the snapshot test catches it).
