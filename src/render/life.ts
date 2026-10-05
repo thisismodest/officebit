@@ -47,13 +47,12 @@ export function chatTurn(p: Person, other: string, time: number): string | null 
 export function paintLife(ctx: Ctx, sim: Simulation, p: Person, pose: Pose, facing: Facing, x: number, feet: number, head: number, time: number): void {
   const h = hashString(p.id);
   const intent = p.intent;
-  // Their phone out, now and then, standing about (grown-ups; not while glancing round, nor with their back to us).
-  if (standingAbout(p, pose) && p.role !== 'child' && facing !== 'up' && !glance(p, pose, time)) {
+  // Their phone out, now and then, standing about (grown-ups, facing us: side on, it doesn't read as a phone).
+  if (standingAbout(p, pose) && p.role !== 'child' && facing === 'down' && !glance(p, pose, time)) {
     const spell = time / PHONE.every + h * 3;
     if (Math.floor(spell) % 2 === 0 && spell % 1 < PHONE.share) {
-      const px = facing === 'left' ? x + 1 : facing === 'right' ? x + 8 : x + 4;
-      rect(ctx, px, feet - 11, 3, 4, OUTLINE);
-      rect(ctx, px + 1, feet - 10, 1, 2, '#9fd3f0');
+      rect(ctx, x + 4, feet - 11, 3, 4, OUTLINE);
+      rect(ctx, x + 5, feet - 10, 1, 2, '#9fd3f0');
     }
   }
   if (intent?.kind !== 'use' || p.phase !== 'doing') return;

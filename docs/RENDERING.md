@@ -79,7 +79,7 @@ cars are one.
 ## Signs of life
 
 `life.ts` keeps still moments from looking frozen, drawn only (from each person's id and the clock, never the story):
-standing about, a glance round now and then and a look at their phone; in a chat, the bubble (`bubbleFor` in
+standing about, a glance round now and then and a look at their phone (facing us); in a chat, the bubble (`bubbleFor` in
 `renderer.ts`) takes turns between the two of them, on about this and that; on the sofa in front of the TV, its glow
 flickering on them, and a controller for a game; at the table, a cup raised now and then.
 
