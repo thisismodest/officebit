@@ -42,7 +42,6 @@ const PATHS = {
   done: 'M3 8.5 6.5 12 13 4.5',
   close: 'M4 4l8 8M12 4l-8 8',
   play: 'M5 3.5v9l7-4.5z',
-  speed: 'M2.5 4v8l5-4zM8.5 4v8l5-4z',
   minus: 'M3 8h10',
   sound: 'M2.5 6h2.5l3-2.5v9L5 10H2.5zM10.5 5.5a3.5 3.5 0 0 1 0 5M12.5 3.5a6 6 0 0 1 0 9',
   muted: 'M2.5 6h2.5l3-2.5v9L5 10H2.5zM10.5 6l3.5 4M14 6l-3.5 4',

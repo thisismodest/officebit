@@ -20,8 +20,11 @@ reads the wall clock; the timekeeper does.
 | Mode | Clock | Controls |
 |---|---|---|
 | **Live** (default) | Your local date and time: a game second per real second | Pause and play |
-| **Sandbox** | Starts 06:00 today, or on a day you pick (tap the clock: **Another day**) | 1× to 60× |
-| **Jumping ahead** | Tap the clock: in an hour, tomorrow at 8, next Monday, a week on, or a date and time you pick | Then carries on in Sandbox |
+| **Sandbox** | Starts 06:00 today, or on a day you pick (**Another day**) | Pause and play, 1× to 60× |
+| **Jumping ahead** | In Sandbox: in an hour, 8am tomorrow, next Monday, a week on, or a day and time you pick | Then carries on |
+
+Tap the clock for the switch between Live and Sandbox; in Sandbox the same panel has the speeds, jumping ahead and
+another day. Pause and play sit beside the clock (or Space).
 
 - **Steps and game time.** `sim.step(dt)` covers `dt` ticks of game time.
   People walk the same distance every step, so walking looks the same in every
@@ -36,10 +39,10 @@ reads the wall clock; the timekeeper does.
   people get where they're going in the time the walk would take without
   walking it, and there's no traffic, buses or boats; the last two game hours
   run in full, so you arrive to people mid-walk and cars on the roads. Whenever it falls behind (the tab was
-  hidden, or paused) it catches up out of sight, showing "Catching up with the
-  clock…". The clock counts the days since it began (Day 1 is the day it
-  started, whatever the weekday). The ▸▸ menu says when it started, with **Start afresh today**,
-  which starts the town again this morning on a new seed: a new story.
+  hidden) it catches up out of sight, showing "Catching up with the
+  clock…". Paused and played again, it goes back to now on screen, like a jump ahead
+  (`backToNow`; out of sight if it's more than a day behind), and stays Live. The clock counts the days since it
+  began (Day 1 is the day it started, whatever the weekday), and its panel says when that was.
   Switching to Sandbox keeps the town you have; back to Live goes back to the
   one that's been running.
 - **Jumping ahead** plays out on screen at full speed, with a progress bar and

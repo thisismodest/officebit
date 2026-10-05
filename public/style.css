@@ -382,23 +382,6 @@ button#fullscreen {
   max-width: calc(100% - min(20rem, 90%) - 2rem);
 }
 
-/* Live or Sandbox, and the speed: down from ▸▸ at the end of the menu bar. */
-.speed-menu {
-  top: calc(100% + var(--mdst-space-xs));
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--mdst-space-xs);
-  width: 15rem;
-  padding: var(--mdst-space-sm);
-
-  & .speeds {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
-  }
-}
-
 /* Music and sounds: two switches under the speaker, each with its volume below it. */
 .audio-menu {
   display: flex;
@@ -419,8 +402,8 @@ button#fullscreen {
   }
 }
 
-/* The speed you're on, inverted. */
-.menubar .speed-menu [aria-pressed="true"] {
+/* The mode and speed you're on, inverted. */
+.menubar .time-jump [aria-pressed="true"] {
   background: var(--mdst-color-fg);
   color: var(--mdst-color-bg);
   border-color: var(--mdst-color-fg);
@@ -1134,37 +1117,29 @@ button.icon-button {
 
 /* Jumping ahead: a small panel down from the clock. */
 .time-jump {
+  /* Every button and box in it is one height, so a row lines up. */
+  --row: 2rem;
+
   top: calc(100% + var(--mdst-space-xs));
   right: 0;
-  width: 18rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mdst-space-xs);
+  width: 17rem;
   padding: var(--mdst-space-sm);
 
-  & h3 {
-    margin: 0 0 var(--mdst-space-sm);
-    font-size: var(--mdst-text-xs);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  & .presets {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--mdst-space-xs);
-    margin-bottom: var(--mdst-space-sm);
-  }
-
-  & form {
+  & [data-for="sandbox"]:not([hidden]) {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
     gap: var(--mdst-space-xs);
   }
 
-  & label {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    gap: var(--mdst-space-xs);
+  & button,
+  & input {
+    box-sizing: border-box;
+    height: var(--row);
+    min-height: var(--row);
+    padding-block: 0;
   }
 
   & input {
@@ -1172,23 +1147,68 @@ button.icon-button {
     font-size: var(--mdst-text-sm);
   }
 
+  /* Rows of equal buttons: Live or Sandbox, the speeds, the jumps. */
+  & .mode-switch,
+  & .speeds,
+  & .presets {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: var(--mdst-space-xs);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  & .presets {
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: row;
+  }
+
+  & h3 {
+    margin: var(--mdst-space-sm) 0 0;
+    font-size: var(--mdst-text-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  & form {
+    display: flex;
+    align-items: center;
+    gap: var(--mdst-space-xs);
+  }
+
+  & label {
+    display: flex;
+    align-items: center;
+    gap: var(--mdst-space-xs);
+    margin: 0;
+    white-space: nowrap;
+  }
+
   & input[type="number"] {
-    width: 4rem;
+    width: 3.25rem;
+  }
+
+  & input[type="time"],
+  & input[type="date"] {
+    flex: 1;
+  }
+
+  & label:has(input[type="time"]) {
+    flex: 1;
+  }
+
+  & form button {
+    flex: none;
   }
 
   & p {
-    margin: var(--mdst-space-sm) 0 0;
+    margin: 0;
   }
 
   & .status:empty {
     display: none;
-  }
-
-  /* Another day, under jumping ahead. */
-  & h3:not(:first-child) {
-    margin-top: var(--mdst-space-md);
-    padding-top: var(--mdst-space-sm);
-    border-top: var(--mdst-border-width) solid var(--mdst-color-subtle);
   }
 }
 
@@ -1453,7 +1473,6 @@ button.icon-button {
 
   .hud button,
   .menubar button,
-  .speed-menu select,
   .editor-picker .grid button,
   .share-menu button,
   .share-menu label {
@@ -1576,8 +1595,9 @@ button.icon-button {
     transform: translateY(100%);
   }
 
-  .time-jump,
-  .speed-menu {
+  .time-jump {
+    --row: 2.5rem;
+
     width: min(20rem, calc(100vw - 2rem));
   }
 

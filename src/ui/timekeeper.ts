@@ -1,9 +1,10 @@
 // Time modes (docs/TIME.md#modes). Live follows your clock: a game second per
 // real second, pause only, running since the day it started (so the story
 // carries on between visits), catching up (out of sight) on load and whenever
-// the tab has been hidden. Sandbox runs at whatever speed you pick. Jumping ahead
-// fast-forwards (on screen, at speed) to a later time, and carries on from
-// there in sandbox. The sim never sees the wall clock; this does.
+// the tab has been hidden; paused and played again, it goes back to now on screen.
+// Sandbox runs at whatever speed you pick. Jumping ahead fast-forwards (on screen,
+// at speed) to a later time, and carries on from there in sandbox. The sim never
+// sees the wall clock; this does.
 import { START_HOUR, TICKS_PER_DAY, TICKS_PER_SECOND, dayOf } from '../sim/clock.ts';
 import type { Simulation } from '../sim/sim.ts';
 import { calendarDate, whereabouts } from './whereabouts.ts';
@@ -57,6 +58,8 @@ export interface Travel {
   to: number;
   /** Game ticks per real ms. */
   rate: number;
+  /** Live, going back to now after a pause: it stays Live. */
+  live?: boolean;
 }
 
 export class Timekeeper {
@@ -131,6 +134,15 @@ export class Timekeeper {
     if (this.speed === 0) this.speed = 1;
   }
 
+  /** Played again after a pause in Live: back to now, on screen like a jump. More than a day behind, it catches up out of sight instead. */
+  backToNow(sim: Simulation): void {
+    if (this.mode !== 'live' || !this.origin) return;
+    const to = liveTick(this.origin, this.now());
+    if (to - sim.tick <= BEHIND || to - sim.tick > TICKS_PER_DAY) return;
+    this.travelling = { from: sim.tick, to, rate: Math.max((to - sim.tick) / JUMP_MS, SLOWEST_JUMP), live: true };
+    this.carry = 0;
+  }
+
   /** Stop jumping ahead, wherever it's got to, and carry on from there. */
   stopTravelling(): void {
     this.travelling = null;
@@ -138,6 +150,8 @@ export class Timekeeper {
 
   /** Run however many steps this frame needs. Returns how far between steps the view is, 0–1, for smooth drawing. */
   advance(sim: Simulation, elapsed: number): number {
+    // Paused again on the way back to now: it waits there.
+    if (this.travelling?.live && this.paused) this.travelling = null;
     if (this.travelling) {
       // At the jump's pace (up to what a frame can manage), stopping at the target.
       const { to, rate } = this.travelling;

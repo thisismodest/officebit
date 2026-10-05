@@ -21,7 +21,6 @@ import { PlaceCard } from './ui/place-card.ts';
 import { Profile } from './ui/profile.ts';
 import { Editor } from './ui/editor.ts';
 import { icon } from './ui/icons.ts';
-import { popover } from './ui/popover.ts';
 import { ShareMenu } from './ui/share-menu.ts';
 import { upgrade } from './worlds/upgrades.ts';
 import { Welcome } from './ui/welcome.ts';
@@ -269,9 +268,6 @@ const soundscape = new Soundscape({
   quiet: () => time.paused || !!time.travelling || time.catchingUp,
 });
 soundscape.setSim(sim);
-
-// Live or Sandbox, and the speed: a small menu from ▸▸ in the menu bar.
-popover($('#speed'), $('#speed-menu'));
 
 // Tapping a tab opens the sheet; tapping the open tab again folds it away.
 sheet.querySelector('[role="tablist"]')!.addEventListener(
@@ -561,16 +557,13 @@ function updateCameraUi(): void {
   $('#zoom-level').textContent = `${Number(camera.zoom.toFixed(1))}×`;
 }
 
-for (const button of document.querySelectorAll<HTMLButtonElement>('[data-speed]')) {
-  button.addEventListener('click', () => setSpeed(Number(button.dataset.speed)));
-}
+/** Pause, play or a sandbox speed. Playing a paused Live town goes back to now. */
 function setSpeed(next: number): void {
+  if (time.mode === 'live' && time.paused && next > 0) time.backToNow(sim);
   time.speed = next;
   updateTimeUi();
 }
 
-const modeSelect = $<HTMLSelectElement>('#mode');
-modeSelect.addEventListener('change', () => setMode(modeSelect.value as Mode));
 /** Sandbox keeps the town you have. Live follows the real clock, so it goes back to the town that's been running since live mode started. */
 function setMode(mode: Mode): void {
   // Leaving Live: the town as it is, for coming back to.
@@ -582,35 +575,19 @@ function setMode(mode: Mode): void {
   updateTimeUi();
 }
 
-// A new beginning: the town starts again this morning, with a story of its own.
-$('#start-afresh').addEventListener('click', () => {
-  time.since = Date.now();
-  localStorage.setItem(SINCE_KEY, String(time.since));
-  design.seed = storySeed(true);
-  restart();
-  updateTimeUi();
-});
-
 const playPause = $('#play-pause');
 playPause.addEventListener('click', () => setSpeed(time.paused ? 1 : 0));
 
+/** The mode the controls last showed (jumping ahead switches to Sandbox by itself). */
+let shownMode = time.mode;
 function updateTimeUi(): void {
-  const live = time.mode === 'live';
-  modeSelect.value = time.mode;
+  shownMode = time.mode;
   const label = time.paused ? 'Play' : 'Pause';
   playPause.innerHTML = icon(time.paused ? 'play' : 'pause');
   playPause.setAttribute('aria-label', label);
   playPause.title = label;
-  // Live mode is pause and play only; the speeds are for Sandbox. Live says how long it's been running.
-  $('#speed-menu .speeds').hidden = live;
-  $('#since').hidden = !live || !time.since;
-  if (time.since) $('#since-date').textContent = `Running since ${new Date(time.since).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}.`;
-  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-speed]')) {
-    button.setAttribute('aria-pressed', String(Number(button.dataset.speed) === time.speed));
-  }
+  timePanel.update();
 }
-updateTimeUi();
-updateCameraUi();
 
 /** A fresh town from the design (switching to Live does this), looking at the same place as before. */
 function restart(): void {
@@ -638,10 +615,12 @@ function jump(to: number): void {
   time.travel(sim, to);
   updateTimeUi();
 }
-new TimeJump($('#clock'), {
+const timePanel = new TimeJump($('#clock'), {
   sim: () => sim,
   time,
   jump,
+  setMode,
+  setSpeed,
   startOn: (day) => {
     // Another day is a sandbox: Live has to be today.
     localStorage.setItem(MODE_KEY, 'sandbox');
@@ -652,6 +631,8 @@ new TimeJump($('#clock'), {
   },
 });
 api.travel = (when: number | string | Date) => jump(typeof when === 'number' ? sim.tick + when * TICKS_PER_DAY : sim.tick + (new Date(when).getTime() - Date.now()) / TICK_MS);
+updateTimeUi();
+updateCameraUi();
 travelBar.querySelector('[data-action="stop"]')!.addEventListener('click', () => time.stopTravelling());
 travelBar.addEventListener('pointerdown', (event) => event.stopPropagation());
 
@@ -693,8 +674,9 @@ function frame(now: number): void {
   // Caught up: save it there, so coming straight back doesn't do it all again.
   if (wasCatchingUp && !catchingUp) saveTown();
   travelBar.hidden = !travelling && !catchingUp;
-  travelBar.querySelector('span')!.textContent = travelling ? `Jumping ahead… ${formatClock(sim.tick, sim.firstDay)}` : 'Catching up with the clock…';
-  travelBar.querySelector<HTMLElement>('[data-action="stop"]')!.hidden = !travelling;
+  travelBar.querySelector('span')!.textContent =
+    travelling && !travelling.live ? `Jumping ahead… ${formatClock(sim.tick, sim.firstDay)}` : 'Catching up with the clock…';
+  travelBar.querySelector<HTMLElement>('[data-action="stop"]')!.hidden = !travelling || !!travelling.live;
   const progress = travelBar.querySelector('progress')!;
   if (travelling) progress.value = (sim.tick - travelling.from) / (travelling.to - travelling.from);
   else if (catchingUp && time.origin) progress.value = (sim.tick - time.origin.tick) / Math.max(1, liveTick(time.origin, Date.now()) - time.origin.tick);
@@ -724,7 +706,7 @@ function frame(now: number): void {
     audio.night = sim.daylight() < 0.3;
     // Live and Sandbox alike: the day of the story, counted from the day it began (phones have room for just the time).
     clock.textContent = narrow.matches ? `${weekdayOf(sim.tick)} ${formatTime(sim.tick)}` : formatClock(sim.tick, sim.firstDay);
-    if (time.mode !== modeSelect.value) updateTimeUi();
+    if (time.mode !== shownMode) updateTimeUi();
   }
   requestAnimationFrame(frame);
 }

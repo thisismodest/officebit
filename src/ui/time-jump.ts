@@ -1,11 +1,10 @@
-// Jumping ahead (docs/TIME.md#modes): tap the clock to visit a later
-// time. The town fast-forwards to it (the same story it would have lived
-// anyway: the sim is deterministic) and carries on from there in sandbox.
-// Or start a fresh town on another day altogether, to see it at Halloween.
+// The clock's panel (docs/TIME.md#modes): Live or Sandbox, and in Sandbox the speeds, jumping ahead to a later time
+// (the same story it would have lived anyway: the sim is deterministic), or a fresh town on another day altogether,
+// to see it at Halloween.
 import { TICKS_PER_DAY, TICKS_PER_HOUR, dayOf, tickAt } from '../sim/clock.ts';
 import type { Simulation } from '../sim/sim.ts';
 import { popover, type Toggle } from './popover.ts';
-import { TICK_MS, type Timekeeper } from './timekeeper.ts';
+import type { Mode, Timekeeper } from './timekeeper.ts';
 
 export interface TimeJumpHost {
   sim(): Simulation;
@@ -14,7 +13,11 @@ export interface TimeJumpHost {
   jump(to: number): void;
   /** A fresh town in sandbox, from 06:00 on this day. */
   startOn(day: Date): void;
+  setMode(mode: Mode): void;
+  setSpeed(speed: number): void;
 }
+
+const SPEEDS = [1, 4, 16, 60];
 
 export class TimeJump {
   private readonly root: HTMLElement;
@@ -27,31 +30,43 @@ export class TimeJump {
     this.root.className = 'time-jump popover mdst-card mdst-card--compact';
     this.root.hidden = true;
     this.root.innerHTML = `
-      <h3>Jump ahead</h3>
-      <div class="presets">
-        <button type="button" class="mdst-button--sm" data-jump="hour">In an hour</button>
-        <button type="button" class="mdst-button--sm" data-jump="morning">Tomorrow at 8</button>
-        <button type="button" class="mdst-button--sm" data-jump="monday">Next Monday</button>
-        <button type="button" class="mdst-button--sm" data-jump="week">A week on</button>
+      <div class="mode-switch" role="group" aria-label="Time">
+        <button type="button" class="mdst-button--sm" data-mode="live">Live</button>
+        <button type="button" class="mdst-button--sm" data-mode="sandbox">Sandbox</button>
       </div>
-      <form>
-        <label class="mdst-p--sm" data-for="live">To <input type="datetime-local" name="when"></label>
-        <label class="mdst-p--sm" data-for="sandbox">To day <input type="number" name="day" min="1" inputmode="numeric"> at <input type="time" name="time" value="09:00"></label>
-        <button type="submit" class="mdst-button--sm mdst-button--inverted">Go</button>
-      </form>
-      <p class="mdst-p--sm mdst-p--muted">It fast-forwards to then and carries on from there, in Sandbox.</p>
-      <p class="status mdst-p--sm bad" role="status"></p>
-      <h3>Another day</h3>
-      <form class="another-day">
-        <label class="mdst-p--sm">Start the town on <input type="date" name="date"></label>
-        <button type="submit" class="mdst-button--sm">Start there</button>
-      </form>
-      <p class="mdst-p--sm mdst-p--muted">A fresh town, in Sandbox, from 06:00 that day: to see what it's like at Halloween, say.</p>`;
+      <p class="mdst-p--sm mdst-p--muted" data-for="live">Follows your clock<span class="since"></span>.</p>
+      <div data-for="sandbox">
+        <h3>Speed</h3>
+        <fieldset class="speeds" aria-label="Speed">
+          ${SPEEDS.map((speed) => `<button type="button" class="mdst-button--sm" data-speed="${speed}">${speed}×</button>`).join('')}
+        </fieldset>
+        <h3>Jump ahead</h3>
+        <div class="presets">
+          <button type="button" class="mdst-button--sm" data-jump="hour">In an hour</button>
+          <button type="button" class="mdst-button--sm" data-jump="morning">8am tomorrow</button>
+          <button type="button" class="mdst-button--sm" data-jump="monday">Next Monday</button>
+          <button type="button" class="mdst-button--sm" data-jump="week">A week on</button>
+        </div>
+        <form title="It fast-forwards to then and carries on from there">
+          <label class="mdst-p--sm">Day <input type="number" name="day" min="1" inputmode="numeric"></label>
+          <label class="mdst-p--sm">at <input type="time" name="time" value="09:00"></label>
+          <button type="submit" class="mdst-button--sm mdst-button--inverted">Go</button>
+        </form>
+        <p class="status mdst-p--sm bad" role="status"></p>
+        <h3>Another day</h3>
+        <form class="another-day" title="A fresh town from 06:00 that day: to see what it's like at Halloween, say">
+          <input type="date" name="date" aria-label="Start the town on">
+          <button type="submit" class="mdst-button--sm">Start</button>
+        </form>
+      </div>`;
     button.after(this.root);
     this.toggle = popover(button, this.root, () => this.reset());
     this.root.addEventListener('click', (event) => {
-      const preset = (event.target as HTMLElement).closest<HTMLElement>('[data-jump]')?.dataset.jump;
-      if (preset) this.go(this.presetTick(preset));
+      const target = (event.target as HTMLElement).closest<HTMLElement>('[data-jump], [data-mode], [data-speed]');
+      const { jump, mode, speed } = target?.dataset ?? {};
+      if (jump) this.go(this.presetTick(jump));
+      if (mode && mode !== this.host.time.mode) this.host.setMode(mode as Mode);
+      if (speed) this.host.setSpeed(Number(speed));
     });
     this.root.querySelector('form')!.addEventListener('submit', (event) => {
       event.preventDefault();
@@ -67,17 +82,22 @@ export class TimeJump {
     });
   }
 
+  /** The mode and speed as they are now: Live is just the clock; Sandbox has the rest. */
+  update(): void {
+    const { mode, speed, since } = this.host.time;
+    for (const button of this.root.querySelectorAll<HTMLElement>('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+    for (const button of this.root.querySelectorAll<HTMLElement>('[data-speed]')) button.setAttribute('aria-pressed', String(Number(button.dataset.speed) === speed));
+    for (const part of this.root.querySelectorAll<HTMLElement>('[data-for]')) part.hidden = part.dataset.for !== mode;
+    this.root.querySelector('.since')!.textContent = since
+      ? `, running since ${new Date(since).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}`
+      : '';
+  }
+
   /** Fresh choices each time it opens, starting from now. */
   private reset(): void {
-    const { sim, time } = this.host;
+    const { sim } = this.host;
     const tick = sim().tick;
-    for (const label of this.root.querySelectorAll<HTMLElement>('[data-for]')) label.hidden = label.dataset.for !== time.mode;
-    // Start the custom time at tomorrow morning.
-    const when = this.input('when');
-    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    tomorrow.setHours(8, 0, 0, 0);
-    when.min = localValue(new Date());
-    when.value = localValue(tomorrow);
+    this.update();
     // Days of the story, as the clock numbers them.
     const day = this.input('day');
     const today = dayOf(tick) - sim().firstDay + 1;
@@ -104,13 +124,8 @@ export class TimeJump {
     }
   }
 
-  /** The time typed in: a real date and time in live mode, a day and time in sandbox. */
+  /** The day and time typed in. */
   private chosenTick(): number {
-    const tick = this.host.sim().tick;
-    if (this.host.time.mode === 'live') {
-      const when = new Date(this.input('when').value).getTime();
-      return Number.isNaN(when) ? NaN : tick + (when - Date.now()) / TICK_MS;
-    }
     const day = Number(this.input('day').value) - 1 + this.host.sim().firstDay;
     const [hh = 9, mm = 0] = this.input('time').value.split(':').map(Number);
     return tickAt(day, hh + mm / 60);
@@ -135,10 +150,3 @@ export class TimeJump {
     this.root.querySelector('.status')!.textContent = text;
   }
 }
-
-/** A date as a datetime-local input wants it: local time, to the minute. */
-function localValue(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-

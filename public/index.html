@@ -205,13 +205,13 @@
       <p class="wordmark">officebit</p>
       <p class="loading-note">Waking the town up…</p>
     </div>
-    <!-- The menu bar: officebit, where you're looking, and the time (tap the clock to jump ahead). -->
+    <!-- The menu bar: officebit, where you're looking, and the time (tap the clock for Live or Sandbox, the speeds and jumping ahead). -->
     <header class="menubar">
       <a class="wordmark" href="./about/" title="About officebit">officebit</a>
       <span class="place-name" id="place" aria-live="polite"></span>
       <div class="status-items">
         <span class="popover-anchor"
-          ><button type="button" class="clock mdst-button--sm mdst-button--ghost" id="clock" title="Jump ahead to another time">
+          ><button type="button" class="clock mdst-button--sm mdst-button--ghost" id="clock" title="Time: Live or Sandbox" aria-expanded="false">
             Day 1 · 06:00
           </button></span
         >
@@ -225,33 +225,6 @@
           aria-label="Pause"
           title="Pause (space)"
         ></button>
-        <span class="popover-anchor">
-          <button
-            type="button"
-            class="icon-button mdst-button--sm mdst-button--ghost"
-            id="speed"
-            data-icon="speed"
-            aria-label="Time and speed"
-            title="Time and speed"
-            aria-expanded="false"
-          ></button>
-          <div class="speed-menu popover mdst-card mdst-card--compact" id="speed-menu" hidden>
-            <select id="mode" aria-label="Time" class="mdst-dropdown--sm" title="Live follows your clock; Sandbox lets you speed up">
-              <option value="live">Live: follows your clock</option>
-              <option value="sandbox">Sandbox: pick a speed</option>
-            </select>
-            <p class="mdst-p--sm" id="since" hidden>
-              <span id="since-date"></span>
-              <button type="button" class="link" id="start-afresh">Start afresh today</button>
-            </p>
-            <fieldset class="speeds" aria-label="Speed">
-              <button type="button" class="mdst-button--sm" data-speed="1">1×</button>
-              <button type="button" class="mdst-button--sm" data-speed="4">4×</button>
-              <button type="button" class="mdst-button--sm" data-speed="16">16×</button>
-              <button type="button" class="mdst-button--sm" data-speed="60">60×</button>
-            </fieldset>
-          </div>
-        </span>
         <button
           type="button"
           class="icon-button mdst-button--sm mdst-button--ghost sidebar-toggle"

@@ -113,7 +113,7 @@ src/render/   renderer.ts (one level through a camera; y-sorted props+people; ni
               props/* (one painter per catalog type)
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
               editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (the cog: your town's name, save, share links, townfiles),
-              timekeeper.ts (live/sandbox; catching up brisk), snapshots.ts (Live towns saved in IndexedDB), time-jump.ts (jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
+              timekeeper.ts (live/sandbox; catching up brisk), snapshots.ts (Live towns saved in IndexedDB), time-jump.ts (the clock's panel: Live or Sandbox, speeds, jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
               place-card.ts, fullscreen.ts, welcome.ts (the first-visit card and ?), tour.ts (the tour, from the welcome card), team-form.ts (adding someone
               to the team), describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
 src/games/    mini games (docs/GAMES.md): controls.ts, cabinet.ts (the arcade cabinet), arcade/ (Caterpillar, Brick Bash), town/ (Parcel Dash
@@ -221,7 +221,7 @@ Working and verified in the browser:
 - **Games:** the arcade machines play Caterpillar and Brick Bash in an arcade cabinet; Parcel Dash from a signpost
   by the depot, driving a van round the real town.
 
-216 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+217 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

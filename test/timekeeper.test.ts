@@ -85,6 +85,25 @@ test('time travel fast-forwards to the target and leaves live mode', () => {
   assert.equal(weekdayOf(sim.tick), 'Fri');
 });
 
+test('played again after a pause, live mode goes back to now on screen and stays live', () => {
+  let now = THURSDAY;
+  const time = new Timekeeper('live', () => now);
+  const sim = fresh();
+  time.start(sim);
+  time.speed = 0;
+  now += 30 * 60 * 1000;
+  time.advance(sim, 16);
+  const paused = sim.tick;
+  time.backToNow(sim);
+  time.speed = 1;
+  assert.equal(time.travelling?.live, true);
+  assert.equal(time.mode, 'live');
+  while (time.travelling) time.advance(sim, 16);
+  assert.ok(sim.tick - paused >= TICKS_PER_HOUR / 2 - 1, 'half an hour later');
+  assert.ok(liveTick(time.origin!, now) - sim.tick <= 1);
+  assert.equal(time.mode, 'live');
+});
+
 test('a step covering less game time drains needs by less, but walks just as far', () => {
   const a = fresh();
   const b = fresh();
