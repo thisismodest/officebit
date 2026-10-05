@@ -60,22 +60,23 @@ Rowan   z>WWWWWuWWWuuuuuuzzzzzzz   W25% H0% u28% c1% >14%  int 2/1
 
 `npm run bench -- [people] [days]` fills the starter town out to that many
 people (sharing its homes and workplaces) and times a few days headless. Keep
-an eye on it at 200 (about 7 s a game day on a laptop), and at the starter
-town's own size (`npm run bench -- 34`: under a second a day, which is how fast
-jumping ahead can go). The sim keeps a few indexes so the cost grows with
+an eye on it at 200 (about 6 s a game day on a laptop), and at the starter
+town's own size (`npm run bench -- 34`: a second or two a day).
+The sim keeps a few indexes so the cost grows with
 people, not people squared:
 - `sim.peopleOn(level)`: who's on a level. Always change someone's level
   with `sim.setLevel`, which keeps it up to date.
 - The collision space, bucketed by cell.
 - Per-day answers (`dayOff`, `holiday`), per-step ones (`publicPlaces`), and
   each building's floors (`floorsOf`, cleared when the levels change).
+- The furniture by level (`itemsOn`) and just what offers something (`offering`), made again with each new
+  `activeItems()` list.
 - Worked out once and kept: the bus route's drives between stops, the food
   trucks among the furniture (both till the furniture or roads change), and the
-  road search's scratch arrays.
+  road search's scratch arrays (numbered per search, never cleared).
 
-Jumping ahead runs the sim flat out: a short jump is paced to play out over
-about 8 seconds, and a long one takes 150 ms of each frame, drawing a few frames
-a second.
+Jumping ahead: a short hop plays out on screen at 60×; a long one runs out of sight, brisk, taking 250 ms of
+each frame (about 0.45 s a brisk game day, 1.6 s a full one, for the starter town).
 
 A speed-up shouldn't change the story. Compare `npm run probe -- 336` before
 and after; the output should be identical.

@@ -117,23 +117,27 @@ test('a step covering less game time drains needs by less, but walks just as far
   assert.ok(sleepers.length > 5 && hunger(b) > hunger(a), 'half the game time, less hungry');
 });
 
-test('jumping ahead plays out over about eight seconds, and short hops at 60×', () => {
-  const secondsFor = (ticks: number) => {
+test('a short hop plays out on screen at 60×; further jumps happen out of sight, brisk but for the last stretch', () => {
+  const jump = (ticks: number) => {
     const time = new Timekeeper('sandbox');
     const sim = fresh();
     time.start(sim);
-    time.travel(sim, sim.tick + ticks);
-    let ms = 0;
-    while (time.travelling && ms < 60_000) {
+    const to = sim.tick + ticks;
+    time.travel(sim, to);
+    const hidden = time.outOfSight;
+    let frames = 0;
+    while (time.travelling && frames < 10_000) {
       time.advance(sim, 16);
-      ms += 16;
+      frames++;
     }
-    return ms / 1000;
+    assert.ok(Math.abs(sim.tick - to) <= 1, 'it gets there');
+    assert.equal(sim.brisk, false, 'and carries on in full');
+    return { hidden, seconds: (frames * 16) / 1000 };
   };
-  const day = secondsFor(TICKS_PER_DAY);
-  assert.ok(day > 7 && day < 9, `a day took ${day}s`);
-  const hour = secondsFor(TICKS_PER_HOUR);
-  assert.ok(hour > 0.8 && hour < 1.2, `an hour took ${hour}s (60×)`);
+  const hour = jump(TICKS_PER_HOUR);
+  assert.equal(hour.hidden, false);
+  assert.ok(hour.seconds > 0.8 && hour.seconds < 1.2, `an hour took ${hour.seconds}s (60×)`);
+  assert.equal(jump(TICKS_PER_DAY).hidden, true);
 });
 
 test('live mode carries on from the day it started, catching up a slice at a time', () => {

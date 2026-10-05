@@ -470,6 +470,8 @@ main {
   align-items: center;
   gap: var(--mdst-space-md);
   /* Room inside the border: more on the text side, just enough round the button. */
+  width: max-content;
+  max-width: calc(100% - 2rem);
   padding: var(--mdst-space-xs) var(--mdst-space-xs) var(--mdst-space-xs) var(--mdst-space-md);
   transform: translateX(-50%);
   background: var(--mdst-color-bg);
@@ -477,6 +479,16 @@ main {
   & progress {
     width: 12rem;
   }
+}
+
+/* A long jump, out of sight: the town dims, with the progress in the middle of it. */
+#stage.away canvas {
+  filter: brightness(0.45) saturate(0.6);
+}
+
+#stage.away .travel {
+  bottom: 50%;
+  transform: translate(-50%, 50%);
 }
 
 /* The tour (tour.ts): a light round one thing, everything else greyed out (it doesn't block clicks), and a bubble beside it. */
@@ -1673,7 +1685,6 @@ button.icon-button {
   /* Banners (steering, time travel) sit just above the sheet. */
   .travel {
     bottom: calc(3.5rem + var(--mdst-space-sm));
-    width: max-content;
     max-width: calc(100vw - 1rem);
   }
 }

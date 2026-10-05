@@ -84,7 +84,8 @@ export class RoadMap {
   /** Tiles with something standing on them (a lamppost, a charger, a canopy's posts), and bays: no route goes through them. */
   private readonly standing: Uint8Array;
 
-  private scratch: { cost: Float64Array; came: Int32Array } | null = null;
+  /** The search's scratch space, kept between searches: a state's cost and where it came from count only if it's been reached this search (`seen` is the search's number). */
+  private scratch: { cost: Float64Array; came: Int32Array; seen: Uint32Array; search: number } | null = null;
   private readonly network: Network;
 
   constructor(level: LevelDef, grid: Grid, network: Network = ROADS) {
@@ -208,12 +209,29 @@ export class RoadMap {
     // Each state remembers the last turn for a couple of tiles: two quarter-turns the same way that close
     // together are turning round too (into a side road's mouth, or halfway round a circle, and straight back out).
     const memory = MEMORY;
-    // The search's scratch space, kept between searches (it's the whole map, every heading, every memory).
+    // The whole map, every heading, every memory; a fresh search just takes the next number rather than clearing it.
     const states = this.w * this.h * 4 * memory;
-    if (this.scratch?.cost.length !== states) this.scratch = { cost: new Float64Array(states), came: new Int32Array(states) };
-    const { cost, came } = this.scratch;
-    cost.fill(Infinity);
-    came.fill(-1);
+    if (this.scratch?.cost.length !== states) this.scratch = { cost: new Float64Array(states), came: new Int32Array(states), seen: new Uint32Array(states), search: 0 };
+    const scratch = this.scratch;
+    const { cost, came, seen } = scratch;
+    const search = ++scratch.search;
+    const costOf = (state: number) => (seen[state] === search ? cost[state]! : Infinity);
+    // What each tile is like for this drive, worked out the first time the search comes to it: 0 not yet, 1 yes, 2 no.
+    const tiles = this.w * this.h;
+    const enters = new Uint8Array(tiles);
+    const roads = new Uint8Array(tiles);
+    const canEnter = (x: number, y: number) => {
+      if (!this.inside(x, y)) return enter(x, y);
+      const i = y * this.w + x;
+      if (!enters[i]) enters[i] = enter(x, y) ? 1 : 2;
+      return enters[i] === 1;
+    };
+    const isRoad = (x: number, y: number) => {
+      if (!this.inside(x, y)) return road(x, y);
+      const i = y * this.w + x;
+      if (!roads[i]) roads[i] = road(x, y) ? 1 : 2;
+      return roads[i] === 1;
+    };
     const open = new Heap();
     const stateOf = (at: number, d: number, m: number) => (at * 4 + d) * memory + m;
     const pathTo = (end: number): Tile[] => {
@@ -228,38 +246,48 @@ export class RoadMap {
       if (heading && h !== heading) continue;
       const start = stateOf(tile(...from), d, 0);
       cost[start] = 0;
+      came[start] = -1;
+      seen[start] = search;
       open.push(start, 0);
     }
     while (open.size > 0 && left > 0) {
+      // Bettered since it was queued: it was gone through already, at its better cost.
+      const queued = open.topKey;
       const state = open.pop();
+      const here = cost[state]!;
+      if (queued > here) continue;
       const m = state % memory;
       const d = Math.floor(state / memory) % 4;
       const at = Math.floor(state / memory / 4);
-      for (const i of ending.get(at) ?? []) {
-        const arrive = goals[i]!.arrive;
-        if (found[i] || (arrive !== undefined && HEADINGS[d] !== arrive)) continue;
-        found[i] = { path: pathTo(state), cost: cost[state]! };
-        left--;
-      }
+      const ends = ending.get(at);
+      if (ends)
+        for (const i of ends) {
+          const arrive = goals[i]!.arrive;
+          if (found[i] || (arrive !== undefined && HEADINGS[d] !== arrive)) continue;
+          found[i] = { path: pathTo(state), cost: here };
+          left--;
+        }
       const x = at % this.w;
       const y = (at - x) / this.w;
-      for (const [nd, h] of HEADINGS.entries()) {
-        const [dx, dy] = AHEAD[h];
-        const [nx, ny] = [x + dx, y + dy];
-        if (!enter(nx, ny)) continue;
+      for (let nd = 0; nd < 4; nd++) {
+        const [dx, dy] = AHEAD[HEADINGS[nd]!];
+        const nx = x + dx;
+        const ny = y + dy;
+        if (!canEnter(nx, ny)) continue;
         // A quarter-turn clockwise (right) or anticlockwise (left), and whether it follows one the same way just now.
         const clockwise = nd === (d + 1) % 4;
         const anticlockwise = nd === (d + 3) % 4;
         const again = (clockwise && (m === 1 || m === 2)) || (anticlockwise && (m === 3 || m === 4));
-        const hop = nd !== d && [2, 3].some((k) => !road(x + dx * k, y + dy * k));
-        const turn = nd === d ? 0 : (nd + 2) % 4 === d || again ? turnRound : hop ? LANE_CHANGE : TURN;
+        const turn =
+          nd === d ? 0 : (nd + 2) % 4 === d || again ? turnRound : !isRoad(x + dx * 2, y + dy * 2) || !isRoad(x + dx * 3, y + dy * 3) ? LANE_CHANGE : TURN;
         const nm = clockwise ? 1 : anticlockwise ? 3 : m === 1 ? 2 : m === 3 ? 4 : 0;
         const next = stateOf(tile(nx, ny), nd, nm);
         const surface = offRoad(nx, ny) ? OFF_ROAD : this.network.costs[this.floorAt(nx, ny)!]!;
-        const g = cost[state]! + surface + turn + (this.wrongLane(nx, ny, dx, dy) ? WRONG_LANE : 0);
-        if (g >= cost[next]!) continue;
+        const g = here + surface + turn + (this.wrongLane(nx, ny, dx, dy) ? WRONG_LANE : 0);
+        if (g >= costOf(next)) continue;
         cost[next] = g;
         came[next] = state;
+        seen[next] = search;
         open.push(next, g);
       }
     }

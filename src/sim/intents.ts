@@ -117,7 +117,7 @@ export const INTENTS: { [K in Intent['kind']]: Rules<Of<K>> } = {
       if (intent.mode === 'games') game(sim, p, item, refill);
       if (item.type.worksite) sim.construction.worked(p, item);
     },
-    fits: (sim, p, intent, phase) => sim.canUse(p, sim.items[intent.item]!, phase),
+    fits: (sim, p, intent, phase, area) => sim.canUse(p, sim.items[intent.item]!, phase, area),
   },
 
   chat: {

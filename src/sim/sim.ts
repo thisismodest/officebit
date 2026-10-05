@@ -97,6 +97,10 @@ export interface PersonChanges {
 
 type Spawn = Pick<Person, 'id' | 'name' | 'species' | 'npc' | 'look' | 'dept' | 'company' | 'home' | 'role' | 'works' | 'shift' | 'days' | 'preset' | 'traits' | 'routine'>;
 
+/** Each list of active items, by level and just those offering something: made once per list (a new list whenever the furniture changes), and never saved. */
+const ON_LEVEL = new WeakMap<readonly Item[], Map<string, Item[]>>();
+const OFFERING = new WeakMap<readonly Item[], Item[]>();
+
 export class Simulation {
   readonly world: WorldDef;
   readonly rng: Rng;
@@ -230,6 +234,33 @@ export class Simulation {
     return this.active;
   }
 
+  /** The active items that offer something to someone choosing what to do (desks aside), in the same order. */
+  offering(): readonly Item[] {
+    const active = this.activeItems();
+    let offers = OFFERING.get(active);
+    if (!offers) {
+      offers = active.filter((item) => item.type.offers && !item.type.desk);
+      OFFERING.set(active, offers);
+    }
+    return offers;
+  }
+
+  /** The active items on one level, in the same order. */
+  itemsOn(level: string): readonly Item[] {
+    const active = this.activeItems();
+    let byLevel = ON_LEVEL.get(active);
+    if (!byLevel) {
+      byLevel = new Map();
+      for (const item of active) {
+        const here = byLevel.get(item.level);
+        if (here) here.push(item);
+        else byLevel.set(item.level, [item]);
+      }
+      ON_LEVEL.set(active, byLevel);
+    }
+    return byLevel.get(level) ?? [];
+  }
+
   placeOf(p: Person): Place {
     return { level: p.level, p: [Math.round(p.x), Math.round(p.y)] };
   }
@@ -327,18 +358,20 @@ export class Simulation {
     return this.staffOf(level).some((p) => workingDay(p) && (this.phaseOf(p) === 'work' || hour < p.routine.commute));
   }
 
-  /** Could `p` use this item during `phase`? Their area, or street food at lunch; and at home, only with ingredients in. */
-  canUse(p: Person, item: Item, phase: DayPhase): boolean {
-    // Staff are who opens up: their own venue being shut (nobody minding it yet) doesn't keep them out.
-    const opening = p.role === 'staff' && !!p.works && p.works === this.baseOf(item.level);
-    if (item.gone || !(opening ? this.withinHours(item) : this.isOpen(item))) return false;
-    const needs = item.type.usesPantry ?? 0;
-    if (needs > 0 && this.levels.get(item.level)?.kind === 'home' && this.pantry(this.baseOf(item.level)) < needs) return false;
+  /** Could `p` use this item during `phase`? Their area (pass it, if it's to hand), or street food at lunch; and at home, only with ingredients in. */
+  canUse(p: Person, item: Item, phase: DayPhase, area?: readonly string[]): boolean {
+    if (item.gone) return false;
     // Out of work: a row on the river is somewhere to go too (for anyone who goes out at all).
     const rowing = phase === 'home' && !!item.type.boating && roleOf(p).goesOut;
     // At work: street food at lunch, and the food shop for a shift worker running low at home.
-    const errand = phase === 'work' && ((!!item.type.street) || (!!item.type.groceries && this.shiftErrand(p)));
-    return this.areaOf(p, phase).includes(item.level) || errand || rowing;
+    const errand = phase === 'work' && (!!item.type.street || (!!item.type.groceries && this.shiftErrand(p)));
+    // Somewhere they may be at all, first: it's quickest to tell.
+    if (!(errand || rowing || (area ?? this.areaOf(p, phase)).includes(item.level))) return false;
+    // Staff are who opens up: their own venue being shut (nobody minding it yet) doesn't keep them out.
+    const opening = p.role === 'staff' && !!p.works && p.works === this.baseOf(item.level);
+    if (!(opening ? this.withinHours(item) : this.isOpen(item))) return false;
+    const needs = item.type.usesPantry ?? 0;
+    return !(needs > 0 && this.levels.get(item.level)?.kind === 'home' && this.pantry(this.baseOf(item.level)) < needs);
   }
 
   /** Meals' worth of ingredients in a home's kitchen. */
@@ -626,10 +659,20 @@ export class Simulation {
    * it's no longer anywhere they may be.
    */
   private mindVenues(news: boolean): void {
+    // Each venue's staff (as staffOf has them), from one look at everyone.
+    const staffAt = new Map<string, Person[]>();
+    for (const p of this.people) {
+      const levels = this.companies.get(p.company ?? '')?.levels ?? [];
+      for (const level of p.works && !levels.includes(p.works) ? [p.works, ...levels] : levels) {
+        const staff = staffAt.get(level);
+        if (staff) staff.push(p);
+        else staffAt.set(level, [p]);
+      }
+    }
     for (const level of this.world.levels) {
       if (level.kind !== 'venue') continue;
-      const staff = this.staffOf(level.id);
-      if (staff.length === 0) continue;
+      const staff = staffAt.get(level.id);
+      if (!staff) continue;
       const open = staff.some((p) => p.level === level.id && this.present(p) && this.phaseOf(p) === 'work');
       const was = this.minded.get(level.id);
       this.minded.set(level.id, open);
@@ -1383,7 +1426,7 @@ export class Simulation {
   private act(p: Person): void {
     const intent = p.intent!;
     const refill = (who: Person, need: Need, perTick: number) => restore(who.needs, need, perTick * this.dt);
-    for (const [need, gain] of Object.entries(p.gains) as [Need, number][]) refill(p, need, gain);
+    for (const need in p.gains) refill(p, need as Need, p.gains[need as Need]!);
     rulesFor(intent).doing?.(this, p, intent, refill);
     // Moved on to something else (given up on the bus, say): that's started fresh.
     if (p.intent !== intent) return;

@@ -177,6 +177,11 @@ export class Heap {
     return this.nodes.length;
   }
 
+  /** The priority of the node `pop` would take next. */
+  get topKey(): number {
+    return this.keys[0]!;
+  }
+
   push(node: number, priority: number): void {
     this.nodes.push(node);
     this.keys.push(priority);
@@ -200,9 +205,16 @@ export class Heap {
   }
 
   private swap(a: number, b: number): void {
-    [this.nodes[a], this.nodes[b]] = [this.nodes[b]!, this.nodes[a]!];
-    [this.keys[a], this.keys[b]] = [this.keys[b]!, this.keys[a]!];
-    [this.seq[a], this.seq[b]] = [this.seq[b]!, this.seq[a]!];
+    const { nodes, keys, seq } = this;
+    const node = nodes[a]!;
+    nodes[a] = nodes[b]!;
+    nodes[b] = node;
+    const key = keys[a]!;
+    keys[a] = keys[b]!;
+    keys[b] = key;
+    const n = seq[a]!;
+    seq[a] = seq[b]!;
+    seq[b] = n;
   }
 
   private up(i: number): void {

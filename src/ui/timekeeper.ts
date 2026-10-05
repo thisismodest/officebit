@@ -1,10 +1,10 @@
 // Time modes (docs/TIME.md#modes). Live follows your clock: a game second per
 // real second, pause only, running since the day it started (so the story
 // carries on between visits), catching up (out of sight) on load and whenever
-// the tab has been hidden; paused and played again, it goes back to now on screen.
-// Sandbox runs at whatever speed you pick. Jumping ahead fast-forwards (on screen,
-// at speed) to a later time, and carries on from there in sandbox. The sim never
-// sees the wall clock; this does.
+// the tab has been hidden; paused and played again, it goes back to now.
+// Sandbox runs at whatever speed you pick. Jumping ahead fast-forwards to a later
+// time (a short hop on screen at 60×; further, out of sight behind a progress bar),
+// and carries on from there in sandbox. The sim never sees the wall clock; this does.
 import { START_HOUR, TICKS_PER_DAY, TICKS_PER_SECOND, dayOf } from '../sim/clock.ts';
 import type { Simulation } from '../sim/sim.ts';
 import { calendarDate, whereabouts } from './whereabouts.ts';
@@ -25,11 +25,9 @@ const FAST_BUDGET_MS = 40;
 const CATCH_UP_BUDGET_MS = 250;
 /** Catching up, everything but the last stretch is brisk (sim.brisk: no walking, no traffic), so you arrive to the town as it would be: this many ticks (two game hours). */
 const FULL_TICKS = 1200;
-/** A long jump ahead (one the sim can't keep pace with) takes more of each frame: fewer frames drawn, more of the time spent getting there. */
-const LONG_JUMP_BUDGET_MS = 150;
-/** A jump ahead aims to play out over this long (real ms), so you can watch it; but never slower than 60×. */
-const JUMP_MS = 8000;
-const SLOWEST_JUMP = (60 * TICKS_PER_SECOND) / 1000;
+/** A jump this far (ticks: two game hours) or less plays out on screen, at 60× (ticks per real ms); further, it's out of sight (brisk, as catching up is). */
+const SHORT_JUMP = FULL_TICKS;
+const JUMP_RATE = (60 * TICKS_PER_SECOND) / 1000;
 /** Most steps per frame in sandbox mode, so a slow machine doesn't spiral. */
 const MAX_STEPS_PER_FRAME = 100;
 
@@ -56,8 +54,8 @@ export function liveTick(origin: LiveOrigin, ms: number): number {
 export interface Travel {
   from: number;
   to: number;
-  /** Game ticks per real ms. */
-  rate: number;
+  /** Too far to watch: it happens out of sight, behind the progress bar. */
+  hidden: boolean;
   /** Live, going back to now after a pause: it stays Live. */
   live?: boolean;
 }
@@ -129,18 +127,23 @@ export class Timekeeper {
     if (to <= sim.tick) return;
     this.mode = 'sandbox';
     this.origin = null;
-    this.travelling = { from: sim.tick, to, rate: Math.max((to - sim.tick) / JUMP_MS, SLOWEST_JUMP) };
+    this.travelling = { from: sim.tick, to, hidden: to - sim.tick > SHORT_JUMP };
     this.carry = 0;
     if (this.speed === 0) this.speed = 1;
   }
 
-  /** Played again after a pause in Live: back to now, on screen like a jump. More than a day behind, it catches up out of sight instead. */
+  /** Played again after a pause in Live: back to now, like a jump ahead. */
   backToNow(sim: Simulation): void {
     if (this.mode !== 'live' || !this.origin) return;
     const to = liveTick(this.origin, this.now());
-    if (to - sim.tick <= BEHIND || to - sim.tick > TICKS_PER_DAY) return;
-    this.travelling = { from: sim.tick, to, rate: Math.max((to - sim.tick) / JUMP_MS, SLOWEST_JUMP), live: true };
+    if (to - sim.tick <= BEHIND) return;
+    this.travelling = { from: sim.tick, to, hidden: to - sim.tick > SHORT_JUMP, live: true };
     this.carry = 0;
+  }
+
+  /** Nothing worth drawing: catching up, or a long jump under way. */
+  get outOfSight(): boolean {
+    return this.catchingUp || !!this.travelling?.hidden;
   }
 
   /** Stop jumping ahead, wherever it's got to, and carry on from there. */
@@ -153,20 +156,13 @@ export class Timekeeper {
     // Paused again on the way back to now: it waits there.
     if (this.travelling?.live && this.paused) this.travelling = null;
     if (this.travelling) {
-      // At the jump's pace (up to what a frame can manage), stopping at the target.
-      const { to, rate } = this.travelling;
-      this.carry += elapsed * rate;
-      // Falling behind its pace: it's a long one, so give it more of each frame.
-      const budget = this.carry > rate * FAST_BUDGET_MS ? LONG_JUMP_BUDGET_MS : FAST_BUDGET_MS;
-      const until = performance.now() + budget;
-      while (this.carry >= 1 && sim.tick + 1 <= to && performance.now() < until) {
-        sim.step();
-        this.carry -= 1;
-      }
-      if (sim.tick + 1 > to) {
+      const { to, hidden } = this.travelling;
+      // Too far to watch: as fast as it'll go, out of sight. A short hop: at 60×, on screen.
+      const there = hidden ? this.fastForward(sim, to, CATCH_UP_BUDGET_MS) : this.hop(sim, to, elapsed);
+      if (there) {
         this.travelling = null;
         this.carry = 0;
-      } else if (this.carry > rate * LONG_JUMP_BUDGET_MS) this.carry = rate * LONG_JUMP_BUDGET_MS;
+      }
       return 1;
     }
     this.catchingUp = false;
@@ -181,6 +177,17 @@ export class Timekeeper {
       return this.run(elapsed, () => sim.step(LIVE_DT));
     }
     return this.run(elapsed * this.speed, () => sim.step());
+  }
+
+  /** A short hop's steps for this frame, at 60× (within the frame's budget), stopping at `to`. True once there. */
+  private hop(sim: Simulation, to: number, elapsed: number): boolean {
+    this.carry = Math.min(this.carry + elapsed * JUMP_RATE, JUMP_RATE * FAST_BUDGET_MS);
+    const until = performance.now() + FAST_BUDGET_MS;
+    while (this.carry >= 1 && sim.tick + 1 <= to && performance.now() < until) {
+      sim.step();
+      this.carry -= 1;
+    }
+    return sim.tick + 1 > to;
   }
 
   /** Steps at the real-time rate, carrying the remainder to the next frame. */

@@ -129,14 +129,15 @@ export class PersonalityBrain implements Brain {
     // A date night overrides the usual once-a-day outing.
     const date = p.date && sim.tick < p.date.until ? sim.person(p.date.with) : undefined;
     const timeToGo = isVenue(p.level) && outFor > OUTING_TICKS && !date;
-    for (const item of sim.activeItems()) {
+    for (const item of sim.offering()) {
       const { type } = item;
-      if (!type.offers || type.desk || !sim.canUse(p, item, phase) || sim.freeSpots(item.index) === 0 || sim.plans.reserved(item.index, p)) continue;
+      const offers = type.offers!;
+      if (!sim.canUse(p, item, phase, area) || sim.freeSpots(item.index) === 0 || sim.plans.reserved(item.index, p)) continue;
       // Children raid the fridge rather than cook.
       if (p.role === 'child' && (type.usesPantry ?? 0) >= 1) continue;
       if ((outing(item.level) && wentOutToday && !date) || (isVenue(item.level) && timeToGo)) continue;
       let score = 0;
-      for (const need of NEEDS) score += benefit(need, type.offers[need] ?? 0);
+      for (const need of NEEDS) score += benefit(need, offers[need] ?? 0);
       const [x, y] = item.def.p;
       const crowd = sim.crowdAt(item.level, x, y, 2.5, p);
       score -= crowd * (1 - t.social) * 0.18;
@@ -229,7 +230,7 @@ export class PersonalityBrain implements Brain {
       const queues = new Set<string>();
       for (const item of sim.activeItems()) {
         if (!item.type.groceries) continue;
-        if (sim.canUse(p, item, phase) && sim.freeSpots(item.index) > 0) {
+        if (sim.canUse(p, item, phase, area) && sim.freeSpots(item.index) > 0) {
           options.push({ intent: { kind: 'use', item: item.index }, score: need - cost({ level: item.level, p: item.def.p }) + noise() });
         } else if (worthWaitingFor(p, item, sim)) {
           queues.add(item.level);
@@ -424,7 +425,7 @@ function sleep(p: Person, sim: Simulation, until = sim.nextWake(p)): Intent | nu
 /** Is there something like this in the same room as the item? */
 function inRoomWith(sim: Simulation, item: Item, like: (other: Item) => boolean): boolean {
   const room = sim.roomOf(item);
-  return sim.activeItems().some((other) => other.level === item.level && like(other) && sim.roomOf(other) === room);
+  return sim.itemsOn(item.level).some((other) => like(other) && sim.roomOf(other) === room);
 }
 
 function quietest(p: Person, sim: Simulation): Place | null {

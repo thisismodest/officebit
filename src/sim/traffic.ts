@@ -11,7 +11,7 @@ import { AHEAD, MOVERS, OPPOSITE, advance, speedOn, type Heading, type Mover } f
 import { RoadMap, type Driver } from './roads.ts';
 import { Rng } from './rng.ts';
 import type { Simulation } from './sim.ts';
-import type { Tile } from './world.ts';
+import type { Rect, Tile } from './world.ts';
 
 /** Chance, each step, of a car joining each highway lane: by day, and in the quiet hours. */
 const THROUGH_BUSY = 0.02;
@@ -69,6 +69,9 @@ export interface Lane {
   last: Tile;
   off: Tile;
 }
+
+/** The parked vehicles each grid's tiles were last marked for (never saved: a restored town marks them afresh). */
+const PARKED = new WeakMap<Grid, string>();
 
 export class Traffic {
   readonly cars: Car[] = [];
@@ -229,9 +232,13 @@ export class Traffic {
   private markParked(level: string): void {
     const grid = this.sim.grids.get(level);
     if (!grid) return;
+    const rects = this.sim.space.still(level, 'wheels').map((body): Rect => body.rect ?? [Math.round(body.x), Math.round(body.y), 1, 1]);
+    // Nothing's parked or pulled out since last time: the tiles are marked already.
+    const marked = rects.join(';');
+    if (PARKED.get(grid) === marked) return;
+    PARKED.set(grid, marked);
     grid.parked.fill(0);
-    for (const body of this.sim.space.still(level, 'wheels')) {
-      const [x, y, w, h] = body.rect ?? [Math.round(body.x), Math.round(body.y), 1, 1];
+    for (const [x, y, w, h] of rects) {
       for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (grid.inBounds(i, j)) grid.parked[grid.i(i, j)] = 1;
     }
   }

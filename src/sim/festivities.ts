@@ -161,7 +161,9 @@ export class Festivities {
   private decorate(wanted: boolean, hour: number): void {
     const { sim } = this;
     for (const level of this.decorated()) {
-      const tree = sim.activeItems().find((i) => i.def.t === 'homeTree' && sim.floorsOf(level).includes(i.level));
+      // The first on any floor, as the furniture's numbered.
+      const trees = sim.floorsOf(level).flatMap((floor) => sim.itemsOn(floor).filter((i) => i.def.t === 'homeTree'));
+      const tree = trees.sort((a, b) => a.index - b.index)[0];
       if (wanted === !!tree) continue;
       const home = sim.levels.get(level)?.kind === 'home';
       // Evenings at home; working hours at the office.

@@ -684,10 +684,12 @@ function frame(now: number): void {
   // Coming back after a while: the loading screen says where the catching up has got to.
   if (loading && catchingUp) loading.querySelector('.loading-note')!.textContent = `Catching up on the town… ${formatClock(sim.tick, sim.firstDay)}`;
 
-  // Jumping ahead plays out on screen, at speed. Live's catching up happens out of sight: the town just is where it should be.
+  // A short hop plays out on screen, at speed. Further jumps and Live's catching up happen out of sight (the town dimmed,
+  // the progress in the middle of it): the town just is where it should be.
+  stage.classList.toggle('away', time.outOfSight);
   // On a phone the sheet and the profile slide up over the map: keep whoever's followed in the part still showing.
   renderer.camera.insetBottom = narrow.matches ? Math.max(profile.coveredHeight(), sheet.offsetHeight) : 0;
-  if (!catchingUp) renderer.draw(between, dt);
+  if (!time.outOfSight) renderer.draw(between, dt);
   if (loading && !catchingUp) {
     const screen = loading;
     loading = null;

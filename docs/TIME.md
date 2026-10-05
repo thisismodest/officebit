@@ -41,16 +41,15 @@ another day. Pause and play sit beside the clock (or Space).
   run in full, so you arrive to people mid-walk and cars on the roads. Whenever it falls behind (the tab was
   hidden) it catches up out of sight, showing "Catching up with the
   clock…". Paused and played again, it goes back to now on screen, like a jump ahead
-  (`backToNow`; out of sight if it's more than a day behind), and stays Live. The clock counts the days since it
+  (`backToNow`; out of sight if it's more than two game hours behind), and stays Live. The clock counts the days since it
   began (Day 1 is the day it started, whatever the weekday), and its panel says when that was.
   Switching to Sandbox keeps the town you have; back to Live goes back to the
   one that's been running.
-- **Jumping ahead** plays out on screen at full speed, with a progress bar and
-  **Stop here**, then carries on from that moment. Because the sim is deterministic,
-  it's the same story the town would have lived anyway. It leaves Live mode,
-  since the town is then ahead of the clock. A jump aims to take about 8
-  seconds, however far (never faster than 60× for short ones, and as fast as
-  the machine allows for very long ones).
+- **Jumping ahead** shows a progress bar with **Stop here**, then carries on from that moment. A hop of two
+  game hours or less plays out on screen at 60×: the same story the town would have lived anyway, since the sim is
+  deterministic. Further, it happens out of sight, the town dimmed behind the progress bar, and brisk (as catching up
+  is) but for the last two game hours: a week in a few seconds, and a story much like the one it would have lived.
+  It leaves Live mode, since the town is then ahead of the clock.
   From the console: `officebit.travel(3)` (days) or
   `officebit.travel('2026-12-25T09:00')`.
 - **Another day**, under jumping ahead, starts a fresh town in Sandbox at 06:00
