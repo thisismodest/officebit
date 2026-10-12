@@ -1,6 +1,6 @@
 // The welcome card (docs/UI.md): on a first visit, and from the ? on the tool
-// rail. A sentence on what this is, the tour if you'd like it, and the way to
-// the About page.
+// rail. A sentence on what this is, the tour if you'd like it, and the story of
+// what it is (story.ts).
 
 /** Remembered once someone's seen it, so it only opens by itself the once. */
 const SEEN_KEY = 'officebit:welcomed';
@@ -8,7 +8,7 @@ const SEEN_KEY = 'officebit:welcomed';
 export class Welcome {
   private readonly root: HTMLElement;
 
-  constructor(host: HTMLElement, button: HTMLElement, onTour: () => void) {
+  constructor(host: HTMLElement, button: HTMLElement, onTour: () => void, onStory: () => void) {
     this.root = document.createElement('div');
     this.root.className = 'welcome mdst-card';
     this.root.setAttribute('role', 'dialog');
@@ -21,7 +21,7 @@ export class Welcome {
         <p class="actions">
           <button type="button" class="mdst-button--sm mdst-button--inverted" data-close>Look around</button>
           <button type="button" class="mdst-button--sm" data-tour>Take a tour</button>
-          <a class="mdst-button mdst-button--sm" href="./about/">What is this?</a>
+          <button type="button" class="mdst-button--sm" data-story>What is this?</button>
         </p>
         <p class="mdst-p--sm"><a href="./changelog/">What's new</a></p>
       </div>`;
@@ -29,6 +29,10 @@ export class Welcome {
     this.root.querySelector('[data-tour]')!.addEventListener('click', () => {
       this.close();
       onTour();
+    });
+    this.root.querySelector('[data-story]')!.addEventListener('click', () => {
+      this.close();
+      onStory();
     });
     this.root.addEventListener('pointerdown', (event) => event.stopPropagation());
     host.append(this.root);

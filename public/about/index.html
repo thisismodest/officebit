@@ -163,6 +163,15 @@
           />
         </section>
 
+        <section>
+          <h2>Your town, a day at a time</h2>
+          <div class="story-strip" id="story"></div>
+          <script type="module">
+            import { storyStrip } from "../src/ui/story.js";
+            storyStrip(document.getElementById("story"), "../story/");
+          </script>
+        </section>
+
         <section id="how">
           <h2>Everyone has a mind of their own</h2>
           <p>

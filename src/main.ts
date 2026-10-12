@@ -23,6 +23,7 @@ import { Editor } from './ui/editor.ts';
 import { icon } from './ui/icons.ts';
 import { ShareMenu } from './ui/share-menu.ts';
 import { upgrade } from './worlds/upgrades.ts';
+import { Story } from './ui/story.ts';
 import { Welcome } from './ui/welcome.ts';
 import { attachTabs } from './ui/tabs.ts';
 import { checkWorld, fromHash, loadLocal, saveLocal } from './ui/world-io.ts';
@@ -305,7 +306,9 @@ const tour = new Tour(stage, {
 });
 /** The speed the town was going at before the tour paused it (null: the tour hasn't). */
 let speedBeforeTour: number | null = null;
-new Welcome(stage, $('#help'), () => tour.start());
+// What is this? A short story over the town (story.ts), from the welcome card.
+const story = new Story(document.body);
+new Welcome(stage, $('#help'), () => tour.start(), () => story.start());
 new ShareMenu($('#share'), {
   design: () => design,
   starter: () => ({ ...structuredClone(STARTER), seed: storySeed() }),

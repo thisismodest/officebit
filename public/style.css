@@ -564,6 +564,93 @@ main {
   }
 }
 
+/* What is this? (story.ts): a picture and a line at a time, over the darkened town. */
+.story {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: safe center;
+  padding: var(--mdst-space-sm);
+  overflow-y: auto;
+  background: rgba(10, 8, 20, 0.7);
+}
+
+.story-card {
+  position: relative;
+  width: min(34rem, 100%);
+  padding: 0;
+  background: var(--mdst-color-bg);
+  box-shadow: 0 0.25rem 0 rgba(0, 0, 0, 0.35);
+
+  & .story-close {
+    position: absolute;
+    top: var(--mdst-space-xs);
+    right: var(--mdst-space-xs);
+    z-index: 1;
+    background: var(--mdst-color-bg);
+  }
+
+  & figure {
+    margin: 0;
+  }
+
+  /* The picture: the town's own pixels, kept crisp, a frame of the page's colour round it. */
+  & img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 8 / 5;
+    image-rendering: pixelated;
+    border-bottom: var(--mdst-border-width) solid var(--mdst-color-border);
+    -webkit-user-drag: none;
+    user-select: none;
+    touch-action: pan-y;
+  }
+
+  & figcaption {
+    padding: var(--mdst-space-md) var(--mdst-space-md) 0;
+
+    & h2 {
+      margin: 0 0 var(--mdst-space-xs);
+      font-size: 1.25rem;
+    }
+
+    & p {
+      margin: 0;
+    }
+  }
+}
+
+.story-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--mdst-space-sm);
+  padding: var(--mdst-space-md);
+
+  & .story-dots {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    gap: 6px;
+
+    & span {
+      width: 8px;
+      height: 8px;
+      background: var(--mdst-color-subtle);
+      border: var(--mdst-border-width) solid var(--mdst-color-border);
+    }
+
+    & span[data-on] {
+      background: var(--mdst-color-fg);
+    }
+  }
+
+  & button {
+    min-width: 6rem;
+  }
+}
+
 /* The welcome card (welcome.ts): in the middle of the map, on a first visit and from the ? on the tool rail. */
 .welcome {
   position: absolute;

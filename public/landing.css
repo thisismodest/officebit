@@ -204,6 +204,37 @@ main > section {
   image-rendering: pixelated;
 }
 
+/* A day in your town (story.ts, the same story as "What is this?" in town): its pictures, each with its line. */
+.story-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--mdst-space-lg) var(--mdst-space-md);
+
+  & figure {
+    margin: 0;
+  }
+
+  & img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: var(--mdst-space-sm);
+    border: 2px solid var(--mdst-color-fg);
+    background: var(--stage-bg);
+    image-rendering: pixelated;
+  }
+
+  & figcaption {
+    text-wrap: pretty;
+  }
+
+  /* Its title, on a line of its own. */
+  & figcaption strong {
+    display: block;
+    margin-bottom: 2px;
+  }
+}
+
 .features {
   padding-left: 1.25rem;
 

@@ -49,6 +49,7 @@ npx @biomejs/biome lint .   # lint (biome.jsonc; not an npm script, not a depend
 npm run probe -- 48  # headless: everyone's last 48 h as a timeline, plus venture events
 npm run bench -- 200 # how fast: a town of 200 people, timed (docs/DEVELOPING.md#speed)
 npm run spotlights          # fetch the spotlights' titles and pictures into .cache/spotlights/ (the build and dev server do it too)
+npm run story-shots  # retake the "What is this?" pictures (public/story/) from the dev server, in headless Chrome
 npm run build        # dist/ for GitHub Pages
 ```
 
@@ -125,7 +126,8 @@ src/feeds/    protocol.ts (validated data-only messages), local.ts (console + po
 public/       index.html + style.css (the town, at the site's root), about/ + landing.css (what officebit is), changelog/ (what's new,
               for players: add a line when something ships), sw.js (the app's service worker), og-image.png, icons,
               site.webmanifest, sitemap.xml (addresses filled in from package.json `homepage`: docs/DEVELOPING.md#deploying)
-scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports, site address), probe.ts, bench.ts, spotlights.ts (fetches the spotlights with the site)
+scripts/      dev.ts, build.ts, transform.ts (type-strip + .ts→.js imports, site address), probe.ts, bench.ts, spotlights.ts (fetches the spotlights with the site),
+              story-shots.ts (the story's pictures)
 test/         node:test suites, one per area, mostly on the compact test town (town.config.ts; helpers in town.ts: docs/DEVELOPING.md#testing)
 ```
 

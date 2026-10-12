@@ -101,6 +101,13 @@ sitemap, the JSON-LD), filled in as they're built (`SITE_URL` overrides the
 homepage for a test build) or served (localhost). Move the site, change the
 homepage.
 
+### Story pictures
+
+The pictures in "What is this?" (`src/ui/story.ts`) are the starter town itself, in `public/story/`. Retake them when
+the town's look changes: with `npm run dev` running, `npm run story-shots` sets up each moment in a Sandbox town (a dry
+summer weekday, by the town's forecast; a later one if it'd rain) in headless Chrome, and saves them. Look them over
+before keeping them: the town's story is its own each time.
+
 **Spotlights:** the build fetches the spotlights' pages and pictures into `dist/spotlights/`
 ([FURNITURE](FURNITURE.md#spotlights)); one that can't be fetched gets the house spotlight.
 

@@ -16,7 +16,8 @@
     "typecheck": "tsc",
     "probe": "node scripts/probe.ts",
     "bench": "node scripts/bench.ts",
-    "spotlights": "node scripts/spotlights.ts"
+    "spotlights": "node scripts/spotlights.ts",
+    "story-shots": "node scripts/story-shots.ts"
   },
   "dependencies": {
     "mdst-ui": "^1.1.0"
