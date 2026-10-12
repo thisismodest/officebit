@@ -66,6 +66,8 @@ export class Renderer {
   /** Vehicles a mini game drives (its van): where they are (tiles) and which way they face, to light the road ahead
    * after dark like the town's cars. */
   readonly headlamps: ((level: string) => { x: number; y: number; facing: Heading }[])[] = [];
+  /** What a mini game's taken up to play with (the football), not drawn where it lies meanwhile. */
+  readonly hidden = new Set<Item>();
   /** The level on screen. */
   level = '';
   /** Called when the level on screen changes (e.g. following someone upstairs). */
@@ -191,7 +193,7 @@ export class Renderer {
     const night = 1 - sim.daylight();
     const props = this.propsOf(this.level);
     const visible = this.visible();
-    const drawables: { sortY: number; draw: () => void }[] = props.map((prop) => {
+    const drawables: { sortY: number; draw: () => void }[] = props.filter((prop) => !this.hidden.has(prop.item)).map((prop) => {
       // Food trucks are wherever their drive has got to (and only on the map, not the dark beyond it).
       // Boats are on their moorings, out on the river, or (a rowing boat) put away in the club.
       const moving = prop.item.type.street

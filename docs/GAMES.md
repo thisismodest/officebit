@@ -58,7 +58,8 @@ goes, back to the start. Each crossing scores, and the traffic gets a little qui
 
 ## Town games
 
-Played on the real town map, as a layer drawn over it (`renderer.overlays`), by `town/runner.ts`: a bar along the top
+Played on the real town map, as layers drawn over it (`renderer.overlays`, with the town, so they darken at night;
+`renderer.marks`, bright over it; `renderer.headlamps`, a vehicle's lights on the road), by `town/runner.ts`: a bar along the top
 (what to do, chips for how it's going, the time, an arrow which way), the camera on you (or left to you, in a game about
 looking round: drag the map, or the arrows), and a joystick for fingers in a game you steer. A game can ask for the map
 closer (never further out than you had it). The map still zooms (scroll, pinch, the zoom buttons); a tap on it goes to the
@@ -97,6 +98,31 @@ each to grass a good way from the thrower and near enough to you to get there co
 it's thrown, allowing a moment to see where it's going, and not at a flat-out run), its shadow (and a square) where it'll land, darker as it comes down; run there
 (the stick, or tap where to run) and be within reach when it does. Each throw's a little quicker. Stars by catches: eight
 for three, five for two. The game zooms the map in to play.
+
+### Fishing
+
+From a fishing barrel (`fishingBarrel`) within four tiles of water: a pond, or the river and its shallows (the starter
+town has one by the Green's pond and one on the bank by the moorings). Five casts. Tap (or ◆) to stop the swinging
+power meter and cast: further out, bigger fish. Wait for the float to dip, then tap within a second or so to hook it.
+Reel in with taps, quickly: it pulls back between them (the heavier, the harder), but once hooked it never gets away.
+A catch is a gold star over you.
+What bites depends on the water (roach, rudd, tench, carp and goldfish in ponds; perch, chub, trout, pike and, after
+dark, eels in the river), how far out (carp and pike only far out), and the time (bites come quicker at dawn and dusk,
+and in the rain). Every fish goes back; a new kind goes in the fish book (kept in the browser), shown in the bar.
+Stars by fish landed. The map zooms in to fish.
+
+### Penalties
+
+From a football (`football`) on a pitch, a shoot-out at its nearest goal (within twelve tiles, on the same level). Five
+each. Taking one: tap to stop the aim sweeping across the goal (past a post is wide), then tap to stop the power (too
+much is over the bar); the keeper dives, guessing your side now and then, and saves what's near enough (a soft one
+from further). In goal: the town runs up, and you dive with the stick (or tap above or below the keeper) before it
+shoots. Most goals wins. How each kick goes is decided as it's struck, so the ball flies there: into the net, into the
+keeper's hands and back out, or past the post or over the bar and out the back. The goal's way round decides which
+way's along the pitch, so it works on any pitch.
+
+Where they're played is `town/pitches.ts`, which the editor asks too: a barrel only goes down by water with somewhere
+to stand at it, and a football only near a goal (the outline's red otherwise).
 
 ## Adding a game
 

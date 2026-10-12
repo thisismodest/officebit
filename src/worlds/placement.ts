@@ -7,6 +7,7 @@
 import { CATALOG } from '../sim/catalog.ts';
 import { covers, endsOn, footprint as footprintOf, overlap, tilesIn } from '../sim/geometry.ts';
 import { pitchReachable } from '../sim/food-trucks.ts';
+import { goalNear, swimNear } from '../games/town/pitches.ts';
 import { Grid } from '../sim/grid.ts';
 import { RoadMap } from '../sim/roads.ts';
 import { MOVERS, blocks } from '../sim/movement.ts';
@@ -74,6 +75,9 @@ export function placementProblem(level: LevelDef, portals: readonly PortalDef[],
   if (type.street && !pitchReachable(new RoadMap(after, new Grid(after)), placed)) return 'A food truck needs a clear way up from the road in front, with nothing in the way.';
   // A bus stop faces a road, for its bus to pull up beside.
   if (t === 'busStop' && !new RoadMap(after, new Grid(after)).stopBay(placed)) return 'A bus stop goes beside a road, for the bus to pull up at.';
+  // Something to play needs where it's played: water for a fishing barrel, a goal for the football.
+  if (type.minigame === 'fishing' && !swimNear(after, new Grid(after), after.furniture, at)) return 'A fishing barrel goes by a pond or the river, with room to stand at the water.';
+  if (type.minigame === 'penalties' && !goalNear(after.furniture, at)) return 'The football goes on a pitch, near a goal.';
   return null;
 }
 

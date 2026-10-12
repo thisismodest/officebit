@@ -1,6 +1,6 @@
 // The mini games' signposts out in the town (docs/GAMES.md): click one to play.
 import { OUTLINE } from '../palette.ts';
-import { rect } from '../pixels.ts';
+import { rect, type Ctx } from '../pixels.ts';
 import type { Painter } from './common.ts';
 
 const POST = '#6b4a33';
@@ -67,4 +67,43 @@ export const GAMES: Record<string, Painter> = {
       }
     },
   },
+  // Fishing: a wooden barrel, a rod leaning out of it, its line hanging.
+  fishingBarrel: {
+    up: 14,
+    paint(ctx, w, h, o) {
+      const mid = w / 2;
+      rect(ctx, mid - 5, o + h - 11, 10, 10, OUTLINE);
+      rect(ctx, mid - 4, o + h - 10, 8, 8, '#9a6a3a');
+      rect(ctx, mid - 4, o + h - 8, 8, 1, '#6b4a33');
+      rect(ctx, mid - 4, o + h - 4, 8, 1, '#6b4a33');
+      // The rod, up and out to the right, and its line.
+      for (let i = 0; i < 12; i++) rect(ctx, mid + 1 + Math.floor(i / 2), o + h - 11 - i, 1, 1, '#4a3a2a');
+      rect(ctx, mid + 7, o + h - 22, 1, 6, '#e8e8e8');
+      rect(ctx, mid + 6, o + h - 16, 3, 2, RED);
+    },
+  },
+  // Penalties: a football, black and white, on the grass.
+  football: {
+    up: 0,
+    paint(ctx, w, h, o) {
+      rect(ctx, w / 2 - 3, o + h - 3, 7, 2, 'rgba(20, 14, 30, 0.25)');
+      paintBall(ctx, w / 2 + 0.5, o + h - 6, true);
+    },
+  },
 };
+
+/** A football, round, white with black patches: the big one on the grass, a smaller one in flight. */
+const BALLS = {
+  big: ['..ooo..', '.owwko.', 'owkkwwo', 'okkkwwo', 'owwwwko', '.okwwo.', '..ooo..'],
+  small: ['.ooo.', 'owwwo', 'owkwo', 'owwwo', '.ooo.'],
+};
+const BALL_INK: Record<string, string> = { o: OUTLINE, k: '#4e4860', w: '#f4f4f0' };
+
+/** A football centred on (cx, cy), in pixels. */
+export function paintBall(ctx: Ctx, cx: number, cy: number, big = false): void {
+  const rows = big ? BALLS.big : BALLS.small;
+  const [x0, y0] = [Math.round(cx - rows.length / 2), Math.round(cy - rows.length / 2)];
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) if (BALL_INK[row[x]!]) rect(ctx, x0 + x, y0 + y, 1, 1, BALL_INK[row[x]!]!);
+  });
+}

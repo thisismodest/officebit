@@ -280,7 +280,11 @@ export const STARTER_CONFIG: TownConfig = {
     // Games on the Green (docs/GAMES.md): Find it's noticeboard by the path, and Catch!'s ball tub out on the grass.
     // Last, so everything before them keeps its place in the town's numbering (and the story its course).
     { t: "findIt", p: [52, 90] },
-    { t: "ballTub", p: [88, 100] }
+    { t: "ballTub", p: [88, 100] },
+    // Fishing barrels by the Green's pond and on the river bank by the moorings, and a football on the school's pitch.
+    { t: "fishingBarrel", p: [66, 83] },
+    { t: "fishingBarrel", p: [101, 134] },
+    { t: "football", p: [62, 123] }
   ],
 
   floors: {

@@ -5,7 +5,9 @@ import type { Tile } from '../sim/world.ts';
 import { Cabinet } from './cabinet.ts';
 import { CATCH } from './town/catch.ts';
 import { FIND_IT } from './town/find-it.ts';
+import { FISHING } from './town/fishing.ts';
 import { PARCEL_DASH } from './town/parcel-dash.ts';
+import { PENALTIES } from './town/penalties.ts';
 import { TownGame, type TownGameDef, type TownHost } from './town/runner.ts';
 
 export type Minigame = NonNullable<FurnitureType['minigame']>;
@@ -21,10 +23,12 @@ export const MINIGAMES: Record<Minigame, { title: string; about: string; play: s
   parcelDash: { title: 'Parcel Dash', about: 'Drive the parcel van and deliver to the houses!', play: '📦 Play', cant: 'There are no houses to deliver to from here.' },
   findIt: { title: 'Find it', about: 'Someone’s out and about in town. Can you find them?', play: '🔍 Play', cant: 'There’s nobody in town to find.' },
   catch: { title: 'Catch!', about: 'A friend throws, you run and catch. How many can you get?', play: '⚾ Play', cant: 'There’s no grass to play on here.' },
+  fishing: { title: 'Fishing', about: 'Cast a line and see what’s biting. Every new kind goes in your fish book.', play: '🎣 Fish', cant: 'There’s no water near enough to fish in.' },
+  penalties: { title: 'Penalties', about: 'Five penalties each: take yours, then go in goal.', play: '⚽ Play', cant: 'There’s no goal near enough to shoot at.' },
 };
 
 /** The games played out in the town. */
-const TOWN_GAMES: Record<Exclude<Minigame, 'arcade'>, TownGameDef> = { parcelDash: PARCEL_DASH, findIt: FIND_IT, catch: CATCH };
+const TOWN_GAMES: Record<Exclude<Minigame, 'arcade'>, TownGameDef> = { parcelDash: PARCEL_DASH, findIt: FIND_IT, catch: CATCH, fishing: FISHING, penalties: PENALTIES };
 
 export class Games {
   private readonly cabinet: Cabinet;

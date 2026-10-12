@@ -115,10 +115,10 @@ src/render/   renderer.ts (one level through a camera; y-sorted props+people; ni
 src/ui/       overview.ts, directory.ts, news.ts, profile.ts (sidebar and slide-out; docs/UI.md), history.ts (Back),
               editor.ts (map editor), room-tools.ts (its rooms, doorways and floors), person-editor.ts (Edit on a profile), share-menu.ts + world-io.ts (the cog: your town's name, save, share links, townfiles),
               timekeeper.ts (live/sandbox; catching up brisk), snapshots.ts (Live towns saved in IndexedDB), time-jump.ts (the clock's panel: Live or Sandbox, speeds, jumping ahead, another day), whereabouts.ts (your place, from your timezone), controls.ts (pan/zoom/click),
-              place-card.ts, fullscreen.ts, welcome.ts (the first-visit card and ?), tour.ts (the tour, from the welcome card), team-form.ts (adding someone
+              place-card.ts, fullscreen.ts, welcome.ts (the first-visit card and ?), story.ts + slides.ts ("What is this?": pictures and a line at a time), tour.ts (the tour, from the welcome card), team-form.ts (adding someone
               to the team), describe.ts + who.ts (wording), popover.ts, tabs.ts, html.ts, icons.ts (toolbar SVGs)
 src/games/    mini games (docs/GAMES.md): controls.ts, cabinet.ts (the arcade cabinet), arcade/ (Caterpillar, Brick Bash, Space Rocks, Bubble
-              Blaster, Cross the Road), town/ (Parcel Dash, Find it, Catch!, and the runner that plays them over the map); index.ts (Games,
+              Blaster, Cross the Road), town/ (Parcel Dash, Find it, Catch!, Fishing, Penalties, and the runner that plays them over the map); index.ts (Games,
               MINIGAMES). Never touch the sim's story.
 src/audio/    composer.ts (the music's notes, day and night, seeded), music.ts (Web Audio player), sounds.ts (effects), noise.ts;
               ui/soundscape.ts decides which effects play, ui/audio-menu.ts the switches and volumes
@@ -225,9 +225,10 @@ Working and verified in the browser:
   links, interactions, feeds, opt-in music and sounds with volumes, full screen, and an installable app (PWA).
 - **Games:** the arcade machines play Caterpillar, Brick Bash, Space Rocks, Bubble Blaster and Cross the Road in an arcade
   cabinet; out in town, Parcel Dash from a signpost by the depot (a van round the real town), and on the Green Find it
-  (spot someone out and about) and Catch! (run to catch a friend's throws).
+  (spot someone out and about) and Catch! (run to catch a friend's throws); fishing by the pond and the river, and
+  penalties on the school's pitch.
 
-227 tests passing; typecheck and lint clean. Known gaps are under "Also on the
+234 tests passing; typecheck and lint clean. Known gaps are under "Also on the
 list" in `ROADMAP.md`.
 
 `src/worlds/starter.ts` uses double quotes (Marcus's editor reformatted it);

@@ -4,7 +4,7 @@
 // town carries on behind you; a Sandbox one waits till you're done. The town's story never knows.
 import { FEET, type Renderer } from '../../render/renderer.ts';
 import { TILE, type Ctx } from '../../render/pixels.ts';
-import type { Simulation } from '../../sim/sim.ts';
+import type { Item, Simulation } from '../../sim/sim.ts';
 import type { Tile } from '../../sim/world.ts';
 import { DELTA, GameControls, type Dir, type Input } from '../controls.ts';
 import { joystick, pixelStar } from '../pixel.ts';
@@ -53,6 +53,8 @@ export interface TownRound {
   mark?(ctx: Ctx, time: number, night: number): void;
   /** Vehicles it drives (tiles, and which way they face), to light the road ahead after dark like the town's cars. */
   headlamps?(): { x: number; y: number; facing: Dir }[];
+  /** Something in town it plays with (the football), not drawn where it lies while it's in play. */
+  readonly using?: Item;
   readonly done: boolean;
   /** One to three, once it's done. */
   readonly stars: number;
@@ -178,6 +180,9 @@ export class TownGame {
   private begin(): boolean {
     const round = this.def?.plan(this.host.sim(), this.from, Math.random);
     if (!round) return false;
+    const { hidden } = this.host.renderer;
+    if (this.round?.using) hidden.delete(this.round.using);
+    if (round.using) hidden.add(round.using);
     this.round = round;
     this.shownDone = false;
     this.root.querySelector<HTMLElement>('.town-game-done')!.hidden = true;
@@ -192,7 +197,8 @@ export class TownGame {
     if (this.root.hidden) return;
     cancelAnimationFrame(this.frameId);
     this.controls.detach();
-    const { overlays, marks, headlamps } = this.host.renderer;
+    const { overlays, marks, headlamps, hidden } = this.host.renderer;
+    if (this.round?.using) hidden.delete(this.round.using);
     overlays.splice(overlays.indexOf(this.paint), 1);
     marks.splice(marks.indexOf(this.mark), 1);
     headlamps.splice(headlamps.indexOf(this.headlamps), 1);

@@ -20,10 +20,20 @@
 button,
 svg,
 canvas,
-[role="tab"] {
+[role="tab"],
+.arcade,
+.town-game {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* Quick taps (on the map, in a game) mustn't flash grey on phones. */
+canvas,
+button,
+.arcade,
+.town-game {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* mdst-ui sets `display` on buttons, so hiding has to win. */
@@ -1802,6 +1812,11 @@ button.icon-button {
     }
   }
 
+  /* A town game's joystick: above the sheet's tabs, like the other controls over the map. */
+  .town-game > .town-game-pad {
+    bottom: calc(3.5rem + var(--mdst-space-sm));
+  }
+
   /* Banners (steering, time travel) sit just above the sheet. */
   .travel {
     bottom: calc(3.5rem + var(--mdst-space-sm));
@@ -2075,12 +2090,26 @@ button.icon-button {
   top: var(--mdst-space-md);
   left: 50%;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
-  gap: var(--mdst-space-md);
+  gap: var(--mdst-space-xs) var(--mdst-space-md);
+  /* As wide as it needs, but never past the map's sides: a narrow screen wraps it onto two lines. */
+  width: max-content;
+  max-width: calc(100% - 1rem);
   padding: var(--mdst-space-xs) var(--mdst-space-xs) var(--mdst-space-xs) var(--mdst-space-md);
   transform: translateX(-50%);
-  white-space: nowrap;
   background: var(--mdst-color-bg);
+
+  & > * {
+    white-space: nowrap;
+  }
+
+  /* What to do now: wrapped, if it's long. */
+  & > .town-game-say {
+    white-space: normal;
+    text-align: center;
+  }
 }
 
 .town-game-say {

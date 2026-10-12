@@ -10,11 +10,15 @@ import { CrossTheRoad } from '../src/games/arcade/cross-the-road.ts';
 import { SpaceRocks } from '../src/games/arcade/space-rocks.ts';
 import { ARCADE } from '../src/games/cabinet.ts';
 import { Catch, plan as planCatch } from '../src/games/town/catch.ts';
+import { Fishing, plan as planFishing } from '../src/games/town/fishing.ts';
+import { Penalties } from '../src/games/town/penalties.ts';
+import { goalNear } from '../src/games/town/pitches.ts';
+import { placementProblem } from '../src/worlds/placement.ts';
 import { FindIt, aboutTown, standingSpot, townsfolk, type Findable } from '../src/games/town/find-it.ts';
 import type { Dir, Input, Key } from '../src/games/controls.ts';
 import { MINIGAMES } from '../src/games/index.ts';
 import { ParcelDash, plan } from '../src/games/town/parcel-dash.ts';
-import { doorInto, fresh, run, snapshot, until } from './town.ts';
+import { doorInto, fresh, run, snapshot, starter, until } from './town.ts';
 
 /** Controls for one frame: keys held, and keys pressed this frame. */
 const keys = (held: Dir[] = [], pressed: Key[] = []): Input => ({ held: new Set(held), pressed: new Set(pressed), pointer: null, tap: null });
@@ -331,3 +335,99 @@ test('find it and catch in the town: people to find, somewhere outdoors for stan
   assert.deepEqual(snapshot(played), snapshot(untouched), 'the story goes on just the same');
 });
 
+
+test('fishing: tap to cast, wait for the bite, hook it in time, and tap and tap to reel it in (it never gets off)', () => {
+  // Water to the east of where you stand.
+  const water: Tile[] = [];
+  for (let x = 2; x < 8; x++) for (let y = -2; y <= 2; y++) water.push([x, y]);
+  const fishing = new Fishing([0, 0], water, 'pond', () => false, () => false, fixed(0.5));
+  assert.equal(fishing.facing, 'right');
+  const tick = (act = false, dt = 0.05) => fishing.step(dt, act);
+  // Cast at the top of the swing: furthest out.
+  for (let i = 0; i < 16; i++) tick();
+  tick(true);
+  assert.equal(fishing.stage, 'flying');
+  assert.ok(fishing.float && water.some(([x, y]) => x === fishing.float!.x && y === fishing.float!.y), 'the float lands on the water');
+  for (let i = 0; i < 400 && (fishing.stage as string) !== 'bite'; i++) tick();
+  assert.equal(fishing.stage, 'bite', 'a bite');
+  tick(true);
+  assert.equal(fishing.stage, 'reeling', 'hooked');
+  // A tap a second: it pulls back as much as that brings in, but it's still on.
+  for (let i = 0; i < 200; i++) tick(i % 20 === 0);
+  assert.equal(fishing.stage, 'reeling', 'still on the line');
+  assert.ok(fishing.progress < 0.5, 'not much nearer');
+  // Tapping quickly brings it in.
+  for (let i = 0; i < 400 && fishing.stage === 'reeling'; i++) tick(i % 2 === 0);
+  assert.equal(fishing.landed.length, 1, fishing.last?.said);
+  assert.equal(fishing.landed[0]!.species.water, 'pond');
+  // Too slow to hook the next one: it gets away.
+  for (let i = 0; i < 60 && fishing.stage !== 'aim'; i++) tick();
+  tick(true);
+  for (let i = 0; i < 400 && fishing.stage !== 'bite'; i++) tick();
+  for (let i = 0; i < 40; i++) tick();
+  assert.match(fishing.last!.said, /got away/);
+  assert.equal(fishing.casts, 3);
+});
+
+test('penalties: aim and power beat the keeper, or don’t; in goal a dive the right way saves; five each, then it’s over', () => {
+  // The keeper's guess (and the town's shots) come from this "random" number.
+  const p = new Penalties(fixed(0.99));
+  const at = (stage: string) => {
+    for (let i = 0; i < 200 && p.stage !== stage; i++) p.step(0.01, false, null);
+  };
+  // Aim near a post (a quarter of the sweep in), mid power: the keeper (diving the other way) can't reach it.
+  for (let i = 0; i < 200 && !(p.aim < -0.6 && p.aim > -0.9); i++) p.step(0.01, false, null);
+  p.step(0, true, null);
+  for (let i = 0; i < 200 && !(p.power > 0.6 && p.power < 0.8); i++) p.step(0.01, false, null);
+  p.step(0, true, null);
+  // Decided as it's struck, so the ball flies where it's going (into the net, the keeper's hands, over or wide).
+  assert.equal(p.stage, 'flight');
+  assert.equal(p.outcome, 'goal');
+  at('shown');
+  assert.equal(p.said, 'Goal!');
+  assert.deepEqual(p.score, [1, 0]);
+  // In goal: the town's shot goes to the side (0.99: the far side), and diving that way saves it.
+  at('run');
+  assert.equal(p.turn, 'save');
+  p.step(0.01, false, Math.sign(p.aim));
+  at('shown');
+  assert.equal(p.said, 'Saved!');
+  // Through to the end.
+  for (let i = 0; i < 5000 && !p.done; i++) p.step(0.02, i % 20 === 0, null);
+  assert.ok(p.done);
+  assert.equal(p.kicks.length, 10);
+  assert.deepEqual(p.kicks.slice(0, 4).map((k) => k.by), [0, 1, 0, 1], 'you shoot, then you keep');
+});
+
+test('fishing and penalties in the starter town: a pond and the river to fish, and a goal to shoot at', () => {
+  const sim = starter();
+  const at = (t: string) => sim.activeItems().filter((i) => i.def.t === t).map((i) => i.def.p);
+  const [pond, river] = at('fishingBarrel');
+  const byPond = planFishing(sim, pond!, Math.random)!;
+  const byRiver = planFishing(sim, river!, Math.random)!;
+  assert.ok(byPond && byRiver, 'water near both barrels');
+  // Like a player: cast, hook it the moment it bites, and tap whenever the line slackens.
+  const play = (f: typeof byPond) => {
+    for (let i = 0; i < 4000 && f.landed.length === 0 && !f.done; i++) f.step(0.05, f.stage === 'aim' || f.stage === 'bite' || f.stage === 'reeling');
+  };
+  play(byPond);
+  play(byRiver);
+  assert.equal(byPond.landed[0]?.species.water, 'pond');
+  assert.equal(byRiver.landed[0]?.species.water, 'river');
+  const goal = goalNear(sim.itemsOn(sim.traffic.level!).map((i) => i.def), at('football')[0]!);
+  assert.ok(goal, 'a goal by the ball');
+  assert.equal(Math.abs(goal.out[0]), 1, 'shooting along the pitch');
+});
+
+test('the editor puts a fishing barrel only by water, and a football only near a goal', () => {
+  const sim = starter();
+  const town = sim.levels.get(sim.traffic.level!)!;
+  const at = (t: string) => sim.activeItems().find((i) => i.def.t === t)!.def;
+  const barrel = at('fishingBarrel');
+  const ball = at('football');
+  const move = (def: typeof barrel, to: Tile) => placementProblem(town, sim.world.portals, def.t, to, def);
+  assert.equal(move(barrel, barrel.p), null, 'where it is, by the pond');
+  assert.match(move(barrel, [barrel.p[0], barrel.p[1] - 12]) ?? '', /pond or the river/, 'away from the water');
+  assert.equal(move(ball, ball.p), null, 'where it is, on the pitch');
+  assert.match(move(ball, [ball.p[0], ball.p[1] - 20]) ?? '', /near a goal/, 'off the pitch');
+});

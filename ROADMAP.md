@@ -57,6 +57,76 @@ Done (see `docs/INTERACTIONS.md`): pizza (delivered by a rider) and fire
 drills from the World tab, and taking control of someone. Nudges were tried
 and dropped.
 
+## Play and learn
+
+Games and things to learn from, for players of every age (teenagers on school iPads, and the 4–10s). Lines that hold
+for all of it: nothing to sign up to, no chat or play with strangers (anything social goes by a share link between
+people who know each other), no ads, nothing collected about anyone; short sessions; and nothing that changes the
+town's story unless it's meant to (a game reads the town; a bot or a startup is part of it, on purpose).
+
+### Games ✓ (so far)
+Done (see `docs/GAMES.md`): the arcade (Caterpillar, Brick Bash, Space Rocks, Bubble Blaster, Cross the Road); out in
+town, Parcel Dash, Find it, Catch!, fishing (by any water, with a fish book) and penalties (one player, or two taking
+turns). Next, in roughly this order:
+- **Beat my time:** finishing a game gives a link with the score and the town; a friend plays the same course, and
+  sees whose is best. Leaderboards between friends, without accounts.
+- **Two players on one device:** a pong-style Paddle Battle and a top-down duel in the arcade; split-screen Parcel
+  Dash.
+- **Time trials:** go-karts round the town's own roads, against a ghost of your best lap.
+- **A proper kickabout:** one against one across the pitch, against a townsperson (ball physics, an opponent that
+  runs); penalties are its start.
+- **A treasure hunt:** clues across town (Find it's big sibling).
+- More arcade classics under our own names: a falling-blocks puzzler, a maze chase.
+
+### 9. Data detective
+The town as data, and fair tests on it (statistics and the scientific method).
+- **A Data tab:** charts of the last week, drawn on a canvas (no dependencies): moods and needs, commute times, who
+  interrupts whom, a web of who's friends with whom, each venture's money. Each as a table too, to export to a
+  spreadsheet.
+- **Experiments:** make a prediction ("moving the coffee machine next to Design cuts their focus"), make the change,
+  and the town runs a week twice out of sight (a few seconds each), as it was and with the change, from the same
+  start. Because the sim is deterministic, the only difference is yours: a controlled experiment, side by side.
+- *Open:* which charts first; whether experiments run from now or from a saved moment; how a prediction's put (a
+  slider, a choice).
+
+### 10. Bot workshop
+Coding: write a program that lives in the town.
+- **Where:** a computer in the office or the school opens the workshop, a screen of its own (like the arcade): your
+  code on one side, the town on the other.
+- **Who:** a robot that walks in from the edge of town (nobody's life taken over). It's told what to do in plain
+  commands, `walkTo('the diner')`, `use('coffee machine')`, `chatWith('Nia')`, `wait(10)`, `say('hi')`, and can ask
+  the time, who's near, what's open and where things are. Code answers events: `onArrive`, `every(hour)`, `whenIdle`.
+- **Safe:** the code runs walled off (a worker, no page, no saves, no network), with a time limit, and talks to the
+  town only through those commands. They reach the sim as data, like taking control's orders, so the town still saves
+  and the story's still the sim's own, given what went in.
+- **Puzzles to learn with,** each checking itself: get to the diner before it shuts; make three friends today; deliver
+  three parcels; keep your needs above half all day. Starter code and hints; solving one opens the next.
+- **In two goes:** JavaScript with a friendly API first (for teenagers); then blocks to drag and drop (for younger
+  players), a small block editor of our own.
+- **Share a bot** by link: it runs in your friend's town.
+- *Open:* bots in Live as well as Sandbox, or in a practice copy of your town; what the robot looks like and where it
+  lives; how many at once.
+
+### 11. Run a startup
+Economics, by taking the helm of a venture.
+- **Take over** one that's going (or start one: pick a founder and an idea), and run it: its price, who to hire and
+  when, spending on getting the word out, and when to move to a bigger office.
+- **Fridays:** takings come in, with money in, money out, profit, and how many weeks the cash will last.
+- **What the sim needs:** a venture with a product (an app, a bakery, a games studio) and levers that work through
+  the town: cheaper brings more customers, more staff makes more but costs more in wages; good weeks and bad as now.
+- Your decisions are the town's story (in Live, its history).
+- *Open:* real products for ventures (more work, but it makes the decisions mean something); how much is left to
+  chance; whether rivals open up.
+
+### Schools
+- *Open:* whether officebit sets out to be at home in a classroom: a page for teachers with lesson ideas (the data
+  detective, the bot workshop, the town planner), perhaps a quiet mode with the games behind a switch. Or it stays a
+  thing for fun that happens to teach.
+- **Town planner challenges** (civics and geography): "the 8:30 bus is packed: fix it", "cut the queue at the food
+  trucks", "get everyone home by six": you change roads, crossings and stops in the editor, and the sim scores it.
+- **Did you know?** cards on the World tab for what the sim already knows: why days are shorter in winter (sunrise
+  follows where you are), how personality shapes a day, the river and the weather.
+
 ## Later
 
 ### 8. A "god": an LLM playing a person

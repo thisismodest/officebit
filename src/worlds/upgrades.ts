@@ -45,6 +45,15 @@ export const UPGRADES: Upgrade[] = [
       { level: 'town', furniture: { t: 'ballTub', p: [88, 100] } },
     ],
   },
+  // Fishing and penalties: barrels by the pond and the river, and a football on the school's pitch.
+  {
+    version: '0.7.1',
+    add: [
+      { level: 'town', furniture: { t: 'fishingBarrel', p: [66, 83] } },
+      { level: 'town', furniture: { t: 'fishingBarrel', p: [101, 134] } },
+      { level: 'town', furniture: { t: 'football', p: [62, 123] } },
+    ],
+  },
 ];
 
 /**
