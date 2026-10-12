@@ -6,6 +6,7 @@
 import { PANTRY_FULL, type Need, type Needs } from './needs.ts';
 import { faceTowards, type Intent, type Person } from './person.ts';
 import { outsideDoor } from './places.ts';
+import { roleOf } from './roles.ts';
 import type { DayPhase } from './schedule.ts';
 import type { Item, Simulation } from './sim.ts';
 import type { Place } from './world.ts';
@@ -69,9 +70,10 @@ function resume(sim: Simulation, p: Person, intent: Standing, length: [number, n
 }
 
 /** Standing about, now and then a few steps round where they first stood, in the same room, then on standing there for what's left.
- * Not someone you've sent there (taking control): they stay where they're put. */
+ * Not someone there for a reason (sent there by you, taking control; or on an errand, like the pizza rider waiting by
+ * the table): they stay where they're put. */
 function potter(sim: Simulation, p: Person, intent: Standing): void {
-  if (sim.brisk || sim.interactions.isControlled(p)) return;
+  if (sim.brisk || sim.interactions.isControlled(p) || roleOf(p).day === 'errand') return;
   intent.potterAt ??= sim.tick + sim.rng.int(...POTTER.stand);
   if (sim.tick < intent.potterAt || p.timer < POTTER.least) return;
   intent.potterAt = undefined;

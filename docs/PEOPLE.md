@@ -153,7 +153,8 @@ Standing about (`wander`, `retreat`), people potter: every 2–5 ticks, a few
 steps to a free tile within 3 of where they first stood, in the same room, then
 on standing there. The stand ends when it would have anyway (the walking counts
 towards it). Not out of sight (brisk: they just stand, so catching up and jumping
-ahead cost no more), and not someone you've sent there (taking control).
+ahead cost no more), not someone you've sent there (taking control), and not anyone on an errand (the pizza rider by the
+table), who's there for a reason.
 
 ## At runtime
 
