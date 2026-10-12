@@ -11,7 +11,7 @@ import { Camera } from './camera.ts';
 import { paintJob, paintVehicleLights, vehicleOrigin, vehicleSprite, type Colours } from './vehicles.ts';
 import { planeAt } from './props/airfield.ts';
 import { truckColours } from './props/outdoor.ts';
-import { characterSprite, type Facing, type Look, type Pose, SPRITE_H } from './characters.ts';
+import { characterSprite, type Facing, type Look, type Pose, SPRITE_H, anchors } from './characters.ts';
 import { BACKGROUND, NIGHT, OUTLINE, PANTS, hashString } from './palette.ts';
 import { PET_H, petSprite, type PetPose } from './pets.ts';
 import { TILE, canvas, dot, rect, type Ctx } from './pixels.ts';
@@ -576,8 +576,10 @@ export class Renderer {
     }
     const sprite = characterSprite(this.lookOf(p), facing, pose, p.status.activity === 'focus');
     ctx.drawImage(sprite, x, feet - SPRITE_H + 1);
-    // A phone, a cup, the TV's glow (life.ts).
-    paintLife(ctx, this.sim, p, pose, facing, x, feet, feet - SPRITE_H + 1 + headTop(sprite), this.time);
+    // A phone, a cup, the TV's glow (life.ts), at their hands and mouth.
+    const top = feet - SPRITE_H + 1;
+    const rows = anchors(this.lookOf(p), pose);
+    paintLife(ctx, this.sim, p, pose, facing, x, { head: top + rows.head, mouth: top + rows.mouth, hands: top + rows.hands }, this.time);
     // Out in the rain: an umbrella up, for those who carry one.
     if (this.sim.weather.wet() > 0 && hasUmbrella(p, this.sim.world.seed) && this.sim.levels.get(p.level)?.kind === 'outside') {
       paintUmbrella(ctx, x + 6, feet - SPRITE_H + 1 + headTop(sprite), hashString(p.id));

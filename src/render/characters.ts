@@ -100,6 +100,14 @@ const childLegs = (rows: readonly string[]) => rows.filter((_, i) => i !== 1);
 
 const cache = new Map<string, HTMLCanvasElement>();
 
+/** Where things are on someone's sprite, in rows from its top: the top of their head, their mouth and their hands (for
+ * drawing what they're holding: a phone, a controller, a cup). Sitting, they're a row or two lower. */
+export function anchors(look: Look, pose: Pose): { head: number; mouth: number; hands: number } {
+  const head = HEADROOM + (look.child ? CHILD_DROP : 0) + (pose === "sitDesk" ? 2 : pose === "sitSofa" ? 1 : 0);
+  // The hands are on the body's fourth row (a child's is two rows shorter).
+  return { head, mouth: head + 7, hands: head + 9 + (look.child ? 1 : 3) };
+}
+
 export function characterSprite(look: Look, facing: Facing, pose: Pose, headphones: boolean): HTMLCanvasElement {
   const key = `${look.skin}.${look.hair}.${look.shirt}.${look.style}.${look.pants}.${look.badge}.${look.hiVis}.${look.child}|${facing}|${pose}|${headphones}`;
   let sprite = cache.get(key);
@@ -147,7 +155,7 @@ function build(look: Look, facing: Facing, pose: Pose, headphones: boolean): HTM
     paintAscii(ctx, CRAWL[view === "side" ? "side" : "front"][pose === "crawlA" ? 0 : 1]!, colors, 0, y0 + 9, mirror);
     return c;
   }
-  const y0 = HEADROOM + (look.child ? CHILD_DROP : 0) + (pose === "sitDesk" ? 2 : pose === "sitSofa" ? 1 : 0);
+  const y0 = anchors(look, pose).head;
   const body = (rows: readonly string[]) => (look.child ? childBody(rows) : rows);
   const legRows = (rows: readonly string[]) => (look.child ? childLegs(rows) : rows);
   const legsAt = y0 + 9 + body(BODY.front).length;

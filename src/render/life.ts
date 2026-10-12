@@ -41,28 +41,30 @@ export function chatTurn(p: Person, other: string, time: number): string | null 
 }
 
 /**
- * The signs of life round someone just drawn: `x` their sprite's left, `feet` where they stand, `head` the top of their
- * head (world pixels), `facing` as drawn.
+ * The signs of life round someone just drawn: `x` their sprite's left, and `at` the top of their head, their mouth and
+ * their hands (world pixels), `facing` as drawn.
  */
-export function paintLife(ctx: Ctx, sim: Simulation, p: Person, pose: Pose, facing: Facing, x: number, feet: number, head: number, time: number): void {
+export function paintLife(ctx: Ctx, sim: Simulation, p: Person, pose: Pose, facing: Facing, x: number, at: { head: number; mouth: number; hands: number }, time: number): void {
   const h = hashString(p.id);
   const intent = p.intent;
   // Their phone out, now and then, standing about (grown-ups, facing us: side on, it doesn't read as a phone).
   if (standingAbout(p, pose) && p.role !== 'child' && facing === 'down' && !glance(p, pose, time)) {
     const spell = time / PHONE.every + h * 3;
     if (Math.floor(spell) % 2 === 0 && spell % 1 < PHONE.share) {
-      rect(ctx, x + 4, feet - 11, 3, 4, OUTLINE);
-      rect(ctx, x + 5, feet - 10, 1, 2, '#9fd3f0');
+      // Held up in front of them, at their hands.
+      rect(ctx, x + 4, at.hands - 3, 3, 4, OUTLINE);
+      rect(ctx, x + 5, at.hands - 2, 1, 2, '#9fd3f0');
     }
   }
   if (intent?.kind !== 'use' || p.phase !== 'doing') return;
   // On the sofa in front of the TV: its glow flickering on them, and a controller out for a game.
   if (pose === 'sitSofa' && (intent.mode === 'games' || intent.mode === 'takeaway')) {
     const flicker = 0.08 + 0.07 * Math.abs(Math.sin(time / 170 + h * 9) * Math.sin(time / 430));
-    rect(ctx, x, head, 12, feet - 6 - head, `rgba(130, 180, 255, ${flicker.toFixed(3)})`);
+    rect(ctx, x, at.head, 12, at.hands + 2 - at.head, `rgba(130, 180, 255, ${flicker.toFixed(3)})`);
+    // The controller in their hands, its light blinking.
     if (intent.mode === 'games') {
-      rect(ctx, x + 3, feet - 10, 6, 3, OUTLINE);
-      rect(ctx, x + 4, feet - 9, 1, 1, Math.floor(time / 300) % 2 ? '#e94f4f' : '#5fb35a');
+      rect(ctx, x + 3, at.hands - 1, 6, 3, OUTLINE);
+      rect(ctx, x + 4, at.hands, 1, 1, Math.floor(time / 300) % 2 ? '#e94f4f' : '#5fb35a');
     }
   }
   // At the table with something to eat or drink: a cup raised now and then.
@@ -70,9 +72,10 @@ export function paintLife(ctx: Ctx, sim: Simulation, p: Person, pose: Pose, faci
   if (pose === 'sitSofa' && item?.type.offers?.hunger && !intent.mode) {
     const into = (time + h * CUP.every) % CUP.every;
     if (into < CUP.lasts) {
-      rect(ctx, x + 7, head + 6, 4, 4, OUTLINE);
-      rect(ctx, x + 8, head + 7, 2, 2, '#f4f4f0');
-      rect(ctx, x + 8, head + 7, 2, 1, '#8a5a3a');
+      // Up at their mouth.
+      rect(ctx, x + 7, at.mouth - 2, 4, 4, OUTLINE);
+      rect(ctx, x + 8, at.mouth - 1, 2, 2, '#f4f4f0');
+      rect(ctx, x + 8, at.mouth - 1, 2, 1, '#8a5a3a');
     }
   }
 }
