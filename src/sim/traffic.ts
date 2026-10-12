@@ -198,6 +198,7 @@ export class Traffic {
       body = {
         id: car.id,
         reach: moverOf(car).reach ?? 0,
+        length: moverOf(car).length,
         level: this.level!,
         get x() {
           return car.x;

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Space, asideOffset, easeAside, inTheWay, type Body } from '../src/sim/collision.ts';
 import { TICKS_PER_DAY } from '../src/sim/clock.ts';
-import { MOVERS } from '../src/sim/movement.ts';
+import { MOVERS, type Mover } from '../src/sim/movement.ts';
 import { Simulation } from '../src/sim/sim.ts';
 import { STARTER } from '../src/worlds/starter.ts';
 
@@ -44,7 +44,8 @@ test('walking manners: slow behind someone, wait right behind them, pass someone
 test('driving manners: keep the gap to the car in front, wait behind one stopped in the lane, give way at junctions, and never mind other lanes', () => {
   const me = body('m', 0, 0, 'left');
   assert.equal(inTheWay(me, 'left', [body('q', -1.2, 0, 'left')], driving).step, 0, 'too close');
-  assert.equal(inTheWay(me, 'left', [body('q', -2, 0, 'left')], driving).step, 1, 'far enough');
+  assert.equal(inTheWay(me, 'left', [body('q', -2, 0, 'left')], driving).step, 0.5, 'closing in: easing off');
+  assert.equal(inTheWay(me, 'left', [body('q', -2.5, 0, 'left')], driving).step, 1, 'far enough');
   // A bus or a van reaches a tile past its middle: the gap is to its back.
   assert.equal(inTheWay(me, 'left', [body('bus', -2, 0, 'left', true, { reach: 1 })], driving).step, 0, 'right up behind a bus');
   assert.equal(inTheWay(body('van', 0, 0, 'left', true, { reach: 1 }), 'left', [body('q', -2, 0, 'left')], driving).step, 0, 'a van keeps its front clear too');
@@ -95,5 +96,31 @@ test('the town keeps an index of who is on each level, always the same as lookin
     for (const level of sim.levels.keys()) {
       assert.deepEqual(sim.peopleOn(level), sim.people.filter((p) => p.level === level), `${level} at ${t}`);
     }
+  }
+});
+
+test('queueing, a vehicle stops a little way behind the one in front, never touching it, whatever their lengths', () => {
+  const body = (id: string, kind: 'car' | 'van' | 'bus' | 'truck', x: number, moving: boolean): Body => ({
+    id,
+    x,
+    y: 5,
+    facing: 'right',
+    moving,
+    here: true,
+    level: 'town',
+    reach: (MOVERS[kind] as Mover).reach ?? 0,
+    length: MOVERS[kind].length,
+  });
+  for (const [behind, front] of [['car', 'van'], ['bus', 'car'], ['car', 'bus'], ['truck', 'car']] as const) {
+    const stopped = body('a', front, 20, false);
+    let x = 5;
+    // Drives up at its pace, a step at a time, slowing as it's told to, till it's told to wait.
+    for (let i = 0; i < 200; i++) {
+      const { step } = inTheWay(body('b', behind, x, true), 'right', [stopped], MOVERS[behind].manners);
+      if (step === 0) break;
+      x += MOVERS[behind].speed * step;
+    }
+    const gap = 20 - x - (MOVERS[behind].length! + MOVERS[front].length!) / 2;
+    assert.ok(gap >= 0.3 && gap <= 1, `a ${behind} behind a ${front}: a gap of ${gap.toFixed(2)} tiles`);
   }
 });

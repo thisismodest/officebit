@@ -21,6 +21,8 @@ export interface Mover {
   offMap?: number;
   /** How far its body reaches from its middle (tiles), for keeping all of it clear of things: 0 for anything a tile or less. */
   reach?: number;
+  /** How long it is, nose to tail (tiles), as it's drawn (render/vehicles.ts): for keeping a gap behind another in a queue. */
+  length?: number;
   /** How it behaves around others (collision.ts). */
   manners: Manners;
 }
@@ -43,23 +45,23 @@ const FLY = 1.5;
 /** On foot: slow for someone just ahead, wait right behind them, step aside for someone coming the other way, give way to someone crossing, and after a second or so squeeze past. */
 const WALKING: Manners = { slow: 0.9, stop: 0.55, width: 0.5, oncoming: "pass", crossing: "yield", patience: 12 };
 /** On wheels: keep this far (tiles) behind the vehicle in front, each in its own lane, give way at junctions, and wait as long as it takes. */
-const DRIVING: Manners = { slow: 1.6, stop: 1.6, width: 0.5, oncoming: "ignore", crossing: "junction", patience: Infinity };
+const DRIVING: Manners = { slow: 2.2, stop: 1.6, width: 0.5, oncoming: "ignore", crossing: "junction", patience: Infinity };
 
 export const MOVERS = {
   walker: { on: "foot", speed: WALK, manners: WALKING },
   crawler: { on: "foot", speed: WALK * CRAWL, manners: WALKING },
   hurrying: { on: "foot", speed: WALK * HURRY, manners: WALKING },
-  car: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, manners: DRIVING },
+  car: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, length: 1.375, manners: DRIVING },
   // A food truck: a car's pace, three tiles wide.
-  truck: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
+  truck: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, length: 2.5, manners: DRIVING },
   // A bus: a car's pace, three tiles long.
-  bus: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
+  bus: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, length: 3.25, manners: DRIVING },
   // The delivery lorry: a car's pace, about a food truck's size.
-  lorry: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, manners: DRIVING },
+  lorry: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, reach: 1, length: 2.625, manners: DRIVING },
   // A boat on the river: a gentle pace, rowed or under sail.
   boat: { on: "wheels", speed: BOAT, manners: DRIVING },
   // The parcel van: a car's pace.
-  van: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, manners: DRIVING },
+  van: { on: "wheels", speed: TOWN, surfaces: { highway: HIGHWAY, overpass: HIGHWAY, path: CREEP }, offMap: HIGHWAY, length: 1.75, manners: DRIVING },
   // The plane: in the air at a good clip, slower rolling down the runway, slowest taxiing to its stand.
   plane: { on: "wheels", speed: FLY, surfaces: { runway: ROLL, forecourt: TAXI }, manners: DRIVING }
 } satisfies Record<string, Mover>;

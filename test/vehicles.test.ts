@@ -31,3 +31,7 @@ test('side on, facing right is facing left mirrored; the bus has its row of wind
   const windows = partsOf('bus', 'left').rects.filter(([, y, , , paint]) => paint === 'glass' && y === 5);
   assert.ok(windows.length >= 5, `${windows.length} windows`);
 });
+
+test('every vehicle is as long in the sim (for its gap in a queue) as it is drawn', () => {
+  for (const kind of ['car', 'truck', 'lorry', 'bus', 'van'] as const) assert.equal(MOVERS[kind].length! * 16, VEHICLES[kind].size.length, kind);
+});
