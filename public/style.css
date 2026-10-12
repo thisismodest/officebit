@@ -1337,6 +1337,8 @@ button.icon-button {
     user-select: none;
   }
 
+  /* Never past the right of the screen (a phone's too narrow for every kind of ground): it scrolls sideways instead.
+     100% is its button's width; the rest, the dock's margin either side and the gaps round the button. */
   & .flyout {
     position: absolute;
     top: -3px;
@@ -1344,9 +1346,16 @@ button.icon-button {
     z-index: 1;
     display: flex;
     gap: 2px;
+    max-width: calc(100vw - 100% - 2 * var(--mdst-space-sm) - 8px);
     padding: 3px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
     background: var(--mdst-color-bg);
     border: var(--mdst-border-width) solid var(--mdst-color-border);
+
+    & > * {
+      flex: none;
+    }
   }
 
   /* Tools for one kind of place (the town's roads): laid out as if they weren't wrapped, and gone elsewhere. */
@@ -1617,45 +1626,36 @@ button.icon-button {
     width: min(17rem, calc(100vw - 5rem));
   }
 
-  /* The picker is a strip under the status line, scrolling sideways, leaving the map below it; once you've picked, just that and Change. */
+  /* The picker as on a wide screen (18rem, three columns, as tall as there's room for), but under 25rem (400px), where
+     it takes what width there is, in two. Once you've picked, just that and Change, so there's map to tap. */
   .editor-picker {
-    align-self: stretch;
-    flex: none;
-    display: flex;
-    align-items: stretch;
-    gap: var(--mdst-space-xs);
-    width: auto;
-    max-height: none;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: var(--mdst-space-xs);
+    @media (max-width: 25rem) {
+      align-self: stretch;
+      width: auto;
 
-    & h4 {
-      display: none;
-    }
-
-    & .grid {
-      display: contents;
-    }
-
-    & .grid button {
-      flex: none;
-      width: 4.75rem;
-      min-height: 4.75rem;
-    }
-
-    & .grid button canvas {
-      max-width: 100%;
-      max-height: 2.75rem;
-      margin: 0 auto;
+      & .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
     &[data-collapsed] {
       align-self: flex-start;
+      display: flex;
       align-items: center;
+      gap: var(--mdst-space-xs);
+      max-height: none;
 
+      & h4,
       & .grid button:not([aria-pressed="true"]) {
         display: none;
+      }
+
+      & .grid {
+        display: contents;
+      }
+
+      & .grid button {
+        width: 4.75rem;
       }
 
       & .change {
