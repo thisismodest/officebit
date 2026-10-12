@@ -14,7 +14,7 @@ import { TILE, type Ctx } from '../../render/pixels.ts';
 import { DUSK } from '../../render/renderer.ts';
 import { paintVehicleLights, vehicleOrigin, vehicleSprite } from '../../render/vehicles.ts';
 import { DELTA, OPPOSITE, type Dir, type Input } from '../controls.ts';
-import { clock, type Bar, type TownGameDef, type TownRound } from './runner.ts';
+import { CHIP, clock, type Bar, type TownGameDef, type TownRound } from './runner.ts';
 
 /** How many parcels a round, how fast the van goes where nothing says (tiles a second), how far from a junction's middle it can still turn, and how close to the kerb counts as there (tiles). */
 const PARCELS = 3;
@@ -34,7 +34,7 @@ const CRASH = { van: 0.45, give: 0.2, seconds: 5, stopped: 0.8, knock: 0.5, grac
 /** How long the time shows what a crash added (s). */
 const CRASH_SHOWN = 1.2;
 /** Each parcel's colour, on the house and in the bar. */
-export const COLOURS = ['#e94f4f', '#4f8fd6', '#f3c969', '#5fb35a'];
+export const COLOURS = ['#4f8fd6', '#f3c969', '#b07ad6', '#f08a24'];
 
 export interface Drop {
   home: string;
@@ -279,7 +279,8 @@ class ParcelRound implements TownRound {
     const { game } = this;
     const next = game.drops.filter((d) => !d.done).sort((a, b) => Math.hypot(a.at[0] - game.x, a.at[1] - game.y) - Math.hypot(b.at[0] - game.x, b.at[1] - game.y))[0];
     return {
-      chips: game.drops.map((d) => ({ colour: d.colour, done: d.done, title: d.name })),
+      // Delivered, or still in the van (in its colour, as its arrow's).
+      chips: game.drops.map((d) => ({ colour: d.done ? CHIP.won : d.colour, title: d.name })),
       time: this.crashShown > 0 ? `${clock(game.time)} +${CRASH.seconds}s` : clock(game.time),
       alert: this.crashShown > 0,
       way: next ? { from: game, to: { x: next.at[0], y: next.at[1] }, colour: next.colour } : null,

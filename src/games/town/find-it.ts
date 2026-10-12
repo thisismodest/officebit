@@ -6,7 +6,7 @@ import type { Simulation } from '../../sim/sim.ts';
 import type { Tile } from '../../sim/world.ts';
 import { TILE, type Ctx } from '../../render/pixels.ts';
 import type { Input } from '../controls.ts';
-import { clock, standAt, type Bar, type Portrait, type TownGameDef, type TownRound } from './runner.ts';
+import { CHIP, clock, standAt, type Bar, type Portrait, type TownGameDef, type TownRound } from './runner.ts';
 
 /** How many to find; how near a tap must be to count (tiles); and after how long looking for one a ring and an arrow help (s). */
 const FINDS = 3;
@@ -228,7 +228,7 @@ class FindRound implements TownRound {
     return {
       say: game.said?.text ?? (game.done ? 'All found!' : wanted ? `Find ${wanted.name}` : 'Finding someone…'),
       who: game.said ? undefined : wanted?.id,
-      chips: Array.from({ length: game.finds }, (_, i) => ({ colour: GOLD, done: i < game.found.length, title: `Find ${i + 1}` })),
+      chips: Array.from({ length: game.finds }, (_, i) => ({ colour: i < game.found.length ? CHIP.won : CHIP.todo, title: `Find ${i + 1}` })),
       time: clock(game.time),
       way: wanted && game.hinting ? { to: wanted, colour: GOLD } : null,
     };

@@ -8,7 +8,7 @@ import { FARTHEST, swimNear, type Water } from './pitches.ts';
 import { anchors, characterSprite, type Facing, type Look } from '../../render/characters.ts';
 import { TILE, type Ctx } from '../../render/pixels.ts';
 import type { Input } from '../controls.ts';
-import { standAt, type Bar, type TownGameDef, type TownRound } from './runner.ts';
+import { CHIP, standAt, type Bar, type TownGameDef, type TownRound } from './runner.ts';
 
 /** Casts a round. */
 const CASTS = 5;
@@ -71,6 +71,8 @@ export class Fishing {
   /** Casts left, fish landed, and the last one shown (landed, or what got away). */
   casts = CASTS;
   landed: Catch[] = [];
+  /** Each cast as it went: the fish landed, or null for one that got away. */
+  tries: (Catch | null)[] = [];
   last: { fish: Catch | null; said: string } | null = null;
   /** Reeling: how far in (0–1). */
   progress = 0;
@@ -181,6 +183,7 @@ export class Fishing {
 
   private show(fish: Catch | null, said: string): void {
     this.last = { fish, said };
+    this.tries.push(fish);
     this.hooked = null;
     this.to('shown');
   }
@@ -271,11 +274,14 @@ class FishingRound implements TownRound {
       reeling: 'Tap tap tap to reel it in!',
       shown: game.last?.said ?? '',
     };
-    const book = Object.keys(fishBook()).length;
     return {
       say: said[game.stage],
-      chips: Array.from({ length: CASTS }, (_, i) => ({ colour: game.landed[i]?.species.colour ?? '#7f8c99', done: i < CASTS - game.casts, title: game.landed[i]?.species.name ?? `Cast ${i + 1}` })),
-      time: `📖 ${book}/${FISH.length}`,
+      // Each cast: one landed, one that got away, or still to come.
+      chips: Array.from({ length: CASTS }, (_, i) => {
+        const tried = i < game.tries.length;
+        const fish = game.tries[i];
+        return { colour: !tried ? CHIP.todo : fish ? CHIP.won : CHIP.lost, title: !tried ? `Cast ${i + 1}` : (fish?.species.name ?? 'Got away') };
+      }),
     };
   }
 

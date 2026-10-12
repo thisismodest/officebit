@@ -8,7 +8,7 @@ import { TILE, type Ctx } from '../../render/pixels.ts';
 import { paintBall } from '../../render/props/games.ts';
 import { DELTA, type Input } from '../controls.ts';
 import { goalNear, type Goal } from './pitches.ts';
-import { standAt, type Bar, type TownGameDef, type TownRound } from './runner.ts';
+import { CHIP, standAt, type Bar, type TownGameDef, type TownRound } from './runner.ts';
 
 /** Penalties each, and how far from the goal the spot is (tiles). */
 const KICKS = 5;
@@ -217,7 +217,11 @@ class PenaltiesRound implements TownRound {
     const mine = game.kicks.filter((k) => k.by === 0);
     return {
       say: said,
-      chips: Array.from({ length: KICKS }, (_, i) => ({ colour: mine[i] ? (mine[i]!.scored ? '#5fb35a' : '#e94f4f') : '#7f8c99', done: !!mine[i], title: `Kick ${i + 1}` })),
+      // Your kicks: a goal, a miss, or still to take.
+      chips: Array.from({ length: KICKS }, (_, i) => {
+        const kick = mine[i];
+        return { colour: kick ? (kick.scored ? CHIP.won : CHIP.lost) : CHIP.todo, title: `Kick ${i + 1}${kick ? (kick.scored ? ': goal' : ': missed') : ''}` };
+      }),
       time: `You ${a} – ${b} Town`,
     };
   }

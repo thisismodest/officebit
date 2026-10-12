@@ -20,19 +20,23 @@ export interface TownHost {
   zoomed(): void;
 }
 
-/** A chip in the bar, one for each thing to do: its colour, and whether it's done (a parcel delivered, a ball caught). */
+/** A chip in the bar, one for each thing to do: its colour (how it went, from CHIP, or what it is while it's still to
+ * do: a parcel's colour), and what it is. */
 export interface Chip {
   colour: string;
-  done: boolean;
   title: string;
 }
 
-/** What the bar shows: a word on what to do (and who, by id, for their picture), the chips, the time, and which way to go (tiles). */
+/** Chip colours: won (a goal, a catch, a parcel delivered), lost (a miss, one that got away), and still to do. */
+export const CHIP = { won: '#5fb35a', lost: '#e94f4f', todo: '#7f8c99' };
+
+/** What the bar shows: a word on what to do (and who, by id, for their picture), the chips, the time (or the score; none
+ * if there's nothing to say), and which way to go (tiles). */
 export interface Bar {
   say?: string;
   who?: string;
   chips: Chip[];
-  time: string;
+  time?: string;
   /** Something's just gone wrong (a crash): the time shows it. */
   alert?: boolean;
   /** From where (the middle of the view, if it doesn't say) to where. */
@@ -239,7 +243,7 @@ export class TownGame {
       say.replaceChildren(...(who ? [picture(this.host.renderer.portrait(who))] : []), words);
     }
     const chips = this.root.querySelector<HTMLElement>('.town-game-chips')!;
-    const shown = bar.chips.map((c) => `${c.colour}${c.done}`).join();
+    const shown = bar.chips.map((c) => c.colour).join();
     if (chips.dataset.shown !== shown) {
       chips.dataset.shown = shown;
       chips.replaceChildren(
@@ -247,15 +251,14 @@ export class TownGame {
           const chip = document.createElement('span');
           chip.className = 'town-game-chip';
           chip.style.setProperty('--chip', c.colour);
-          chip.dataset.done = String(c.done);
           chip.title = c.title;
-          chip.textContent = c.done ? '✓' : '';
           return chip;
         }),
       );
     }
     const time = this.root.querySelector<HTMLElement>('.town-game-time')!;
-    time.textContent = bar.time;
+    time.textContent = bar.time ?? '';
+    time.hidden = !bar.time;
     time.toggleAttribute('data-alert', !!bar.alert);
     const way = this.root.querySelector<HTMLElement>('.town-game-way')!;
     way.hidden = !bar.way;

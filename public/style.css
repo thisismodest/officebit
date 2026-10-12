@@ -2131,19 +2131,11 @@ button.icon-button {
 }
 
 .town-game-chip {
-  display: grid;
-  place-items: center;
   width: 1.4rem;
   height: 1.25rem;
-  color: #fff;
-  font-size: 0.8rem;
   background: var(--chip);
   border: 0.15rem solid #2a2033;
   border-radius: 0.2rem;
-
-  &[data-done='true'] {
-    opacity: 0.5;
-  }
 }
 
 /* Something's just gone wrong (a crash): the time, in red, with what it added. */

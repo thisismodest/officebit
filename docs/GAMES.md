@@ -60,7 +60,7 @@ goes, back to the start. Each crossing scores, and the traffic gets a little qui
 
 Played on the real town map, as layers drawn over it (`renderer.overlays`, with the town, so they darken at night;
 `renderer.marks`, bright over it; `renderer.headlamps`, a vehicle's lights on the road), by `town/runner.ts`: a bar along the top
-(what to do, chips for how it's going, the time, an arrow which way), the camera on you (or left to you, in a game about
+(what to do, chips for how it's going: green done, red missed, grey still to come, no ticks; the time, an arrow which way), the camera on you (or left to you, in a game about
 looking round: drag the map, or the arrows), and a joystick for fingers in a game you steer. A game can ask for the map
 closer (never further out than you had it). The map still zooms (scroll, pinch, the zoom buttons); a tap on it goes to the
 game. Started from a signpost, furniture like any other (in the editor under **Fun & games**), so a town can have them
