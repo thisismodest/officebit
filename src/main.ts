@@ -659,8 +659,7 @@ document.addEventListener('keyup', (event) => {
 });
 addEventListener('blur', () => editor.holdHand(false));
 
-/** The loading screen (town/index.html), until the town's first frame is on screen, and a moment more so it doesn't just flash. */
-const LOADING_LINGER_MS = 300;
+/** The loading screen (town/index.html), until the town's first frame is on screen. */
 let loading = document.getElementById('loading');
 let last = performance.now();
 let lastPanel = 0;
@@ -692,9 +691,8 @@ function frame(now: number): void {
   renderer.camera.insetBottom = narrow.matches ? Math.max(profile.coveredHeight(), sheet.offsetHeight) : 0;
   if (!time.outOfSight) renderer.draw(between, dt);
   if (loading && !catchingUp) {
-    const screen = loading;
+    loading.remove();
     loading = null;
-    setTimeout(() => screen.remove(), LOADING_LINGER_MS);
   }
   soundscape.update(dt);
   card.update(renderer.camera, sim);
