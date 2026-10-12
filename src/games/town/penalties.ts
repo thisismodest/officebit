@@ -158,7 +158,7 @@ export class Penalties {
 const YOU: Look = { skin: 1, hair: 2, shirt: 3, style: 0, pants: 1 };
 const TOWN: Look = { skin: 2, hair: 3, shirt: 4, style: 0, pants: 0 };
 /** Where the ball ends up (tiles): in the net behind the line; off the keeper, back out; wide or over, past the goal and out the back. */
-const NET = 0.6;
+const NET = 0.2;
 const REBOUND = 1.6;
 const BEHIND = 2;
 /** How high the ball rises (pixels): a shot, and one over the bar (well over the crossbar as it passes). */
