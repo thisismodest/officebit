@@ -66,8 +66,7 @@ town's story unless it's meant to (a game reads the town; a bot or a startup is 
 
 ### Games ✓ (so far)
 Done (see `docs/GAMES.md`): the arcade (Caterpillar, Brick Bash, Space Rocks, Bubble Blaster, Cross the Road); out in
-town, Parcel Dash, Find it, Catch!, fishing (by any water, with a fish book) and penalties (one player, or two taking
-turns). Next, in roughly this order:
+town, Parcel Dash, Find it, Catch!, fishing (by any water) and penalties. Next, in roughly this order:
 - **Beat my time:** finishing a game gives a link with the score and the town; a friend plays the same course, and
   sees whose is best. Leaderboards between friends, without accounts.
 - **Two players on one device:** a pong-style Paddle Battle and a top-down duel in the arcade; split-screen Parcel

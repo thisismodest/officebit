@@ -1,7 +1,7 @@
 // Fishing (docs/GAMES.md#fishing): from a fishing barrel by any water (a pond, the river), five casts. Tap to stop the
 // swinging power meter and cast; wait for the float to dip, tap quick to hook it; then tap and tap to reel it in, as it
-// pulls back (the big ones harder). What's biting depends on the water (pond or river), the time of day and how far out you
-// cast; every fish goes back, and a new kind goes in your fish book. The angler's the game's own: the town never knows.
+// pulls back (the big ones harder): let the meter empty and it's away. What's biting depends on the water (pond or river), the time of day and how far out you
+// cast; every fish goes back. The angler's the game's own: the town never knows.
 import type { Simulation } from '../../sim/sim.ts';
 import type { Tile } from '../../sim/world.ts';
 import { FARTHEST, swimNear, type Water } from './pitches.ts';
@@ -19,12 +19,11 @@ const FLIGHT = 0.6;
 const WAIT: [number, number] = [2, 7];
 const BITE = 1.2;
 const SHOWN = 1.8;
-/** Reeling (shares of the way in): each tap brings it in this much; it pulls back this much a second, and this much more
- * a second for each kg, up to the most. */
-const REEL = { tap: 0.065, pull: 0.1, perKg: 0.025, most: 0.22 };
+/** Reeling (shares of the way in): how far in it starts, hooked; each tap brings it in this much; it pulls back this
+ * much a second, and this much more a second for each kg, up to the most. Pulled right back, it's off. */
+const REEL = { start: 0.3, tap: 0.065, pull: 0.13, perKg: 0.025, most: 0.25 };
 /** Fish bite sooner at dawn and dusk (and in the rain), by this much. */
 const KEEN = 0.6;
-const BOOK_KEY = 'officebit:fish-book';
 
 /** A kind of fish: where it's found, how heavy (kg, least to most), how often (a weight), and when or how far out. */
 interface Species {
@@ -125,7 +124,7 @@ export class Fishing {
       case 'bite':
         if (act) {
           this.hooked = this.pick();
-          this.progress = 0;
+          this.progress = REEL.start;
           this.to('reeling');
         } else if (this.t >= BITE) this.show(null, 'Too slow! It got away.');
         break;
@@ -154,11 +153,12 @@ export class Fishing {
     this.to('flying');
   }
 
-  /** In a tap at a time, the fish pulling back between (never off the hook: keep tapping and it's yours). */
+  /** In a tap at a time, the fish pulling back between: all the way in and it's yours, all the way back and it's off. */
   private reel(dt: number, act: boolean): void {
     const pull = Math.min(REEL.most, REEL.pull + REEL.perKg * (this.hooked?.kg ?? 0));
     this.progress = Math.max(0, this.progress - pull * dt + (act ? REEL.tap : 0));
-    if (this.progress >= 1 && this.hooked) {
+    if (this.progress <= 0) this.show(null, 'It pulled free and got away!');
+    else if (this.progress >= 1 && this.hooked) {
       this.landed.push(this.hooked);
       this.show(this.hooked, `A ${this.hooked.kg.toFixed(1)} kg ${this.hooked.species.name.toLowerCase()}!`);
     }
@@ -194,28 +194,6 @@ export class Fishing {
   }
 }
 
-/** The fish book: each kind caught, and the heaviest (kg), kept in the browser. */
-export function fishBook(): Record<string, number> {
-  try {
-    return JSON.parse(localStorage.getItem(BOOK_KEY) ?? '{}') as Record<string, number>;
-  } catch {
-    return {};
-  }
-}
-
-function keepInBook(fish: Catch): boolean {
-  const book = fishBook();
-  const fresh = !(fish.species.name in book);
-  if (fresh || fish.kg > book[fish.species.name]!) {
-    try {
-      localStorage.setItem(BOOK_KEY, JSON.stringify({ ...book, [fish.species.name]: fish.kg }));
-    } catch {
-      // Private browsing, or no room: the book just isn't kept.
-    }
-  }
-  return fresh;
-}
-
 /** Water near the barrel (a pond, or the river and its shallows), and somewhere beside it to stand. Null with no water near. */
 export function plan(sim: Simulation, from: Tile, random: () => number): Fishing | null {
   const town = sim.traffic.level;
@@ -237,19 +215,14 @@ const ANGLER: Look = { skin: 2, hair: 1, shirt: 6, style: 0, pants: 2 };
 class FishingRound implements TownRound {
   readonly game: Fishing;
   private act = false;
-  private fresh: string | null = null;
 
   constructor(game: Fishing) {
     this.game = game;
   }
 
   step(input: Input, dt: number): void {
-    const before = this.game.landed.length;
     this.game.step(dt, this.act || input.pressed.has('a'));
     this.act = false;
-    // A kind not in the book yet: kept, and said so.
-    const fish = this.game.landed[before];
-    if (fish && keepInBook(fish)) this.fresh = fish.species.name;
   }
 
   tap(): void {
@@ -294,8 +267,7 @@ class FishingRound implements TownRound {
     const { landed } = this.game;
     if (!landed.length) return 'Nothing today. They’ll be biting next time!';
     const best = landed.reduce((a, b) => (b.kg > a.kg ? b : a));
-    const news = this.fresh ? ` A new one for your book: ${this.fresh.toLowerCase()}!` : '';
-    return `You caught ${landed.length} fish, the biggest a ${best.kg.toFixed(1)} kg ${best.species.name.toLowerCase()}.${news}`;
+    return `You caught ${landed.length} fish, the biggest a ${best.kg.toFixed(1)} kg ${best.species.name.toLowerCase()}.`;
   }
 
   /** You on the bank, the rod out over the water, and the line to the float (drawn with the town, so dark at night). */

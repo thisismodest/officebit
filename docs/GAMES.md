@@ -104,11 +104,11 @@ for three, five for two. The game zooms the map in to play.
 From a fishing barrel (`fishingBarrel`) within four tiles of water: a pond, or the river and its shallows (the starter
 town has one by the Green's pond and one on the bank by the moorings). Five casts. Tap (or ◆) to stop the swinging
 power meter and cast: further out, bigger fish. Wait for the float to dip, then tap within a second or so to hook it.
-Reel in with taps, quickly: it pulls back between them (the heavier, the harder), but once hooked it never gets away.
+Reel in with taps, quickly: it pulls back between them (the heavier, the harder), and if the meter empties it's away.
 A catch is a gold star over you.
 What bites depends on the water (roach, rudd, tench, carp and goldfish in ponds; perch, chub, trout, pike and, after
 dark, eels in the river), how far out (carp and pike only far out), and the time (bites come quicker at dawn and dusk,
-and in the rain). Every fish goes back; a new kind goes in the fish book (kept in the browser), shown in the bar.
+and in the rain). Every fish goes back.
 Stars by fish landed. The map zooms in to fish.
 
 ### Penalties

@@ -23,7 +23,7 @@ export const MINIGAMES: Record<Minigame, { title: string; about: string; play: s
   parcelDash: { title: 'Parcel Dash', about: 'Drive the parcel van and deliver to the houses!', play: '📦 Play', cant: 'There are no houses to deliver to from here.' },
   findIt: { title: 'Find it', about: 'Someone’s out and about in town. Can you find them?', play: '🔍 Play', cant: 'There’s nobody in town to find.' },
   catch: { title: 'Catch!', about: 'A friend throws, you run and catch. How many can you get?', play: '⚾ Play', cant: 'There’s no grass to play on here.' },
-  fishing: { title: 'Fishing', about: 'Cast a line and see what’s biting. Every new kind goes in your fish book.', play: '🎣 Fish', cant: 'There’s no water near enough to fish in.' },
+  fishing: { title: 'Fishing', about: 'Cast a line and see what’s biting.', play: '🎣 Fish', cant: 'There’s no water near enough to fish in.' },
   penalties: { title: 'Penalties', about: 'Five penalties each: take yours, then go in goal.', play: '⚽ Play', cant: 'There’s no goal near enough to shoot at.' },
 };
 

@@ -336,7 +336,7 @@ test('find it and catch in the town: people to find, somewhere outdoors for stan
 });
 
 
-test('fishing: tap to cast, wait for the bite, hook it in time, and tap and tap to reel it in (it never gets off)', () => {
+test('fishing: tap to cast, wait for the bite, hook it in time, and tap and tap to reel it in before it pulls free', () => {
   // Water to the east of where you stand.
   const water: Tile[] = [];
   for (let x = 2; x < 8; x++) for (let y = -2; y <= 2; y++) water.push([x, y]);
@@ -352,21 +352,26 @@ test('fishing: tap to cast, wait for the bite, hook it in time, and tap and tap 
   assert.equal(fishing.stage, 'bite', 'a bite');
   tick(true);
   assert.equal(fishing.stage, 'reeling', 'hooked');
-  // A tap a second: it pulls back as much as that brings in, but it's still on.
-  for (let i = 0; i < 200; i++) tick(i % 20 === 0);
-  assert.equal(fishing.stage, 'reeling', 'still on the line');
-  assert.ok(fishing.progress < 0.5, 'not much nearer');
   // Tapping quickly brings it in.
   for (let i = 0; i < 400 && fishing.stage === 'reeling'; i++) tick(i % 2 === 0);
   assert.equal(fishing.landed.length, 1, fishing.last?.said);
   assert.equal(fishing.landed[0]!.species.water, 'pond');
+  // The next: hooked, but a tap a second isn't enough; it pulls the meter empty and gets away.
+  for (let i = 0; i < 60 && fishing.stage !== 'aim'; i++) tick();
+  tick(true);
+  for (let i = 0; i < 400 && fishing.stage !== 'bite'; i++) tick();
+  tick(true);
+  assert.equal(fishing.stage, 'reeling', 'hooked');
+  for (let i = 0; i < 400 && fishing.stage === 'reeling'; i++) tick(i % 20 === 0);
+  assert.match(fishing.last!.said, /pulled free/);
+  assert.equal(fishing.landed.length, 1);
   // Too slow to hook the next one: it gets away.
   for (let i = 0; i < 60 && fishing.stage !== 'aim'; i++) tick();
   tick(true);
   for (let i = 0; i < 400 && fishing.stage !== 'bite'; i++) tick();
   for (let i = 0; i < 40; i++) tick();
   assert.match(fishing.last!.said, /got away/);
-  assert.equal(fishing.casts, 3);
+  assert.equal(fishing.casts, 2);
 });
 
 test('penalties: aim and power beat the keeper, or don’t; in goal a dive the right way saves; five each, then it’s over', () => {
