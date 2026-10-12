@@ -92,6 +92,11 @@ export class Profile {
     host.append(this.root);
   }
 
+  /** Whose profile is open, if anyone's. */
+  get showing(): string | null {
+    return this.id;
+  }
+
   /** How much of the stage the profile covers from the bottom (it slides up on phones), in CSS px. */
   coveredHeight(): number {
     return this.id ? this.root.offsetHeight : 0;
@@ -150,7 +155,7 @@ export class Profile {
     this.list('recent', [...sim.historyOf(p.id)].slice(-RECENT).reverse().map((e) => `<li><time>${weekdayOf(e.tick)} ${formatTime(e.tick)}</time> ${esc(e.text)}</li>`));
     set('stats', statsOf(p));
     this.controlling = sim.interactions.isControlled(p);
-    this.toggle('control', this.controlling, this.controlling ? 'Let go' : 'Take control');
+    this.toggle('control', this.controlling, this.controlling ? `Let go of ${p.name}` : `Walk ${p.name} about`);
     set('venture', ventureOf(p, sim));
     set('love', loveOf(p, sim));
     set('plan', sim.plans.describe(p));
@@ -170,7 +175,7 @@ export class Profile {
             <span class="mdst-badge mdst-badge--sm mdst-badge--muted"></span>
             <div class="actions">
               ${iconButton('follow', 'Follow', 'data-action="follow" aria-pressed="false"')}
-              ${roleOf(p).controllable && !this.editing ? iconButton('control', 'Take control', 'data-action="control" aria-pressed="false"') : ''}
+              ${roleOf(p).controllable && !this.editing ? iconButton('control', `Walk ${esc(p.name)} about`, 'data-action="control" aria-pressed="false"') : ''}
               ${this.editor && editable(p) ? iconButton(this.editing ? 'done' : 'edit', this.editing ? 'Done editing' : 'Edit', `data-action="edit" aria-pressed="${this.editing}"`) : ''}
             </div>
           </div>

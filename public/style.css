@@ -504,6 +504,24 @@ main {
     top 0.15s,
     width 0.15s,
     height 0.15s;
+
+  /* Something there to do: the light round it pulses (still, for reduced motion). */
+  &[data-do] {
+    outline-color: #f3c969;
+    animation: tour-pulse 1.1s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      outline-width: 3px;
+    }
+  }
+}
+
+@keyframes tour-pulse {
+  50% {
+    outline-width: 4px;
+    outline-offset: 3px;
+  }
 }
 
 .tour-bubble {
@@ -511,11 +529,26 @@ main {
   z-index: 21;
   width: min(18rem, calc(100vw - 2rem));
   padding: var(--mdst-space-sm) var(--mdst-space-md);
+  /* Room on the right for the ✕. */
+  padding-right: calc(var(--mdst-space-md) + 1.5rem);
   background: var(--mdst-color-bg);
   box-shadow: 0 0.25rem 0 rgba(0, 0, 0, 0.35);
 
   & p {
     margin: 0;
+  }
+
+  /* What to do, first and bold, so a glance is enough. */
+  & .tour-do {
+    margin-bottom: var(--mdst-space-xs);
+    font-weight: bold;
+  }
+
+  /* Ending the tour: small, in the corner, out of the way of Next. */
+  & .tour-close {
+    position: absolute;
+    top: var(--mdst-space-xs);
+    right: var(--mdst-space-xs);
   }
 
   & .tour-actions {

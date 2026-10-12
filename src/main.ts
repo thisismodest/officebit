@@ -218,6 +218,29 @@ document.addEventListener('pointerdown', (event) => {
   const target = event.target as Node;
   if (editor.active && target !== renderer.canvas && !editor.contains(target) && !editButton.contains(target)) setEditing(false);
 });
+/** The town's own level (outside). */
+function townLevel(): string {
+  return sim.world.levels.find((l) => l.kind === 'outside')?.id ?? FIRST_LEVEL;
+}
+
+/** The building in town most of the team works in (the head office), for the tour to show: found once for each town. */
+let office: { sim: Simulation; item: Item | undefined } | null = null;
+function officeBuilding(): Item | undefined {
+  if (office?.sim !== sim) office = { sim, item: findOffice() };
+  return office.item;
+}
+
+function findOffice(): Item | undefined {
+  const counts = new Map<string, number>();
+  for (const p of sim.people) if (p.company) counts.set(p.company, (counts.get(p.company) ?? 0) + 1);
+  const busiest = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const levels = sim.companies.get(busiest ?? '')?.levels ?? [];
+  return sim.itemsOn(townLevel()).find((item) => interiorOf(sim, item)?.levels.some((l) => levels.includes(l.id)));
+}
+
+/** The tour meets someone at least this close (the camera's zoom); and shows a building taking up at most this much of the view's width. */
+const TOUR_ZOOM = 3;
+const TOUR_BUILDING_WIDTH = 0.8;
 const tour = new Tour(stage, {
   sim: () => sim,
   renderer,
@@ -229,10 +252,46 @@ const tour = new Tour(stage, {
     setEditing(false);
     select(null);
     follow(p.id);
+    // Close enough to see who it is, and tap them.
+    if (renderer.camera.zoom < TOUR_ZOOM) {
+      renderer.camera.zoomAt(TOUR_ZOOM);
+      updateCameraUi();
+    }
     return p.id;
   },
   steering: () => !!steering,
   editing: () => editor.active,
+  profileOf: () => profile.showing,
+  select: (id) => select(id),
+  steer: (id) => steer(id),
+  edit: (on) => setEditing(on),
+  toTown: () => visit(townLevel()),
+  inTown: () => renderer.level === townLevel(),
+  building() {
+    const item = officeBuilding();
+    return item ? { x: item.def.p[0], y: item.def.p[1], w: item.type.size[0], h: item.type.size[1] } : null;
+  },
+  showBuilding() {
+    const item = officeBuilding();
+    if (!item) return;
+    // All of it in view (a phone at the tour's zoom shows only its door): the closest zoom it fits at.
+    const { camera } = renderer;
+    const fits = (camera.viewW * TOUR_BUILDING_WIDTH) / (item.type.size[0] * TILE);
+    if (camera.zoom > fits) camera.zoomAt(camera.levels().filter((z) => z <= fits).at(-1) ?? camera.levels()[0]!);
+    visit(townLevel(), [item.def.p[0] + Math.floor(item.type.size[0] / 2), item.def.p[1] + Math.floor(item.type.size[1] / 2)]);
+  },
+  openBuilding() {
+    const item = officeBuilding();
+    const inside = item && interiorOf(sim, item);
+    if (item && inside) card.open(inside, { x: (item.def.p[0] + item.type.size[0] / 2) * TILE, y: item.def.p[1] * TILE });
+  },
+  cardOpen: () => card.showingBuilding,
+  reset() {
+    setEditing(false);
+    steer(null);
+    select(null);
+    card.close();
+  },
   pause(on) {
     // Paused for the tour, and back to the speed it was going at after.
     if (on && speedBeforeTour === null) {
@@ -530,10 +589,7 @@ addEventListener('keydown', (event) => {
   }
 });
 
-$('#to-town').addEventListener('click', () => {
-  const town = sim.world.levels.find((l) => l.kind === 'outside');
-  if (town) visit(town.id);
-});
+$('#to-town').addEventListener('click', () => visit(townLevel()));
 
 const followButton = $<HTMLButtonElement>('#follow');
 followButton.addEventListener('click', () => {

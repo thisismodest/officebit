@@ -18,7 +18,7 @@ From each workplace's … menu in the World tab, while someone's in:
 
 ## Taking control
 
-**Take control** (beside Follow in a profile) steers that person and follows
+**Walk them about** (the walking figure beside Follow in a profile) steers that person and follows
 them. Tap someone to talk to them, furniture to use it (a bed to sleep, their
 desk to work), a door or stairs (or, outside, a building) to go through, or anywhere to walk there, on any level. They stay put between
 orders. Tap the person you're steering to bring their profile back. **Let go**

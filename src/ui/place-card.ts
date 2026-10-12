@@ -128,6 +128,11 @@ export class PlaceCard {
     this.interior = null;
   }
 
+  /** Showing a building (its card, with who's there and the way in). */
+  get showingBuilding(): boolean {
+    return !this.root.hidden && !!this.interior;
+  }
+
   /** Keep the card by its building and its head-count current. Call every frame. */
   update(camera: Camera, sim: Simulation): void {
     if (!this.anchor) return;
